@@ -1,4 +1,6 @@
 <script lang="ts">
+	import '../styles/normalize.css';
+
 	import TopAppBar, {
 		Row,
 		Section,
