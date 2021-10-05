@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '../styles/normalize.css';
+	import '$lib/styles/normalize.css';
 
 	import TopAppBar, {
 		Row,
@@ -10,13 +10,18 @@
 	} from '@smui/top-app-bar';
 	import IconButton from '@smui/icon-button';
 
+	import MenuDrawer from '$lib/components/MenuDrawer.svelte';
+
 	let topAppBar: TopAppBarComponentDev;
+	let isMenuDrawerOpen: boolean = false;
 </script>
 
 <TopAppBar bind:this={topAppBar} variant="standard">
 	<Row>
 		<Section>
-			<IconButton class="material-icons">menu</IconButton>
+			<IconButton class="material-icons" on:click={() => (isMenuDrawerOpen = !isMenuDrawerOpen)}
+				>menu</IconButton
+			>
 			<Title>Standard</Title>
 		</Section>
 		<Section align="end" toolbar>
@@ -27,6 +32,7 @@
 	</Row>
 </TopAppBar>
 <AutoAdjust {topAppBar}>
+	<MenuDrawer open={isMenuDrawerOpen} />
 	<slot />
 </AutoAdjust>
 
