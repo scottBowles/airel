@@ -1,13 +1,28 @@
+<script context="module" lang="ts">
+	const mainNavLinks = [
+		{ label: 'Dashboard', href: '/' },
+		{ label: 'NPCs', href: '/npcs' },
+		{ label: 'Places', href: '/places' },
+		{ label: 'Races', href: '/races' },
+		{ label: 'Items', href: '/items' },
+		{ label: 'Associations', href: '/associations' },
+		{ label: 'Scientia', href: '/scientia' }
+	];
+
+	const profileNavLinks = [
+		{ label: 'Profile', href: '/profile' },
+		{ label: 'Settings', href: '/settings' },
+		{ label: 'Logout', href: '/' }
+	];
+</script>
+
 <script lang="ts">
 	import Drawer, { AppContent, Content, Header, Title, Subtitle } from '@smui/drawer';
-	import Button, { Label } from '@smui/button';
 	import List, { Item, Text } from '@smui/list';
 
-	let active = 'Gray Kittens';
+	import { page } from '$app/stores';
 
-	function setActive(value: string) {
-		active = value;
-	}
+	$: currentPage = '/' + $page.path.split('/')[1];
 
 	export let open;
 </script>
@@ -18,52 +33,23 @@
 			<Title>Super Drawer</Title>
 			<Subtitle>It's the best drawer.</Subtitle>
 		</Header>
+
 		<Content>
 			<List>
-				<Item
-					href="javascript:void(0)"
-					on:click={() => setActive('Gray Kittens')}
-					activated={active === 'Gray Kittens'}
-				>
-					<Text>Gray Kittens</Text>
-				</Item>
-				<Item
-					href="javascript:void(0)"
-					on:click={() => setActive('A Space Rocket')}
-					activated={active === 'A Space Rocket'}
-				>
-					<Text>A Space Rocket</Text>
-				</Item>
-				<Item
-					href="javascript:void(0)"
-					on:click={() => setActive('100 Pounds of Gravel')}
-					activated={active === '100 Pounds of Gravel'}
-				>
-					<Text>100 Pounds of Gravel</Text>
-				</Item>
-				<Item
-					href="javascript:void(0)"
-					on:click={() => setActive('All of the Shrimp')}
-					activated={active === 'All of the Shrimp'}
-				>
-					<Text>All of the Shrimp</Text>
-				</Item>
-				<Item
-					href="javascript:void(0)"
-					on:click={() => setActive('A Planet with a Mall')}
-					activated={active === 'A Planet with a Mall'}
-				>
-					<Text>A Planet with a Mall</Text>
-				</Item>
+				{#each mainNavLinks as { label, href }}
+					<a {href} sveltekit:prefetch>
+						<Item activated={href === currentPage}>
+							<Text>{label}</Text>
+						</Item>
+					</a>
+				{/each}
 			</List>
 		</Content>
 	</Drawer>
 
 	<AppContent class="app-content">
 		<main class="main-content">
-			<Button on:click={() => (open = !open)}><Label>Toggle Drawer</Label></Button>
-			<br />
-			<pre class="status">Active: {active}</pre>
+			<slot />
 		</main>
 	</AppContent>
 </div>
@@ -93,5 +79,10 @@
 		padding: 16px;
 		height: 100%;
 		box-sizing: border-box;
+	}
+
+	a {
+		text-decoration: none;
+		color: inherit;
 	}
 </style>
