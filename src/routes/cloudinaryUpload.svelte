@@ -1,4 +1,4 @@
-<script lang="typescript">
+<script lang="ts">
 	import CloudUpload from '$lib/components/CloudUpload.svelte';
 
 	let handleUploadResponse = (error, response: { event: string; info: { public_id: string } }) => {
