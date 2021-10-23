@@ -111,7 +111,7 @@
 
 	<!-- Don't include fixed={false} if this is a page wide drawer.
         It adds a style for absolute positioning. -->
-	<Scrim fixed={false} />
+	<Scrim />
 	<AppContent class="app-content">
 		<main class="main-content">
 			<slot />
@@ -125,7 +125,7 @@
 	.drawer-container {
 		position: relative;
 		display: flex;
-		height: 350px;
+		/* height: 350px; */
 		max-width: 600px;
 		border: 1px solid var(--mdc-theme-text-hint-on-background, rgba(0, 0, 0, 0.1));
 		overflow: hidden;

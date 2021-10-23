@@ -1,4 +1,9 @@
-<script>
+<script lang="ts">
+	// import characterStore
+	import httpStore from '$lib/stores/characters';
+
+	// characterStore.subscribe(($characterStore) => console.log($characterStore));
+
 	let char = {
 		id: 3,
 		hit_die: null,
@@ -69,7 +74,7 @@
 	</div>
 </div>
 
-<style>
+<!-- <style>
 	.ability-scores-container {
 		display: flex;
 		flex-direction: column;
@@ -89,4 +94,4 @@
 	.ability-score-container span:first-child {
 		font-weight: bold;
 	}
-</style>
+</style> -->

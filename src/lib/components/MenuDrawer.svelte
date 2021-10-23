@@ -60,7 +60,7 @@
 	.drawer-container {
 		position: relative;
 		display: flex;
-		height: 350px;
+		/* height: 350px; */
 		max-width: 600px;
 		border: 1px solid var(--mdc-theme-text-hint-on-background, rgba(0, 0, 0, 0.1));
 		overflow: hidden;
