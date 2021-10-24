@@ -1,8 +1,8 @@
 <script lang="ts">
-	// import characterStore
-	import httpStore from '$lib/stores/characters';
+	import { listStore as characters } from '$lib/stores/characters.js';
+	const ROOT_URL = 'http://localhost:3000';
 
-	// characterStore.subscribe(($characterStore) => console.log($characterStore));
+	const handleClick = () => characters.get();
 
 	let char = {
 		id: 3,
@@ -52,7 +52,24 @@
 	<title>Character</title>
 </svelte:head>
 
-<h1 class="ml-4 pt-2">Welcome to Other</h1>
+<h1 class="ml-4 pt-2">Characters</h1>
+
+<button on:click={handleClick}>Refresh Character Data</button>
+{#if $characters?.loading}
+	Loading...
+{:else}
+	{#each $characters.data as character}
+		<a href={`${ROOT_URL}/characters/${character?.id}`}><p>Name: {character?.name}</p></a>
+		<p>Player: {character?.player_name}</p>
+		<p>strength: {character?.strength}</p>
+		<p>dexterity: {character?.dexterity}</p>
+		<p>constitution: {character?.constitution}</p>
+		<p>intelligence: {character?.intelligence}</p>
+		<p>wisdom: {character?.wisdom}</p>
+		<p>charisma: {character?.charisma}</p>
+	{/each}
+{/if}
+
 <div class="ability-scores-container">
 	<div class="ability-score-container">
 		<span>STR</span><span>{char.strength}</span>
@@ -74,7 +91,7 @@
 	</div>
 </div>
 
-<!-- <style>
+<style>
 	.ability-scores-container {
 		display: flex;
 		flex-direction: column;
@@ -94,4 +111,4 @@
 	.ability-score-container span:first-child {
 		font-weight: bold;
 	}
-</style> -->
+</style>

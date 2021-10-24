@@ -1,13 +1,13 @@
-import jwt_decode from 'jwt-decode';
+import { browser } from '$app/env';
 import { writable } from 'svelte/store';
 import { getAccessJwt, getDefaultHeaders, logout } from '$lib/utils/auth.js';
 
-interface HttpMethods {
-	get: (url: string) => Promise<void>;
-	post: ({ url: string, params: any }) => Promise<void>;
-	patch: ({ url: string, params: any }) => Promise<void>;
-	delete: ({ url: string, params: any }) => Promise<void>;
-}
+// interface HttpMethods {
+// 	get: (url: string) => Promise<void>;
+// 	post: ({ url: string, params: any }) => Promise<void>;
+// 	patch: ({ url: string, params: any }) => Promise<void>;
+// 	delete: ({ url: string, params: any }) => Promise<void>;
+// }
 
 // IMPORTING THIS STUFF SEEMS TO BREAK IT
 // interface ReadonlyMethods {
@@ -22,29 +22,39 @@ interface HttpMethods {
 
 // returns a store with HTTP access functions for get, post, patch, delete
 // anytime an HTTP request is made, the store is updated and all subscribers are notified.
-export default function <Readonly extends boolean>(
+export default function <Readonly extends boolean>({
 	initial = {},
 	defaultPath = '',
-	readonly: Readonly | true = true,
-	getDataFromJson = (json) => json[0]
-) {
+	readonly = true,
+	getDataFromJson = (json) => json[0],
+	staleTime = 5000
+}) {
 	// create the underlying store
 	const store = writable(initial || {});
 
-	const ROOT_URL = 'http://127.0.0.1:8000';
+	// before render, set loading to true and return the readonly store
+	if (!browser) {
+		store.update((data) => ({ ...data, loading: true }));
+		return { subscribe: store.subscribe };
+	}
 
+	// url utils
+	const ROOT_URL = 'http://127.0.0.1:8000';
 	const normalizeUrl = (url) =>
 		url.startsWith('http') ? url : url.startsWith('/') ? `${ROOT_URL}${url}` : `${ROOT_URL}/${url}`;
 
+	// track data freshness
+	let lastUpdated = 0;
+	const dataIsStale = () => Date.now() - lastUpdated > staleTime;
+
 	// define a request function that will do `fetch` and update store when request finishes
-	store.request = async (method, url = defaultPath, params = null) => {
+	const request = async (method, url = defaultPath, params = null) => {
 		console.log('Request: ', { method, url, params });
 		// prefix with ROOT_URL if it doesn't start with `http` and add trailing slash if needed
 		url = normalizeUrl(url);
 
 		// before we fetch, clear out previous errors and set `loading` to `true`
 		store.update((data) => {
-			console.log({ data });
 			delete data.errors;
 			data.loading = true;
 
@@ -77,10 +87,9 @@ export default function <Readonly extends boolean>(
 		// if response is 2xx
 		if (response.ok) {
 			// update the store, which will cause subscribers to be notified
-			// add the decoded jwt to locals
-			const currentUser = localStorage.getItem('user') || jwt_decode(accessJwt);
 			const data = getDataFromJson(json);
 			store.set(data);
+			lastUpdated = Date.now();
 			// store.set({ ...json, locals: { user } });
 		} else {
 			// response failed, set `errors` and clear `loading` flag
@@ -94,19 +103,28 @@ export default function <Readonly extends boolean>(
 
 	// convenience wrappers for get, post, patch, and delete
 
-	const get = (url: string = defaultPath) => store.request('GET', url);
+	const get = (url: string = defaultPath) => request('GET', url);
 	const post = ({ url, params }: { url: string; params: Record<string, unknown> }) =>
-		store.request('POST', url, params);
+		request('POST', url, params);
 	const patch = ({ url, params }: { url: string; params: Record<string, unknown> }) =>
-		store.request('PATCH', url, params);
+		request('PATCH', url, params);
 	const del = ({ url, params }: { url: string; params: Record<string, unknown> }) =>
-		store.request('DELETE', url, params);
+		request('DELETE', url, params);
+
+	// create a custom subscribe function that will call the get function if data is stale
+	const customSubscribe = (handler) => {
+		if (dataIsStale()) {
+			get();
+		}
+		const unsubscribe = store.subscribe(handler);
+		return unsubscribe;
+	};
 
 	// return the customized store
-	const { subscribe, set, update } = store;
+	const { set, update } = store;
 	const httpMethods = { get, post, patch, del };
-	const readonlyMethods = { subscribe, ...httpMethods };
+	const readonlyMethods = { subscribe: customSubscribe, ...httpMethods };
 	const writableMethods = { set, update };
 
-	return readonly ? { ...readonlyMethods } : { ...readonlyMethods, writableMethods };
+	return readonly ? readonlyMethods : { ...readonlyMethods, ...writableMethods };
 }

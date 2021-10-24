@@ -24,6 +24,7 @@ async function getAccessJwt() {
 }
 
 async function refreshToken() {
+	console.log('fn: refreshToken');
 	const refreshJwt = localStorage.getItem('refreshJwt');
 	if (!refreshJwt) throw new Error('No refresh token');
 
@@ -61,13 +62,13 @@ async function login({ username, password }) {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ username, password })
 	});
-	const json = await res.json();
-	if (!res.ok) throw new Error(json.error);
-	setAccessJwt(json.access);
-	setRefreshJwt(json.refresh);
+	const tokens = await res.json();
+	if (!res.ok) throw new Error(tokens.error);
+	setAccessJwt(tokens.access);
+	setRefreshJwt(tokens.refresh);
 	const user = await fetch('/users/me', {
 		method: 'POST',
-		headers: getDefaultHeaders(json.access)
+		headers: getDefaultHeaders(tokens.access)
 	});
 	localStorage.setItem('user', JSON.stringify(user));
 	return user;
@@ -75,7 +76,7 @@ async function login({ username, password }) {
 
 // type LogoutArgs = { redirect: string };
 
-function logout({ redirect } = { redirect: '/login'}) {
+function logout({ redirect } = {}) {
 	redirect = redirect || '/login';
 
 	removeJwtTokens();
