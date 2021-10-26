@@ -28,12 +28,18 @@ async function refreshToken() {
 	const refreshJwt = localStorage.getItem('refreshJwt');
 	if (!refreshJwt) throw new Error('No refresh token');
 
-	const res = await fetch(REFRESH_JWT_URL);
+	const headers = getDefaultHeaders();
+
+	const res = await fetch(REFRESH_JWT_URL, { 
+		method: 'POST', 
+		headers,
+		body: JSON.stringify({ refresh: refreshJwt })
+});
 	// TODO: allow 500 and notify the user that they are offline
 	if (res.status !== 200) throw new Error('Refresh token failed');
-	const accessJwt = await res.json();
-	setAccessJwt(accessJwt);
-	return accessJwt;
+	const { access } = await res.json();
+	setAccessJwt(access);
+	return access;
 }
 
 function removeJwtTokens() {
@@ -52,7 +58,9 @@ function setRefreshJwt(refreshJwt) {
 function getDefaultHeaders(accessJwt) {
 	const headers = new Headers();
 	headers.append('Content-Type', 'application/json');
-	headers.append('Authorization', `JWT ${accessJwt}`);
+	if (accessJwt) {
+		headers.append('Authorization', `JWT ${accessJwt}`);
+	}
 	return headers;
 }
 
