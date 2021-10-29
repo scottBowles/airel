@@ -3,35 +3,18 @@ import jwt_decode from 'jwt-decode';
 const ROOT_URL = 'http://127.0.0.1:8000';
 const REFRESH_JWT_URL = `${ROOT_URL}/auth/jwt/refresh`;
 
-type LoginCredentials = {
-	username: string,
-	password: string
-};
-
-type AccessTokenResponse = {
-	access: string,
-	refresh: string
-};
-
-type RefreshTokenResponse = {
-	access: string,
-	refresh: string
-};
-
-type LogoutOptions = { redirect?: string };
-
-function isJwtExpired(jwt: string): boolean {
+function isJwtExpired(jwt) {
 	console.log({ jwt });
 	const decoded = jwt_decode(jwt);
 	const jwtIsExpired = decoded.exp < Date.now() / 1000;
 	return jwtIsExpired;
 }
 
-function setAccessJwt(accessJwt: string): void {
+function setAccessJwt(accessJwt) {
 	localStorage.setItem('accessJwt', accessJwt);
 }
 
-async function getAccessJwt(): Promise<string> {
+async function getAccessJwt() {
 	console.log('fn: getAccessJwt');
 	let accessJwt = localStorage.getItem('accessJwt');
 	console.log('accessJwt from localStorage: ', accessJwt);
@@ -44,20 +27,20 @@ async function getAccessJwt(): Promise<string> {
 	return accessJwt;
 }
 
-function setRefreshJwt(refreshJwt: string): void {
+function setRefreshJwt(refreshJwt) {
 	localStorage.setItem('refreshJwt', refreshJwt);
 }
 
-function getRefreshJwt(): string | null {
+function getRefreshJwt() {
 	return localStorage.getItem('refreshJwt');
 }
 
-function removeJwtTokens(): void {
+function removeJwtTokens() {
 	localStorage.removeItem('accessJwt');
 	localStorage.removeItem('refreshJwt');
 }
 
-async function refreshToken(): Promise<string> {
+async function refreshToken() {
 	console.log('fn: refreshToken');
 	const refreshJwt = getRefreshJwt();
 	if (!refreshJwt) throw new Error('No refresh token');
@@ -71,13 +54,13 @@ async function refreshToken(): Promise<string> {
 	});
 	// TODO: allow 500 and notify the user that they are offline
 	if (res.status !== 200) throw new Error('Refresh token failed');
-	const { access, refresh }: RefreshTokenResponse = await res.json();
+	const { access, refresh } = await res.json();
 	setAccessJwt(access);
 	setRefreshJwt(refresh);
 	return access;
 }
 
-function getDefaultHeaders(accessJwt: string): Headers {
+function getDefaultHeaders(accessJwt) {
 	const headers = new Headers();
 	headers.append('Content-Type', 'application/json');
 	if (accessJwt) {
@@ -86,16 +69,13 @@ function getDefaultHeaders(accessJwt: string): Headers {
 	return headers;
 }
 
-async function login({
-	username,
-	password
-}: LoginCredentials): Promise<Response> {
+async function login({ username, password }) {
 	const res = await fetch('http://127.0.0.1:8000/auth/jwt/create', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ username, password })
 	});
-	const tokens: AccessTokenResponse = await res.json();
+	const tokens = await res.json();
 	if (!res.ok) throw new Error(tokens.error);
 	setAccessJwt(tokens.access);
 	setRefreshJwt(tokens.refresh);
@@ -107,7 +87,7 @@ async function login({
 	return user;
 }
 
-function logout({ redirect }: LogoutOptions = {}): void {
+function logout({ redirect } = {}) {
 	redirect = redirect || '/login';
 
 	removeJwtTokens();

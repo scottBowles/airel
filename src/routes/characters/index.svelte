@@ -1,51 +1,20 @@
-<script lang="ts">
-	import { listStore as characters } from '$lib/stores/characters.js';
+<script>
+	import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
+	import { useQuery } from '@sveltestack/svelte-query';
+	// import { listStore as characters } from '$lib/stores/characters.js';
+
 	const ROOT_URL = 'http://localhost:3000';
+	const API_ROOT = 'http://127.0.0.1:8000';
+	const characterQuery = useQuery('characters', async () => {
+		const accessJwt = await getAccessJwt();
+		const headers = getDefaultHeaders(accessJwt);
+		return fetch(`${API_ROOT}/characters`, { headers }).then((res) =>
+			res.json()
+		);
+	});
 
-	const handleClick = () => characters.get();
-
-	let char = {
-		id: 3,
-		hit_die: null,
-		strength: 8,
-		dexterity: 10,
-		constitution: 11,
-		intelligence: 12,
-		wisdom: 14,
-		charisma: 16,
-		copper_pieces: 0,
-		silver_pieces: 0,
-		electrum_pieces: 0,
-		gold_pieces: 0,
-		platinum_pieces: 0,
-		max_hit_points: 1,
-		temporary_hit_points: 0,
-		damage_taken: 0,
-		name: 'Darwin',
-		player_name: null,
-		alignment: null,
-		experience_points: 1,
-		armor_class: 10,
-		initiative: 0,
-		speed: 0,
-		num_hit_dice: 1,
-		death_save_successes: 0,
-		death_save_failures: 0,
-		inspiration: false,
-		passive_wisdom: 10,
-		passive_intelligence: 10,
-		size: null,
-		background: null,
-		race: null,
-		user: null,
-		features_and_traits: [],
-		proficiencies: [],
-		equipment: [],
-		tool: [],
-		feats: [],
-		weapons: [],
-		armor: []
-	};
+	let characters;
+	$: characters = $characterQuery.data || [];
 </script>
 
 <svelte:head>
@@ -54,42 +23,35 @@
 
 <h1 class="ml-4 pt-2">Characters</h1>
 
-<button on:click={handleClick}>Refresh Character Data</button>
-{#if $characters?.loading}
+{#if characters?.loading}
 	Loading...
-{:else}
-	{#each $characters.data as character}
-		<a href={`${ROOT_URL}/characters/${character?.id}`}><p>Name: {character?.name}</p></a>
-		<p>Player: {character?.player_name}</p>
-		<p>strength: {character?.strength}</p>
-		<p>dexterity: {character?.dexterity}</p>
-		<p>constitution: {character?.constitution}</p>
-		<p>intelligence: {character?.intelligence}</p>
-		<p>wisdom: {character?.wisdom}</p>
-		<p>charisma: {character?.charisma}</p>
-	{/each}
 {/if}
-
-<div class="ability-scores-container">
-	<div class="ability-score-container">
-		<span>STR</span><span>{char.strength}</span>
+{#each characters as character}
+	<a href={`${ROOT_URL}/characters/${character?.id}`}
+		><p>Name: {character?.name}</p></a
+	>
+	<p>Player: {character?.player_name}</p>
+	<div class="ability-scores-container">
+		<div class="ability-score-container">
+			<span>STR</span><span>{character?.strength}</span>
+		</div>
+		<div class="ability-score-container">
+			<span>DEX</span><span>{character?.dexterity}</span>
+		</div>
+		<div class="ability-score-container">
+			<span>CON</span><span>{character?.constitution}</span>
+		</div>
+		<div class="ability-score-container">
+			<span>INT</span><span>{character?.intelligence}</span>
+		</div>
+		<div class="ability-score-container">
+			<span>WIS</span><span>{character?.wisdom}</span>
+		</div>
+		<div class="ability-score-container mr-4 mt-4">
+			<span class="pr-2">CHA</span><span>{character?.charisma}</span>
+		</div>
 	</div>
-	<div class="ability-score-container">
-		<span>DEX</span><span>{char.dexterity}</span>
-	</div>
-	<div class="ability-score-container">
-		<span>CON</span><span>{char.constitution}</span>
-	</div>
-	<div class="ability-score-container">
-		<span>INT</span><span>{char.intelligence}</span>
-	</div>
-	<div class="ability-score-container">
-		<span>WIS</span><span>{char.wisdom}</span>
-	</div>
-	<div class="ability-score-container mr-4 mt-4">
-		<span class="pr-2">CHA</span><span>{char.charisma}</span>
-	</div>
-</div>
+{/each}
 
 <style>
 	.ability-scores-container {

@@ -14,12 +14,12 @@
     "smui-theme-dark": "smui-theme compile static/smui-dark.css -i src/theme/dark"
   },
   "devDependencies": {
+    "@sveltejs/kit": "next",
     "@smui/button": "^5.0.0-beta.7",
     "@smui/drawer": "^5.0.0-beta.7",
     "@smui/icon-button": "^5.0.0-beta.7",
     "@smui/list": "^5.0.0-beta.7",
     "@smui/top-app-bar": "^5.0.0-beta.7",
-    "@sveltejs/kit": "next",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
     "eslint": "^7.32.0",
@@ -28,7 +28,7 @@
     "prettier": "^2.4.1",
     "prettier-plugin-svelte": "^2.4.0",
     "smui-theme": "^5.0.0-beta.7",
-    "svelte": "^3.44.0",
+    "svelte": "^3.42.6",
     "svelte-check": "^2.2.6",
     "svelte-preprocess": "^4.9.4",
     "tslib": "^2.3.1",
@@ -36,6 +36,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@sveltestack/svelte-query": "^1.4.1",
     "jwt-decode": "^3.1.2"
   }
 }

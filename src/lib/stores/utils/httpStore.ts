@@ -1,6 +1,6 @@
 import { browser } from '$app/env';
 import { writable } from 'svelte/store';
-import { getAccessJwt, getDefaultHeaders, logout } from '$lib/utils/auth.js';
+import { getAccessJwt, getDefaultHeaders, logout } from '$lib/auth.js';
 
 // interface HttpMethods {
 // 	get: (url: string) => Promise<void>;
@@ -22,7 +22,7 @@ import { getAccessJwt, getDefaultHeaders, logout } from '$lib/utils/auth.js';
 
 // returns a store with HTTP access functions for get, post, patch, delete
 // anytime an HTTP request is made, the store is updated and all subscribers are notified.
-export default function <Readonly extends boolean>({
+export default function ({
 	initial = {},
 	defaultPath = '',
 	readonly = true,
@@ -41,7 +41,11 @@ export default function <Readonly extends boolean>({
 	// url utils
 	const ROOT_URL = 'http://127.0.0.1:8000';
 	const normalizeUrl = (url) =>
-		url.startsWith('http') ? url : url.startsWith('/') ? `${ROOT_URL}${url}` : `${ROOT_URL}/${url}`;
+		url.startsWith('http')
+			? url
+			: url.startsWith('/')
+			? `${ROOT_URL}${url}`
+			: `${ROOT_URL}/${url}`;
 
 	// track data freshness
 	let lastUpdated = 0;
@@ -104,12 +108,27 @@ export default function <Readonly extends boolean>({
 	// convenience wrappers for get, post, patch, and delete
 
 	const get = (url: string = defaultPath) => request('GET', url);
-	const post = ({ url, params }: { url: string; params: Record<string, unknown> }) =>
-		request('POST', url, params);
-	const patch = ({ url, params }: { url: string; params: Record<string, unknown> }) =>
-		request('PATCH', url, params);
-	const del = ({ url, params }: { url: string; params: Record<string, unknown> }) =>
-		request('DELETE', url, params);
+	const post = ({
+		url,
+		params
+	}: {
+		url: string;
+		params: Record<string, unknown>;
+	}) => request('POST', url, params);
+	const patch = ({
+		url,
+		params
+	}: {
+		url: string;
+		params: Record<string, unknown>;
+	}) => request('PATCH', url, params);
+	const del = ({
+		url,
+		params
+	}: {
+		url: string;
+		params: Record<string, unknown>;
+	}) => request('DELETE', url, params);
 
 	// create a custom subscribe function that will call the get function if data is stale
 	const customSubscribe = (handler) => {
@@ -126,5 +145,7 @@ export default function <Readonly extends boolean>({
 	const readonlyMethods = { subscribe: customSubscribe, ...httpMethods };
 	const writableMethods = { set, update };
 
-	return readonly ? readonlyMethods : { ...readonlyMethods, ...writableMethods };
+	return readonly
+		? readonlyMethods
+		: { ...readonlyMethods, ...writableMethods };
 }

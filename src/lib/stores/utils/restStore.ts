@@ -1,6 +1,6 @@
 import { browser } from '$app/env';
 import { writable } from 'svelte/store';
-import { getAccessJwt, getDefaultHeaders, logout } from '$lib/utils/auth.js';
+import { getAccessJwt, getDefaultHeaders, logout } from '$lib/auth.js';
 
 export default function <Readonly extends boolean>({
 	initial = {},
@@ -20,10 +20,17 @@ export default function <Readonly extends boolean>({
 	// url utils
 	const ROOT_URL = 'http://127.0.0.1:8000';
 	const normalizeUrl = (url) =>
-		url.startsWith('http') ? url : url.startsWith('/') ? `${ROOT_URL}${url}` : `${ROOT_URL}/${url}`;
+		url.startsWith('http')
+			? url
+			: url.startsWith('/')
+			? `${ROOT_URL}${url}`
+			: `${ROOT_URL}/${url}`;
 
 	// define a request function that will do `fetch` and update store when request finishes
-	const request = async (method = 'GET', { url = listPath, params = null, id }) => {
+	const request = async (
+		method = 'GET',
+		{ url = listPath, params = null, id }
+	) => {
 		console.log('Request: ', { method, url, params });
 		// prefix with ROOT_URL if it doesn't start with `http` and add trailing slash if needed
 		url = normalizeUrl(url);
@@ -31,7 +38,9 @@ export default function <Readonly extends boolean>({
 		// before we fetch, clear out previous errors for the relevant query and set loading to true
 		store.update((state) => {
 			state.errors = id ? { [id]: null } : {};
-			state.loading = id ? { ...state.loading, [id]: true } : { ...state.loading, list: true };
+			state.loading = id
+				? { ...state.loading, [id]: true }
+				: { ...state.loading, list: true };
 
 			return state;
 		});
@@ -42,7 +51,9 @@ export default function <Readonly extends boolean>({
 			accessJwt = await getAccessJwt();
 		} catch (e) {
 			store.update((state) => {
-				state.loading = id ? { ...state.loading, [id]: false } : { ...state.loading, list: false };
+				state.loading = id
+					? { ...state.loading, [id]: false }
+					: { ...state.loading, list: false };
 				state.errors = id
 					? { ...state.errors, [id]: e.message }
 					: { ...state.errors, list: e.message };
@@ -79,7 +90,9 @@ export default function <Readonly extends boolean>({
 		} else {
 			// response failed, set `errors` and clear `loading` flag
 			store.update((state) => {
-				state.loading = id ? { ...state.loading, [id]: false } : { ...state.loading, list: false };
+				state.loading = id
+					? { ...state.loading, [id]: false }
+					: { ...state.loading, list: false };
 				state.errors = id
 					? { ...state.errors, [id]: json.message }
 					: { ...state.errors, list: json.message };
@@ -106,9 +119,17 @@ export default function <Readonly extends boolean>({
 
 	// return the customized store
 	const { set, update } = store;
-	const httpMethods = { getList, postToList, getDetail, patchDetail, deleteDetail };
+	const httpMethods = {
+		getList,
+		postToList,
+		getDetail,
+		patchDetail,
+		deleteDetail
+	};
 	const readonlyMethods = { subscribe: store.subscribe, ...httpMethods };
 	const writableMethods = { set, update };
 
-	return readonly ? readonlyMethods : { ...readonlyMethods, ...writableMethods };
+	return readonly
+		? readonlyMethods
+		: { ...readonlyMethods, ...writableMethods };
 }
