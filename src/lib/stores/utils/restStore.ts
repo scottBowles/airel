@@ -1,6 +1,7 @@
 import { browser } from '$app/env';
 import { writable } from 'svelte/store';
 import { getAccessJwt, getDefaultHeaders, logout } from '$lib/auth.js';
+import { API_ROOT } from '$lib/constants';
 
 export default function <Readonly extends boolean>({
 	initial = {},
@@ -18,13 +19,12 @@ export default function <Readonly extends boolean>({
 	}
 
 	// url utils
-	const ROOT_URL = 'http://127.0.0.1:8000';
 	const normalizeUrl = (url) =>
 		url.startsWith('http')
 			? url
 			: url.startsWith('/')
-			? `${ROOT_URL}${url}`
-			: `${ROOT_URL}/${url}`;
+			? `${API_ROOT}${url}`
+			: `${API_ROOT}/${url}`;
 
 	// define a request function that will do `fetch` and update store when request finishes
 	const request = async (
@@ -32,7 +32,7 @@ export default function <Readonly extends boolean>({
 		{ url = listPath, params = null, id }
 	) => {
 		console.log('Request: ', { method, url, params });
-		// prefix with ROOT_URL if it doesn't start with `http` and add trailing slash if needed
+		// prefix with API_ROOT if it doesn't start with `http` and add trailing slash if needed
 		url = normalizeUrl(url);
 
 		// before we fetch, clear out previous errors for the relevant query and set loading to true

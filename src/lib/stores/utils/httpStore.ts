@@ -1,6 +1,7 @@
 import { browser } from '$app/env';
 import { writable } from 'svelte/store';
 import { getAccessJwt, getDefaultHeaders, logout } from '$lib/auth.js';
+import { API_ROOT } from '$lib/constants';
 
 // interface HttpMethods {
 // 	get: (url: string) => Promise<void>;
@@ -39,13 +40,12 @@ export default function ({
 	}
 
 	// url utils
-	const ROOT_URL = 'http://127.0.0.1:8000';
 	const normalizeUrl = (url) =>
 		url.startsWith('http')
 			? url
 			: url.startsWith('/')
-			? `${ROOT_URL}${url}`
-			: `${ROOT_URL}/${url}`;
+			? `${API_ROOT}${url}`
+			: `${API_ROOT}/${url}`;
 
 	// track data freshness
 	let lastUpdated = 0;
@@ -54,7 +54,7 @@ export default function ({
 	// define a request function that will do `fetch` and update store when request finishes
 	const request = async (method, url = defaultPath, params = null) => {
 		console.log('Request: ', { method, url, params });
-		// prefix with ROOT_URL if it doesn't start with `http` and add trailing slash if needed
+		// prefix with API_ROOT if it doesn't start with `http` and add trailing slash if needed
 		url = normalizeUrl(url);
 
 		// before we fetch, clear out previous errors and set `loading` to `true`

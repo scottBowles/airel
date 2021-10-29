@@ -1,7 +1,7 @@
 import jwt_decode from 'jwt-decode';
+import { API_ROOT } from '$lib/constants';
 
-const ROOT_URL = 'http://127.0.0.1:8000';
-const REFRESH_JWT_URL = `${ROOT_URL}/auth/jwt/refresh`;
+const REFRESH_JWT_URL = `${API_ROOT}/auth/jwt/refresh`;
 
 type LoginCredentials = {
 	username: string;
@@ -22,7 +22,7 @@ type LogoutOptions = { redirect?: string };
 
 function isJwtExpired(jwt: string): boolean {
 	console.log({ jwt });
-	const decoded = jwt_decode(jwt);
+	const decoded: { exp: number } = jwt_decode(jwt);
 	const jwtIsExpired = decoded.exp < Date.now() / 1000;
 	return jwtIsExpired;
 }
@@ -90,7 +90,7 @@ async function login({
 	username,
 	password
 }: LoginCredentials): Promise<Response> {
-	const res = await fetch('http://127.0.0.1:8000/auth/jwt/create', {
+	const res = await fetch(`${API_ROOT}/auth/jwt/create`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ username, password })
@@ -114,7 +114,7 @@ function logout({ redirect }: LogoutOptions = {}): void {
 	if (redirect) window.location.href = redirect;
 }
 
-const exports = {
+export {
 	getAccessJwt,
 	removeJwtTokens,
 	setAccessJwt,
@@ -123,5 +123,3 @@ const exports = {
 	login,
 	logout
 };
-
-export default exports;

@@ -2,11 +2,9 @@
 	import { useQuery } from '@sveltestack/svelte-query';
 	import { page } from '$app/stores';
 	import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
+	import { API_ROOT } from '$lib/constants';
 
 	const { id } = $page.params;
-
-	const ROOT_URL = 'http://localhost:3000';
-	const API_ROOT = 'http://127.0.0.1:8000';
 
 	const characterQuery = useQuery(['characters', id], async () => {
 		const accessJwt = await getAccessJwt();

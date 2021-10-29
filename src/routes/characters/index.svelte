@@ -1,18 +1,17 @@
 <script>
 	import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
+	import { ROOT_URL, API_ROOT } from '$lib/constants';
 	import { useQuery } from '@sveltestack/svelte-query';
 	// import { listStore as characters } from '$lib/stores/characters.js';
 
-	const ROOT_URL = 'http://localhost:3000';
-	const API_ROOT = 'http://127.0.0.1:8000';
 	const characterQuery = useQuery('characters', async () => {
 		const accessJwt = await getAccessJwt();
 		const headers = getDefaultHeaders(accessJwt);
+		console.log({ API_ROOT });
 		return fetch(`${API_ROOT}/characters`, { headers }).then((res) =>
 			res.json()
 		);
 	});
-
 	let characters;
 	$: characters = $characterQuery.data || [];
 </script>
