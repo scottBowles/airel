@@ -1,3 +1,26 @@
+<script context="module" lang="ts">
+	import { PUBLIC_PAGES } from '$lib/constants';
+
+	/**
+	 * @type {import('@sveltejs/kit').Load}
+	 */
+	export async function load(session) {
+		const { path } = session.page;
+		if (PUBLIC_PAGES.includes(path)) {
+			return {};
+		}
+
+		if (!session.session.isLoggedIn) {
+			return {
+				status: 301,
+				redirect: '/'
+			};
+		}
+
+		return {};
+	}
+</script>
+
 <script lang="ts">
 	import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
 

@@ -1,19 +1,35 @@
+<script context="module" lang="ts">
+	export async function load(fetch) {
+		const url = '/api/characters.json';
+		const res = await fetch(url);
+		if (res.ok) {
+			return {
+				props: {
+					characters: res.body
+				}
+			};
+		}
+	}
+</script>
+
 <script>
 	import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
 	import { ROOT_URL, API_ROOT } from '$lib/constants';
 	import { useQuery } from '@sveltestack/svelte-query';
+
+	export let characters;
 	// import { listStore as characters } from '$lib/stores/characters.js';
 
-	const characterQuery = useQuery('characters', async () => {
-		const accessJwt = await getAccessJwt();
-		const headers = getDefaultHeaders(accessJwt);
-		console.log({ API_ROOT });
-		return fetch(`${API_ROOT}/characters`, { headers }).then((res) =>
-			res.json()
-		);
-	});
-	let characters;
-	$: characters = $characterQuery.data || [];
+	// const characterQuery = useQuery('characters', async () => {
+	// 	const accessJwt = await getAccessJwt();
+	// 	const headers = getDefaultHeaders(accessJwt);
+	// 	console.log({ API_ROOT });
+	// 	return fetch(`${API_ROOT}/characters`, { headers }).then((res) =>
+	// 		res.json()
+	// 	);
+	// });
+	// let characters;
+	// $: characters = $characterQuery.data || [];
 </script>
 
 <svelte:head>

@@ -1,35 +1,45 @@
 <script>
+	import { session } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { get, post } from '$lib/utils';
+
 	let username;
 	let password;
+	let errors;
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		loginUser({ username, password });
-	};
+	async function loginUser() {
+		const res = await post('api/auth/login', { username, password });
+		if (res.ok) {
+			fetchUser();
+			goto('/');
+		} else {
+			const { non_field_errors } = await res.json();
+			errors = non_field_errors.join('\n');
+		}
+	}
 
-	const loginUser = ({ username, password }) => {
-		fetch('http://127.0.0.1:8000/auth/jwt/create', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				username,
-				password
-			})
-		})
-			.then((res) => res.json())
-			.then((json) => {
-				localStorage.setItem('accessJwt', json.access);
-				localStorage.setItem('refreshJwt', json.refresh);
-			});
-	};
+	async function fetchUser() {
+		const res = await get('api/auth/me');
+		const user = await res.json();
+		$session.user = user;
+	}
 </script>
 
 <div>
-	<form on:submit={handleSubmit}>
-		<input type="text" name="username" placeholder="Username" bind:value={username} />
-		<input type="password" name="password" placeholder="Password" bind:value={password} />
+	<form on:submit|preventDefault={loginUser}>
+		<input
+			type="text"
+			name="username"
+			placeholder="Username"
+			bind:value={username}
+		/>
+		<input
+			type="password"
+			name="password"
+			placeholder="Password"
+			bind:value={password}
+		/>
 		<button type="submit">Login</button>
 	</form>
+	<h4>{errors}</h4>
 </div>

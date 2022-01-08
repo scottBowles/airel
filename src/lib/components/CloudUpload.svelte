@@ -1,11 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	export let handleUploadResponse;
 	let uploadWidget;
-	let openWidget;
 
-	onMount(() => {
+	function initializeCloudinaryWidget() {
 		uploadWidget = window?.cloudinary?.createUploadWidget(
 			{
 				cloudName: 'scottBowles',
@@ -13,11 +10,24 @@
 			},
 			handleUploadResponse
 		);
+	}
 
-		openWidget = () => uploadWidget && uploadWidget.open();
-	});
+	function openWidget() {
+		uploadWidget.open();
+	}
 </script>
 
+<svelte:head>
+	<script
+		src="https://upload-widget.cloudinary.com/global/all.js"
+		type="text/javascript"
+		async
+		on:load={initializeCloudinaryWidget}></script>
+</svelte:head>
+
 <span on:click={openWidget}>
-	<slot>this is a slot for a component which will open the cloudinary upload widget on click</slot>
+	<slot
+		>this is a slot for a component which will open the cloudinary upload widget
+		on click</slot
+	>
 </span>
