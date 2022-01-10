@@ -1,23 +1,32 @@
 <script context="module" lang="ts">
-	export async function load(fetch) {
-		const url = '/api/characters.json';
-		const res = await fetch(url);
-		if (res.ok) {
-			return {
-				props: {
-					characters: res.body
-				}
-			};
-		}
+	import { API_ROOT } from '$lib/constants';
+	export async function load({ fetch }) {
+		// const headers = getDefaultHeaders();
+		const res = await fetch(`${API_ROOT}/characters`);
+		const json = await res.json();
+		return {
+			props: {
+				characters: json
+			}
+		};
+		// const url = '/api/characters.json';
+		// const res = await fetch(url);
+		// if (res.ok) {
+		// 	return {
+		// 		props: {
+		// 			characters: res.body
+		// 		}
+		// 	};
+		// }
 	}
 </script>
 
 <script>
-	import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
-	import { ROOT_URL, API_ROOT } from '$lib/constants';
-	import { useQuery } from '@sveltestack/svelte-query';
+	// import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
+	import { ROOT_URL } from '$lib/constants';
+	// import { useQuery } from '@sveltestack/svelte-query';
 
-	export let characters;
+	export let characters = [];
 	// import { listStore as characters } from '$lib/stores/characters.js';
 
 	// const characterQuery = useQuery('characters', async () => {
@@ -42,7 +51,7 @@
 	Loading...
 {/if}
 {#each characters as character}
-	<a href={`${ROOT_URL}/characters/${character?.id}`}
+	<a sveltekit:prefetch href={`${ROOT_URL}/characters/${character?.id}`}
 		><p>Name: {character?.name}</p></a
 	>
 	<p>Player: {character?.player_name}</p>

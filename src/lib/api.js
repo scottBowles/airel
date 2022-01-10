@@ -1,4 +1,5 @@
 import { API_ROOT } from './constants';
+import browserStorage from './browserStorage';
 
 function addSlashesIfNeeded(endpoint) {
 	if (!endpoint.startsWith('/')) {
@@ -68,6 +69,7 @@ function addSlashesIfNeeded(endpoint) {
 // }
 
 async function send({ method, path, data, token }) {
+	token = token || (await browserStorage.getToken()); // if running from an endpoint, get the token from request.locals.token, defined in the handle hook
 	const endpoint = API_ROOT + addSlashesIfNeeded(path);
 	const opts = { method, headers: {} };
 
@@ -125,4 +127,4 @@ function patch(path, data, token) {
 	return send({ method: 'PATCH', path, data, token });
 }
 
-export { get, del, post, put, patch };
+export default { get, del, post, put, patch };

@@ -1,4 +1,4 @@
-import * as api from '$lib/api.js';
+import api from '$lib/api.js';
 
 export async function post(request) {
 	const res = await api.post('auth/token/login/', {

@@ -1,27 +1,42 @@
-<script lang="ts">
-	import { useQuery } from '@sveltestack/svelte-query';
-	import { page } from '$app/stores';
-	import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
+<script context="module" lang="ts">
 	import { API_ROOT } from '$lib/constants';
+	export async function load({ fetch, page }) {
+		const { id } = page.params;
+		const res = await fetch(`${API_ROOT}/characters/${id}/`);
+		const json = await res.json();
+		return {
+			props: {
+				character: json
+			}
+		};
+	}
+</script>
 
-	const { id } = $page.params;
+<script lang="ts">
+	// import { useQuery } from '@sveltestack/svelte-query';
+	// import { page } from '$app/stores';
+	// import { getAccessJwt, getDefaultHeaders } from '$lib/auth.js';
+	// import { API_ROOT } from '$lib/constants';
 
-	const characterQuery = useQuery(['characters', id], async () => {
-		const accessJwt = await getAccessJwt();
-		const headers = getDefaultHeaders(accessJwt);
-		return fetch(`${API_ROOT}/characters/${id}`, { headers }).then((res) =>
-			res.json()
-		);
-	});
+	// const { id } = $page.params;
 
-	let character;
-	$: character = $characterQuery.data || {};
+	// const characterQuery = useQuery(['characters', id], async () => {
+	// 	const accessJwt = await getAccessJwt();
+	// 	const headers = getDefaultHeaders(accessJwt);
+	// 	return fetch(`${API_ROOT}/characters/${id}`, { headers }).then((res) =>
+	// 		res.json()
+	// 	);
+	// });
+
+	export let character;
+	// $: character = $characterQuery.data || {};
 </script>
 
 <svelte:head>
 	<title>Character</title>
 </svelte:head>
 
+<a sveltekit:prefetch href="/characters">Back to Characters</a>
 {#if character?.loading}
 	Loading...
 {/if}

@@ -3,7 +3,9 @@ import { PUBLIC_PAGES } from '$lib/constants';
 
 export async function handle({ request, resolve }) {
 	const cookies = cookie.parse(request.headers.cookie || '');
-	const token = cookies.token;
+	const authHeader = request.headers.authorization || '';
+	const token = authHeader.split(' ')[1] || cookies.token;
+
 	request.locals.token = token;
 	request.locals.isLoggedIn = !!token;
 
@@ -17,6 +19,7 @@ export async function handle({ request, resolve }) {
 		!PUBLIC_PAGES.includes(request.path) &&
 		!request.path.startsWith('/api')
 	) {
+		// what else should we do to log the user out? remove user from session?
 		return {
 			status: 301,
 			headers: {
