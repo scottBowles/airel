@@ -1,19 +1,20 @@
 <script>
 	import { goto } from '$app/navigation';
 	import api from '$lib/api';
-	import browserStorage from '$lib/browserStorage';
 	import { post } from '$lib/utils';
 
 	let username;
 	let password;
 	let errors;
+	let token;
 	let user;
 
 	async function loginUser() {
 		const res = await post('api/auth/login', { username, password });
-		const { auth_token, non_field_errors } = await res.json();
+		const json = await res.json();
+		const { auth_token, non_field_errors } = json;
 		if (res.ok) {
-			await browserStorage.setToken(auth_token);
+			token = auth_token;
 			fetchUser();
 			goto('/');
 		} else {
@@ -22,8 +23,9 @@
 	}
 
 	async function fetchUser() {
-		const res = await api.get('auth/users/me/');
-		user = JSON.stringify(res);
+		const res = await api.get('auth/users/me/', token);
+		const json = await res.json();
+		user = JSON.stringify(json);
 	}
 </script>
 

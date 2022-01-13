@@ -1,5 +1,4 @@
 import { API_ROOT } from './constants';
-import browserStorage from './browserStorage';
 
 function addSlashesIfNeeded(endpoint) {
 	if (!endpoint.startsWith('/')) {
@@ -64,67 +63,36 @@ function addSlashesIfNeeded(endpoint) {
 // 	if (redirect) window.location.href = redirect;
 // }
 
-// function isLoggedIn() {
-// 	return !!getToken();
-// }
-
-async function send({ method, path, data, token }) {
-	token = token || (await browserStorage.getToken()); // if running from an endpoint, get the token from request.locals.token, defined in the handle hook
+/** customFetch is here so load functions can pass their fetch function */
+async function send({ method, path, data, token, customFetch = fetch }) {
 	const endpoint = API_ROOT + addSlashesIfNeeded(path);
-	const opts = { method, headers: {} };
 
-	if (data) {
-		opts.headers['Content-Type'] = 'application/json';
-		opts.body = JSON.stringify(data);
-	}
+	const opts = { method, headers: { 'Content-Type': 'application/json' } };
+	if (data) opts.body = JSON.stringify(data);
+	if (token) opts.headers.Authorization = `Token ${token}`;
 
-	if (token) {
-		opts.headers.Authorization = `Token ${token}`;
-	}
-
-	const res = await fetch(endpoint, opts);
-	const json = await res.json();
-	return { status: res.status, body: json, ok: res.ok };
-
-	// return (
-	// 	fetch(endpoint, opts)
-	// 		// TODO: pass on error from bad response? pass on status code? pass on headers?
-	// 		.then((res) => {
-	// 			if (!res.ok)
-	// 			console.log({ res, status: res.status, ok: res.ok, error: res.error });
-	// 			return res.json();
-	// 		})
-	// 		.then((json) => {
-	// 			console.log({ json });
-	// 			try {
-	// 				console.log('trying to parse json', json);
-	// 				return JSON.parse(json);
-	// 			} catch (err) {
-	// 				console.log("couldn't parse json", json);
-	// 				return json;
-	// 			}
-	// 		})
-	// );
+	const res = await customFetch(endpoint, opts);
+	return res;
 }
 
-function get(path, token) {
-	return send({ method: 'GET', path, token });
+function get(path, token, customFetch) {
+	return send({ method: 'GET', path, token, customFetch });
 }
 
-function del(path, token) {
-	return send({ method: 'DELETE', path, token });
+function del(path, token, customFetch) {
+	return send({ method: 'DELETE', path, token, customFetch });
 }
 
-function post(path, data, token) {
-	return send({ method: 'POST', path, data, token });
+function post(path, data, token, customFetch) {
+	return send({ method: 'POST', path, data, token, customFetch });
 }
 
-function put(path, data, token) {
-	return send({ method: 'PUT', path, data, token });
+function put(path, data, token, customFetch) {
+	return send({ method: 'PUT', path, data, token, customFetch });
 }
 
-function patch(path, data, token) {
-	return send({ method: 'PATCH', path, data, token });
+function patch(path, data, token, customFetch) {
+	return send({ method: 'PATCH', path, data, token, customFetch });
 }
 
 export default { get, del, post, put, patch };

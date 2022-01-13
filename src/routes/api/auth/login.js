@@ -5,16 +5,17 @@ export async function post(request) {
 		username: request.body.username,
 		password: request.body.password
 	});
+	const json = await res.json();
 
 	if (!res.ok) {
-		return { status: res.status, body: res.body, headers: res.headers };
+		return { status: res.status, body: json, headers: res.headers };
 	}
 
 	return {
 		status: res.status,
-		body: res.body,
+		body: json,
 		headers: {
-			'set-cookie': `token=${res.body.auth_token}; Path=/; HttpOnly`
+			'set-cookie': `token=${json.auth_token}; Path=/; HttpOnly`
 		}
 	};
 }

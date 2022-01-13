@@ -1,8 +1,10 @@
 <script context="module" lang="ts">
-	import { API_ROOT } from '$lib/constants';
-	export async function load({ fetch, page }) {
+	import api from '$lib/api';
+
+	export async function load({ fetch, page, session }) {
 		const { id } = page.params;
-		const res = await fetch(`${API_ROOT}/characters/${id}/`);
+		const { token } = session;
+		const res = await api.get(`/characters/${id}`, token, fetch);
 		const json = await res.json();
 		return {
 			props: {
@@ -28,7 +30,19 @@
 	// 	);
 	// });
 
-	export let character;
+	type TCharacter = {
+		loading?: boolean;
+		name?: string;
+		strength?: number;
+		dexterity?: number;
+		constitution?: number;
+		intelligence?: number;
+		wisdom?: number;
+		charisma?: number;
+	};
+
+	export let character: TCharacter = {};
+
 	// $: character = $characterQuery.data || {};
 </script>
 

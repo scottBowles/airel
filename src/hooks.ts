@@ -3,16 +3,10 @@ import { PUBLIC_PAGES } from '$lib/constants';
 
 export async function handle({ request, resolve }) {
 	const cookies = cookie.parse(request.headers.cookie || '');
-	const authHeader = request.headers.authorization || '';
-	const token = authHeader.split(' ')[1] || cookies.token;
+	const { token } = cookies;
 
 	request.locals.token = token;
 	request.locals.isLoggedIn = !!token;
-
-	// TODO: is there reason to resolve here rather than immediately returning if
-	// the user isn't logged in and we want to redirect? Is this how we want to handle
-	// this anyway?
-	const response = await resolve(request);
 
 	if (
 		!request.locals.isLoggedIn &&
@@ -28,7 +22,7 @@ export async function handle({ request, resolve }) {
 		};
 	}
 
-	return response;
+	return resolve(request);
 }
 
 export function getSession(request) {
