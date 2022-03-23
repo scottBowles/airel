@@ -17,7 +17,13 @@
 </script>
 
 <script lang="ts">
-	import Drawer, { AppContent, Content, Header, Title, Subtitle } from '@smui/drawer';
+	import Drawer, {
+		AppContent,
+		Content,
+		Header,
+		Title,
+		Subtitle
+	} from '@smui/drawer';
 	import List, { Item, Text } from '@smui/list';
 
 	import { page } from '$app/stores';
@@ -61,8 +67,10 @@
 		position: relative;
 		display: flex;
 		/* height: 350px; */
-		max-width: 600px;
-		border: 1px solid var(--mdc-theme-text-hint-on-background, rgba(0, 0, 0, 0.1));
+		/* max-width: 600px; */
+		height: 100vh;
+		border: 1px solid
+			var(--mdc-theme-text-hint-on-background, rgba(0, 0, 0, 0.1));
 		overflow: hidden;
 		z-index: 0;
 	}

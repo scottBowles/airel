@@ -1,7 +1,17 @@
 <script context="module" lang="ts">
+	// import { useQueryClient } from '@sveltestack/svelte-query';
+
 	import api from '$lib/api';
 
 	export async function load({ fetch, session }) {
+		// const queryClient = useQueryClient();
+
+		/**
+		 * check env. if browser, use useQuery. if not, fetch then
+		 * queryClient.setQueryData OUTSIDE of the load function.
+		 * or maybe useQuery outside of the load function with initial value?
+		 * extra call, but does queryClient.setQueryData risk overwriting changed data?
+		 */
 		const token = session.token;
 		const res = await api.get(`/characters`, token, fetch);
 		const json = await res.json();
