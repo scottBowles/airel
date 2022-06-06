@@ -16,7 +16,7 @@ Including another URLconf
 
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
 
 from graphene_django.views import GraphQLView
@@ -32,6 +32,7 @@ from place.views import (
     LocationViewSet,
 )
 from .views import introspection_schema
+from nucleus.views import exchange_token
 
 admin.site.site_header = "D&D Admin"
 admin.site.index_title = "Admin"
@@ -61,4 +62,6 @@ urlpatterns = [
     path("graphql/schema/", csrf_exempt(introspection_schema)),
     path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=False))),
     path("graphiql/", csrf_exempt(GraphQLView.as_view(graphiql=settings.DEBUG))),
+    # path("", include("social_django.urls", namespace="social")),
+    re_path("" + r"social/(?P<backend>[^/]+)/$", exchange_token),
 ]
