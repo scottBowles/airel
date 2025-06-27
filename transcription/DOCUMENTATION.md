@@ -29,7 +29,7 @@ This directory contains a comprehensive audio transcription system designed spec
 | **[services.py](services.py)**                                                         | Core transcription logic | `TranscriptionConfig`, `TranscriptionService`, `AudioProcessingService`, `CampaignContextService` |
 | **[utils.py](utils.py)**                                                               | Utility functions        | `safe_save_json()`, `ordinal()`                                                                   |
 | **[responses.py](responses.py)**                                                       | API response handling    | `WhisperResponse` class for safe API response access                                              |
-| **[models.py](models.py)**                                                             | Database models          | `TranscriptionSession`, `AudioTranscript`, `TranscriptChunk`                                      |
+| **[models.py](models.py)**                                                             | Database models          | `AudioTranscript`, `TranscriptChunk`                                                              |
 | **[tests.py](tests.py)**                                                               | Comprehensive test suite | 25+ tests for all components                                                                      |
 | **[management/commands/transcribe_audio.py](management/commands/transcribe_audio.py)** | Django CLI command       | Main entry point for transcription                                                                |
 

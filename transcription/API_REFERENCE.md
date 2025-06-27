@@ -110,36 +110,6 @@ def _call_whisper_api(
 
 The transcription system includes Django models for persistent storage of transcription data alongside JSON file backups.
 
-### TranscriptionSession
-
-Represents a transcription session, optionally linked to a GameLog.
-
-```python
-from transcription.models import TranscriptionSession
-from nucleus.models import GameLog
-
-# Create session without GameLog
-session = TranscriptionSession.objects.create(
-    notes="Session notes"
-)
-
-# Create session linked to GameLog
-game_log = GameLog.objects.get(id=1)
-session = TranscriptionSession.objects.create(
-    log=game_log,
-    notes="Session notes"
-)
-```
-
-#### Fields
-
-```python
-session.log                    # ForeignKey(GameLog): Optional link to game session
-session.notes                  # TextField: Session notes
-session.created                # DateTimeField: Creation timestamp
-session.updated                # DateTimeField: Last update timestamp
-```
-
 ### AudioTranscript
 
 Stores transcript data for individual audio files.
