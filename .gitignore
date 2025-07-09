@@ -108,4 +108,10 @@ dist
 # TernJS port file
 .tern-port
 
+# uv
+.uv/
+.venv/
+
 env/
+
+.vscode/
