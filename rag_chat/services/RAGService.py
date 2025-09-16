@@ -671,6 +671,45 @@ Your goal: Be the ultimate space fantasy campaign companion that understands the
                 "error": str(e),
             }
 
+    def generate_streaming_response_chunks(
+        self, query: str, search_results: List[SemanticSearchResult]
+    ):
+        """Generate response in chunks for streaming"""
+        try:
+            # Build context from search results
+            context_parts = []
+            for result in search_results[:10]:  # Limit context
+                context_parts.append(f"Source: {result.chunk_text}")
+
+            context = "\n\n".join(context_parts)
+
+            # Create system message
+            system_prompt = """You are a knowledgeable D&D campaign assistant with access to detailed information from an ongoing campaign. Answer questions using the provided context from various sources. Be conversational and engaging."""
+
+            # Create messages for OpenAI
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "assistant", "content": f"Context:\n{context}"},
+                {"role": "user", "content": query},
+            ]
+
+            # Stream response from OpenAI
+            response = openai_client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                stream=True,
+                temperature=0.3,
+                max_completion_tokens=1000,
+            )
+
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+
+        except Exception as e:
+            logger.error(f"Failed to generate streaming response: {str(e)}")
+            yield f"Error: {str(e)}"
+
     def create_chat_session(self, user, title: Optional[str] = None) -> ChatSession:
         """
         Create a new chat session

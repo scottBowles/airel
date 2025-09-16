@@ -3,12 +3,14 @@ import strawberry
 import strawberry_django
 from strawberry import auto, relay
 from strawberry.scalars import JSON
-from typing import List, Optional, Union, Any, TYPE_CHECKING, Sequence
+from typing import List, Optional, Union, Any, TYPE_CHECKING, Sequence, AsyncGenerator
 
 from strawberry_django.relay import DjangoListConnection
 from . import models, services
 import strawberry.experimental.pydantic
 import strawberry.scalars
+from channels.layers import get_channel_layer
+from asgiref.sync import sync_to_async
 
 from nucleus.types.user import User as UserType
 from nucleus.permissions import IsSuperuser
@@ -30,6 +32,17 @@ from place.models import Place
 from item.models import Item, Artifact
 from association.models import Association
 from race.models import Race
+
+
+# Subscription types for streaming
+@strawberry.type
+class ChatMessageChunk:
+    session_id: str
+    message_id: Optional[str] = None
+    content: str
+    is_complete: bool = False
+    error: Optional[str] = None
+    tokens_used: Optional[int] = None
 
 
 @strawberry_django.type(models.ContentChunk)
@@ -188,12 +201,16 @@ class RAGQuery:
         permission_classes=[IsSuperuser]
     )
 
-    @strawberry_django.connection(DjangoListConnection[ChatSessionType], permission_classes=[CanUseRAGChat])
+    @strawberry_django.connection(
+        DjangoListConnection[ChatSessionType], permission_classes=[CanUseRAGChat]
+    )
     def chat_sessions(self, info) -> list[models.ChatSession]:
         user = info.context.request.user
         return models.ChatSession.objects.filter(user=user)
 
-    @strawberry_django.connection(DjangoListConnection[ChatMessageType], permission_classes=[CanUseRAGChat])
+    @strawberry_django.connection(
+        DjangoListConnection[ChatMessageType], permission_classes=[CanUseRAGChat]
+    )
     def chat_messages(self, info) -> list[models.ChatMessage]:
         user = info.context.request.user
         return models.ChatMessage.objects.filter(session__user=user)
@@ -336,13 +353,24 @@ class RAGMutation:
         if session.user != user:
             raise Exception("You can only send messages to your own chat sessions.")
 
-        response_data = rag_service.generate_response(
-            query=input.message,
-            similarity_threshold=input.similarity_threshold,
+        # Create placeholder message
+        message = models.ChatMessage.objects.create(
             session=session,
+            message=input.message,
+            response="",  # Will be updated as chunks come in
+            tokens_used=0,
+            similarity_threshold=input.similarity_threshold,
         )
 
-        message = rag_service.save_chat_message(session, input.message, response_data)
+        # Start streaming response generation
+        from rag_chat.tasks import generate_streaming_response
+
+        generate_streaming_response.delay(
+            message_id=message.id,
+            query=input.message,
+            similarity_threshold=input.similarity_threshold,
+            session_id=session.id,
+        )
 
         return SendChatMessagePayload(message=message, session=session)
 
@@ -431,3 +459,58 @@ class RAGMutation:
             return ProcessContentPayload(
                 success=False, message=f"Failed to start cleanup: {str(e)}"
             )
+
+
+@strawberry.type
+class RAGSubscription:
+    @strawberry.subscription
+    async def chat_message_stream(
+        self, info, session_id: relay.GlobalID
+    ) -> AsyncGenerator[ChatMessageChunk, None]:
+        user = info.context.request.user
+        if not user.is_authenticated:
+            raise Exception("Authentication required")
+
+        # Resolve the session
+        session = await sync_to_async(session_id.resolve_node_sync)(
+            info, ensure_type=models.ChatSession
+        )
+
+        # Check ownership
+        if session.user != user:
+            raise Exception("Access denied")
+
+        channel_layer = get_channel_layer()
+        channel_name = f"chat_stream_{session.id}_{user.id}"
+
+        # Create a unique group for this subscription
+        group_name = f"chat_{session.id}"
+
+        # Join the group
+        await channel_layer.group_add(group_name, channel_name)
+
+        try:
+            # Listen for messages on this channel
+            while True:
+                message = await channel_layer.receive(channel_name)
+
+                if message["type"] == "chat.message.chunk":
+                    yield ChatMessageChunk(
+                        session_id=str(session.id),
+                        message_id=message.get("message_id"),
+                        content=message["content"],
+                        is_complete=message.get("is_complete", False),
+                        error=message.get("error"),
+                        tokens_used=message.get("tokens_used"),
+                    )
+
+                    if message.get("is_complete"):
+                        break
+
+        except Exception as e:
+            yield ChatMessageChunk(
+                session_id=str(session.id), content="", is_complete=True, error=str(e)
+            )
+        finally:
+            # Leave the group when subscription ends
+            await channel_layer.group_discard(group_name, channel_name)

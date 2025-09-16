@@ -395,3 +395,20 @@ def get_valid_object_ids(content_type: str):
         return model.objects.values_list("id", flat=True)
     except Exception:
         return []
+
+
+@shared_task
+def generate_streaming_response(
+    message_id: int,
+    query: str,
+    similarity_threshold: float = None,
+    session_id: int = None,
+):
+    """Generate streaming chat response"""
+    from .streaming_service import ChatStreamingService
+
+    streaming_service = ChatStreamingService()
+    streaming_service.generate_streaming_response(
+        message_id=message_id, query=query, similarity_threshold=similarity_threshold
+    )
+    return {"status": "complete", "message_id": message_id}

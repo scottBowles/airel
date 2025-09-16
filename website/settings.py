@@ -109,6 +109,7 @@ INSTALLED_APPS = [
     # "graphiql_debug_toolbar",
     "algoliasearch_django",
     # "generic_relations",
+    "channels",
     "association",
     "character",
     "item",
@@ -159,7 +160,10 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "website.wsgi.application"
+# WSGI_APPLICATION = "website.wsgi.application"
+
+# ASGI Configuration for Channels
+ASGI_APPLICATION = "website.asgi.application"
 
 
 # Database
@@ -312,6 +316,17 @@ AWS_S3_FILE_OVERWRITE = False
 CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+
+# Channels Configuration (uses same Redis, different prefix)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379/0")],
+            "prefix": "asgi:",
+        },
+    },
+}
 
 # CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 # CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")

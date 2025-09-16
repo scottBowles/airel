@@ -40,7 +40,7 @@ from race.types import (
     RaceMutation,
     TraitMutation,
 )
-from rag_chat.types import RAGQuery, RAGMutation
+from rag_chat.types import RAGQuery, RAGMutation, RAGSubscription
 
 
 @strawberry.type
@@ -114,5 +114,8 @@ Query = merge_types("Query", queries)
 Mutation = merge_types("Mutation", mutations)
 
 schema = JwtSchema(
-    query=Query, mutation=Mutation, extensions=[DjangoOptimizerExtension]
+    query=Query,
+    mutation=Mutation,
+    subscription=RAGSubscription,
+    extensions=[DjangoOptimizerExtension],
 )
