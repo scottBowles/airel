@@ -1,0 +1,47 @@
+@import "./lib/styles/fonts.css";
+@theme {
+  --color-industrial-amber: #ffb000;
+  --color-industrial-dim: #4a3e20;
+  --color-industrial-dark: #1a1a1a;
+  --color-industrial-slate: #1e293b;
+  --color-industrial-green: #00ff41;
+  --color-industrial-border: #3f3f3f;
+  
+  --font-mono: "Space Mono", monospace;
+  --font-display: "Rajdhani", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+/* Base Industrial Theme setup */
+:root {
+  color-scheme: dark;
+}
+
+body {
+    @apply bg-slate-950 text-slate-200 font-body antialiased;
+    /* Scanline effect overlay can be added here later */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    @apply font-display uppercase tracking-widest text-slate-100;
+}
+
+/* Utility to force "machine" look */
+.machine-text {
+    @apply font-mono uppercase tracking-wider text-industrial-amber;
+}
+
+/* Custom Utilities for the Bits UI components */
+@layer utilities {
+    .panel-border {
+        @apply border border-slate-700 bg-slate-900/80 backdrop-blur-sm;
+    }
+    
+    .industrial-input {
+        @apply bg-slate-900 border border-slate-700 p-2 text-slate-200 font-mono focus:border-industrial-amber focus:ring-1 focus:ring-industrial-amber outline-none transition-colors duration-75;
+    }
+
+    .industrial-btn {
+        @apply px-4 py-2 border border-slate-600 bg-slate-800 text-slate-200 font-display uppercase tracking-wider hover:bg-slate-700 hover:border-slate-400 active:bg-slate-600 active:translate-y-[1px] transition-all duration-75;
+    }
+}
