@@ -1,0 +1,11 @@
+query RaceList {
+  races {
+    edges {
+      node {
+        id
+        name
+        description
+      }
+    }
+  }
+}

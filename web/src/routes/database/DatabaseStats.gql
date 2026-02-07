@@ -1,0 +1,20 @@
+query DatabaseStats {
+  characters {
+    totalCount
+  }
+  places {
+    totalCount
+  }
+  items {
+    totalCount
+  }
+  artifacts {
+    totalCount
+  }
+  associations {
+    totalCount
+  }
+  races {
+    totalCount
+  }
+}

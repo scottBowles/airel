@@ -1,0 +1,25 @@
+query PlaceDetail($id: ID!) {
+	node(id: $id) {
+		... on Place {
+			id
+			name
+			description
+			markdownNotes
+			placeType
+			population
+			parent {
+				id
+				name
+			}
+			children {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			imageIds
+		}
+	}
+}

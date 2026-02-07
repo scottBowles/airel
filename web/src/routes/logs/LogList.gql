@@ -1,0 +1,13 @@
+query LogList {
+	gameLogs(first: 50) {
+		edges {
+			node {
+				id
+				title
+				brief
+				gameDate
+				synopsis
+			}
+		}
+	}
+}

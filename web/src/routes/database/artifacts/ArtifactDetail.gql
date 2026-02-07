@@ -1,0 +1,10 @@
+query ArtifactDetail($id: ID!) {
+	node(id: $id) {
+		... on Artifact {
+			id
+			name
+			description
+			markdownNotes
+		}
+	}
+}

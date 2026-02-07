@@ -1,0 +1,10 @@
+query RaceDetail($id: ID!) {
+	node(id: $id) {
+		... on Race {
+			id
+			name
+			description
+			markdownNotes
+		}
+	}
+}

@@ -1,0 +1,11 @@
+query ArtifactList {
+  artifacts {
+    edges {
+      node {
+        id
+        name
+        description
+      }
+    }
+  }
+}

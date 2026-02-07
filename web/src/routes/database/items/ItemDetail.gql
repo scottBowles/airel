@@ -1,0 +1,10 @@
+query ItemDetail($id: ID!) {
+	node(id: $id) {
+		... on Item {
+			id
+			name
+			description
+			markdownNotes
+		}
+	}
+}

@@ -1,0 +1,11 @@
+query CharacterList {
+	characters(first: 50) {
+		edges {
+			node {
+				id
+				name
+				description
+			}
+		}
+	}
+}

@@ -1,0 +1,38 @@
+query LogDetail($id: ID!) {
+	node(id: $id) {
+		... on GameLog {
+			id
+			title
+			brief
+			synopsis
+			summary
+			gameDate
+			url
+
+			characters(first: 10) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			placesSetIn(first: 5) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			items(first: 5) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+		}
+	}
+}

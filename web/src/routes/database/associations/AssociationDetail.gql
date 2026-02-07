@@ -1,0 +1,10 @@
+query AssociationDetail($id: ID!) {
+	node(id: $id) {
+		... on Association {
+			id
+			name
+			description
+			markdownNotes
+		}
+	}
+}

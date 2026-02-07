@@ -1,0 +1,11 @@
+query ItemList {
+  items {
+    edges {
+      node {
+        id
+        name
+        description
+      }
+    }
+  }
+}

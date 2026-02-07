@@ -1,0 +1,15 @@
+query PlaceList {
+  places {
+    edges {
+      node {
+        id
+        name
+        description
+        placeType
+        parent {
+          name
+        }
+      }
+    }
+  }
+}

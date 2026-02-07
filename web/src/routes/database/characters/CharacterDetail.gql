@@ -1,0 +1,36 @@
+query CharacterDetail($id: ID!) {
+	node(id: $id) {
+		... on Character {
+			id
+			name
+			description
+			imageIds
+
+			# Relationships
+			associations(first: 5) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedPlaces(first: 5) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			featuresAndTraits(first: 10) {
+				edges {
+					node {
+						name
+						description
+					}
+				}
+			}
+		}
+	}
+}
