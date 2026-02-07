@@ -1,5 +1,5 @@
 query CharacterList {
-	characters(first: 50) {
+	characters {
 		edges {
 			node {
 				id

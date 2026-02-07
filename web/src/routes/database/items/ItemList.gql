@@ -1,11 +1,11 @@
 query ItemList {
-  items {
-    edges {
-      node {
-        id
-        name
-        description
-      }
-    }
-  }
+	items {
+		edges {
+			node {
+				id
+				name
+				description
+			}
+		}
+	}
 }

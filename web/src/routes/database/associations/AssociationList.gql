@@ -1,11 +1,11 @@
 query AssociationList {
-  associations {
-    edges {
-      node {
-        id
-        name
-        description
-      }
-    }
-  }
+	associations {
+		edges {
+			node {
+				id
+				name
+				description
+			}
+		}
+	}
 }
