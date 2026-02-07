@@ -2,12 +2,17 @@
 
 /** @type {import('houdini').ConfigFile} */
 const config = {
-    "watchSchema": {
-        "url": "env:PUBLIC_GRAPHQL_ENDPOINT"
-    },
-    "plugins": {
-        "houdini-svelte": {}
-    }
-}
+	watchSchema: {
+		url: 'env:PUBLIC_GRAPHQL_ENDPOINT'
+	},
+	scalars: {
+		DateTime: {
+			type: 'string'
+		}
+	},
+	plugins: {
+		'houdini-svelte': {}
+	}
+};
 
-export default config
+export default config;

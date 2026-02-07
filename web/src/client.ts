@@ -1,14 +1,15 @@
 import { HoudiniClient } from '$houdini';
+import { env } from '$env/dynamic/public';
 
 export default new HoudiniClient({
-    url: 'env:PUBLIC_GRAPHQL_ENDPOINT',
+	url: env.PUBLIC_GRAPHQL_ENDPOINT,
 
-    // You can add validation logic, authentication, etc. here
-    // fetchParams({ session }) {
-    //     return {
-    //         headers: {
-    //             Authorization: `Bearer ${session.token}`,
-    //         }
-    //     }
-    // }
-})
+	fetchParams() {
+		return {
+			mode: 'cors',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		};
+	}
+});
