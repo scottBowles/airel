@@ -2,8 +2,15 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 
-	let { children } = $props();
+	let { data, children } = $props();
+	let user = $derived(data.user);
+
+	async function logout() {
+		await fetch('/auth/logout', { method: 'POST' });
+		window.location.href = '/login';
+	}
 </script>
 
 <svelte:head>
@@ -59,6 +66,25 @@
 		</div>
 
 		<div class="flex-1"></div>
+
+		{#if user}
+			<div class="mb-4 border-t border-slate-800 pt-4">
+				<div class="mb-1 text-xs text-slate-400">OPERATOR</div>
+				<div class="text-industrial-amber font-mono text-sm">{user.username}</div>
+				<button onclick={logout} class="mt-2 text-xs text-red-400 hover:text-red-300">
+					TERMINATE SESSION
+				</button>
+			</div>
+		{:else}
+			<div class="mb-4 border-t border-slate-800 pt-4">
+				<a
+					href={resolve(`/login?redirect=${encodeURIComponent(page.url.pathname)}`)}
+					class="text-industrial-amber text-xs hover:underline"
+				>
+					INITIATE LOGIN
+				</a>
+			</div>
+		{/if}
 
 		<!-- Status Metrics (Decor only for now) -->
 		<div class="border-t border-slate-800 pt-4 font-mono text-[10px] text-slate-600">
