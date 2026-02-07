@@ -2058,76 +2058,6 @@ type ProficiencyEdge {
 }
 
 type Query {
-  ArtifactsConnectionFiltered(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameStartswith: String!
-  ): ArtifactConnection!
-  CharactersConnectionFiltered(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameStartswith: String!
-  ): CharacterConnection!
-  ItemsConnectionFiltered(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameStartswith: String!
-  ): ItemConnection!
-  PlacesConnectionFiltered(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameStartswith: String!
-  ): PlaceConnection!
-  RacesConnectionFiltered(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameStartswith: String!
-  ): RaceConnection!
   aiLogSuggestions(id: ID!): GameLogAiSummary!
   artifacts(
     """Returns the items in the list that come after the specified cursor."""
@@ -2154,20 +2084,6 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-  ): AssociationConnection!
-  associationsConnectionFiltered(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameStartswith: String!
   ): AssociationConnection!
   availableContentTypes: [String!]!
   characters(
