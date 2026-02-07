@@ -1,3 +1,60 @@
+# Airel - Frontend (Kontularien)
+
+A SvelteKit application for the Kontularien spaceship interface.
+
+## Tech Stack & Patterns
+
+### 1. Data Fetching (Houdini + SSR)
+
+We utilize **Houdini 2.0** with SvelteKit. To ensure Server-Side Rendering (SSR) works correctly, follow this pattern for all data-fetching routes:
+
+**A. Define the Query**
+Create a named `.gql` file in the route folder (do not use `+page.gql` for page queries to avoid auto-route conflicts).
+_Example:_ `src/routes/logs/LogList.gql`
+
+```graphql
+query LogList {
+  ...
+}
+```
+
+**B. Create the Load Function**
+Use the `_houdini_load` pattern in `+page.ts`.
+
+```typescript
+import { load_LogList } from '$houdini';
+import type { PageLoad } from './$types';
+
+export const load: PageLoad = async (event) => {
+	return {
+		...(await load_LogList({ event }))
+	};
+};
+```
+
+**C. Consume in Component**
+In `+page.svelte`, access the store via `data` props and derived state.
+
+```svelte
+<script lang="ts">
+	import type { PageData } from './$houdini';
+
+	let { data }: { data: PageData } = $props();
+	let LogList = $derived(data.LogList);
+</script>
+
+{#if $LogList.data} ... {/if}
+```
+
+### 2. Styling (TailwindCSS v4)
+
+- Theme configuration is in `src/app.css` under the `@theme` block.
+- Import order in `app.css` is strict: `@import` -> `@plugin` -> `@theme`.
+
+---
+
+## Standard Development
+
 # sv
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
