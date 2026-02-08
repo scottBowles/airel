@@ -3,7 +3,11 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let { DatabaseStats } = $derived(data);
+	let { DatabaseStats, Me } = $derived(data);
+
+	let accessLevel = $derived(
+		$Me?.data?.me?.isStaff ? 'ACCESS LEVEL: UNRESTRICTED' : 'ACCESS LEVEL: RESTRICTED'
+	);
 
 	let counts = $derived({
 		characters: $DatabaseStats.data?.characters?.totalCount ?? '---',
@@ -57,7 +61,7 @@
 <div class="space-y-8">
 	<div class="border-industrial-dim flex items-center justify-between border-b pb-4">
 		<h2 class="text-3xl font-bold tracking-widest text-slate-100 uppercase">Database Core</h2>
-		<div class="text-industrial-amber font-mono text-xs">ACCESS LEVEL: UNRESTRICTED</div>
+		<div class="text-industrial-amber font-mono text-xs">{accessLevel}</div>
 	</div>
 
 	<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
