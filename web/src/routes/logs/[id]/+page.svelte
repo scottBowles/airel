@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { resolve } from '$app/paths';
+	import { formatGameDate } from '$lib/utils';
 
 	let { data }: { data: PageData } = $props();
 	let LogDetail = $derived(data.LogDetail);
@@ -25,14 +26,14 @@
 			ERROR: UNABLE TO DECRYPT LOG DATA.
 			<pre class="mt-4 text-xs">{JSON.stringify($LogDetail.errors, null, 2)}</pre>
 		</div>
-	{:else if $LogDetail?.data?.node}
+	{:else if $LogDetail?.data?.node?.__typename === 'GameLog'}
 		<!-- Header Section -->
 		<header class="border-industrial-dim border-b pb-6">
 			<h1 class="font-display mb-2 text-4xl font-bold tracking-widest text-slate-100 uppercase">
 				{$LogDetail.data.node.title}
 			</h1>
 			<div class="text-industrial-amber flex items-center gap-4 font-mono text-sm">
-				<span>DATE: {$LogDetail.data.node.gameDate || 'UNKNOWN'}</span>
+				<span>DATE: {formatGameDate($LogDetail.data.node.gameDate)}</span>
 				{#if $LogDetail.data.node.url}
 					<span class="text-slate-600">|</span>
 					<a

@@ -7,7 +7,13 @@ const config = {
 	},
 	scalars: {
 		DateTime: {
-			type: 'string'
+			type: 'Date',
+			unmarshal(val) {
+				return new Date(val);
+			},
+			marshal(date) {
+				return date.toISOString();
+			}
 		}
 	},
 	plugins: {

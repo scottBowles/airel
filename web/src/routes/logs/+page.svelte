@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { resolve } from '$app/paths';
+	import { formatGameDate } from '$lib/utils';
 
 	let { data }: { data: PageData } = $props();
 
@@ -44,9 +45,7 @@
 							>
 								{log.title}
 							</h3>
-							<span class="font-mono text-xs text-slate-500"
-								>{log.gameDate || 'Unknown Stardate'}</span
-							>
+							<span class="font-mono text-xs text-slate-500">{formatGameDate(log.gameDate)}</span>
 						</div>
 
 						<p class="font-body line-clamp-2 text-sm text-slate-400">
