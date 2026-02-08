@@ -5,7 +5,9 @@
 	import { page } from '$app/state';
 
 	let { data, children } = $props();
-	let user = $derived(data.user);
+	let { Me } = $derived(data);
+
+	let user = $derived($Me?.data?.me);
 
 	async function logout() {
 		await fetch('/auth/logout', { method: 'POST' });

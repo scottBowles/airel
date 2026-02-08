@@ -1,0 +1,14 @@
+query Me {
+	me {
+		id
+		username
+		email
+		isActive
+		isStaff
+		isSuperuser
+		dateJoined
+		lastLogin
+		firstName
+		lastName
+	}
+}
