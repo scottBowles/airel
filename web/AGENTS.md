@@ -21,3 +21,11 @@ You MUST use this tool whenever writing Svelte code before sending it to the use
 
 Generates a Svelte Playground link with the provided code.
 After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+
+## Project Guidelines
+
+### Technical Patterns & Architecture
+**CRITICAL**: Before implementing any features, READ `README.md`. It contains strict patterns for:
+1.  **Houdini GraphQL**: ALWAYS use Manual Loading (named `.gql` files + `load_QueryName` in `.ts`). **NEVER** use `+page.gql` or `+layout.gql`.
+2.  **Svelte 5**: Use Runes (`$state`, `$derived`, `$props`) exclusively.
+3.  **Styling**: Verify Tailwind implementation details.
