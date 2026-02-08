@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import { page } from '$app/state';
+	import { toast } from 'svelte-sonner';
 
 	// Define the callback type for Google's GIS
 	interface GoogleCredentialResponse {
@@ -81,7 +82,9 @@
 			window.location.href = redirect;
 		} else {
 			console.error('Login failed');
-			// Optionally show an error message variable here
+			toast.error('Access Denied', {
+				description: 'Invalid credentials or system error. Please try again.'
+			});
 		}
 	}
 </script>

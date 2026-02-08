@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { Toaster } from 'svelte-sonner';
 	import favicon from '$lib/assets/favicon.svg';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -119,4 +120,6 @@
 			{@render children()}
 		</div>
 	</main>
+
+	<Toaster richColors theme="dark" position="bottom-right" />
 </div>
