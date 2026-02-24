@@ -1,0 +1,8 @@
+mutation UpdatePlaceImages($id: ID!, $imageIds: [String!]) {
+	updatePlace(input: { id: $id, imageIds: $imageIds }) {
+		... on Place {
+			id
+			imageIds
+		}
+	}
+}

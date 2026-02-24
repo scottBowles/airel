@@ -5,6 +5,7 @@ query PlaceList {
 				id
 				name
 				description
+				imageIds
 				placeType
 				parent {
 					name

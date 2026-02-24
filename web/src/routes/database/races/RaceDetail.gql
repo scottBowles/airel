@@ -5,6 +5,7 @@ query RaceDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			imageIds
 		}
 	}
 }

@@ -5,6 +5,7 @@ query ItemDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			imageIds
 		}
 	}
 }

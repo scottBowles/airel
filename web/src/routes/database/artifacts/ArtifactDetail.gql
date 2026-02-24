@@ -5,6 +5,7 @@ query ArtifactDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			imageIds
 		}
 	}
 }

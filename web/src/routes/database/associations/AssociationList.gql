@@ -5,6 +5,7 @@ query AssociationList {
 				id
 				name
 				description
+				imageIds
 			}
 		}
 	}

@@ -1,10 +1,27 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import type { PageData } from './$houdini';
+	import { UpdateCharacterImagesStore } from '$houdini';
+
 	import { resolve } from '$app/paths';
+	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let CharacterDetail = $derived(data.CharacterDetail);
+	let char = $derived($CharacterDetail.data?.node);
+	let Me = $derived(data.Me);
+	let me = $derived($Me?.data?.me);
+	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
+
+	const updateStore = new UpdateCharacterImagesStore();
+
+	async function saveImages(newIds: string[]) {
+		console.log('saving images with ids: ', newIds);
+		await updateStore.mutate({
+			id: page.params.id ?? '',
+			imageIds: newIds
+		});
+	}
 </script>
 
 <div class="mx-auto max-w-5xl pb-20">
@@ -14,30 +31,22 @@
 		<span>/</span>
 		<a href={resolve('/database/characters')} class="hover:text-industrial-amber">CHARACTERS</a>
 		<span>/</span>
-		<span class="text-slate-300">ID: {$page.params.id}</span>
+		<span class="text-slate-300">ID: {page.params.id}</span>
 	</div>
 
-	{#if $CharacterDetail.data?.node}
-		{@const char = $CharacterDetail.data.node}
+	{#if char && char.__typename === 'Character'}
 		<div
-			class="border-industrial-dim mb-8 grid grid-cols-1 gap-8 border-b pb-8 md:grid-cols-[200px_1fr]"
+			class="border-industrial-dim mb-8 grid grid-cols-1 gap-8 border-b pb-8 md:grid-cols-[250px_1fr]"
 		>
-			<!-- Portrait Frame -->
-			<div class="group relative aspect-3/4 overflow-hidden border-2 border-slate-700 bg-slate-900">
+			<!-- Portrait Frame & Image Management -->
+			<div class="relative w-full">
+				<AdminImageManager imageIds={char.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
+				<!-- Decorative corners -->
 				<div
-					class="absolute inset-0 flex items-center justify-center font-mono text-xs text-slate-700"
-				>
-					{#if char.imageIds.length > 0}
-						<!-- In the future, fetch actual image based on ID -->
-						IMAGE_ID: {char.imageIds[0]}
-					{:else}
-						NO VISUAL RECORD
-					{/if}
-				</div>
-				<!-- Corner accents -->
-				<div class="border-industrial-amber absolute top-0 left-0 h-2 w-2 border-t border-l"></div>
+					class="border-industrial-amber pointer-events-none absolute -top-1 -left-1 h-2 w-2 border-t border-l"
+				></div>
 				<div
-					class="border-industrial-amber absolute right-0 bottom-0 h-2 w-2 border-r border-b"
+					class="border-industrial-amber pointer-events-none absolute -right-1 -bottom-1 h-2 w-2 border-r border-b"
 				></div>
 			</div>
 

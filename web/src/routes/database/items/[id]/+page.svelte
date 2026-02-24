@@ -1,10 +1,25 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { page } from '$app/state';
+	import type { PageData } from './$houdini';
+	import { UpdateItemImagesStore } from '$houdini';
 	import { resolve } from '$app/paths';
+	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let { ItemDetail } = $derived(data);
 	let item = $derived($ItemDetail.data?.node);
+	let Me = $derived(data.Me);
+	let me = $derived($Me?.data?.me);
+	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
+
+	const updateStore = new UpdateItemImagesStore();
+
+	async function saveImages(newIds: string[]) {
+		await updateStore.mutate({
+			id: page.params.id ?? '',
+			imageIds: newIds
+		});
+	}
 </script>
 
 {#if item && item.__typename === 'Item'}
@@ -48,6 +63,7 @@
 
 				<!-- Sidebar -->
 				<div class="space-y-6">
+					<AdminImageManager imageIds={item.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
 					<div class="rounded-sm border border-zinc-800 bg-zinc-900/50 p-4">
 						<h3 class="mb-4 text-sm font-bold tracking-wide text-zinc-400 uppercase">Details</h3>
 						<div class="text-sm text-zinc-500 italic">No additional stats available yet.</div>

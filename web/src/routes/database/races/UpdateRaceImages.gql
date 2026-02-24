@@ -1,0 +1,8 @@
+mutation UpdateRaceImages($id: ID!, $imageIds: [String!]) {
+	updateRace(input: { id: $id, imageIds: $imageIds }) {
+		... on Race {
+			id
+			imageIds
+		}
+	}
+}

@@ -5,6 +5,8 @@ query CharacterList {
 				id
 				name
 				description
+				imageIds
+				thumbnailId
 			}
 		}
 	}

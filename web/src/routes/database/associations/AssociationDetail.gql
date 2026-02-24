@@ -5,6 +5,7 @@ query AssociationDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			imageIds
 		}
 	}
 }

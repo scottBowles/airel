@@ -5,6 +5,7 @@ query ItemList {
 				id
 				name
 				description
+				imageIds
 			}
 		}
 	}

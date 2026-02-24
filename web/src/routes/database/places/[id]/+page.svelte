@@ -1,12 +1,25 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import type { PageData } from './$houdini';
+	import { UpdatePlaceImagesStore } from '$houdini';
+	import { resolve } from '$app/paths';
+	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let { PlaceDetail } = $derived(data);
-
 	let place = $derived($PlaceDetail.data?.node);
+	let Me = $derived(data.Me);
+	let me = $derived($Me?.data?.me);
+	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
+
+	const updateStore = new UpdatePlaceImagesStore();
+
+	async function saveImages(newIds: string[]) {
+		await updateStore.mutate({
+			id: page.params.id ?? '',
+			imageIds: newIds
+		});
+	}
 </script>
 
 {#if place && place.__typename === 'Place'}
@@ -55,6 +68,11 @@
 
 				<!-- Stats & Meta -->
 				<div class="space-y-6">
+					<AdminImageManager
+						imageIds={place.imageIds || []}
+						canEdit={isAdmin}
+						onSave={saveImages}
+					/>
 					<div class="rounded-sm border border-zinc-800 bg-zinc-900/50 p-4">
 						<h3 class="mb-4 text-sm font-bold tracking-wide text-zinc-400 uppercase">Details</h3>
 						<div class="space-y-3 text-sm">

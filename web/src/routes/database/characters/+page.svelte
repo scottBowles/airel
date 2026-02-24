@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { resolve } from '$app/paths';
+	import CldImage from '$lib/components/images/CldImage.svelte';
+	import ScifiPlaceholder from '$lib/components/ui/ScifiPlaceholder.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let CharacterList = $derived(data.CharacterList);
@@ -36,11 +38,21 @@
 					class="group hover:border-industrial-amber block border border-slate-800 bg-slate-900/40 p-4 transition-colors"
 				>
 					<div class="mb-3 flex items-center gap-3">
-						<div
-							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-slate-800 font-mono text-xs text-slate-600"
-						>
-							IMG
-						</div>
+						{#if char.imageIds?.length > 0}
+							<div
+								class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-slate-800 font-mono text-xs text-slate-600"
+							>
+								<CldImage
+									id={char.imageIds[0]}
+									alt={char.name}
+									width={40}
+									height={40}
+									class="w-full h-full object-cover"
+								/>
+							</div>
+						{:else}
+							<ScifiPlaceholder type="character" />
+						{/if}
 						<div class="min-w-0">
 							<h3
 								class="font-display group-hover:text-industrial-amber truncate text-xl text-slate-200"

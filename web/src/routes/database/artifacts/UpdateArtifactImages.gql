@@ -1,0 +1,8 @@
+mutation UpdateArtifactImages($id: ID!, $imageIds: [String!]) {
+	updateArtifact(input: { id: $id, imageIds: $imageIds }) {
+		... on Artifact {
+			id
+			imageIds
+		}
+	}
+}

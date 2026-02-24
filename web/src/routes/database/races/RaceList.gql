@@ -5,6 +5,7 @@ query RaceList {
 				id
 				name
 				description
+				imageIds
 			}
 		}
 	}
