@@ -29,7 +29,6 @@
 			<div>
 				<div class="flex items-baseline gap-3">
 					<h1 class="text-3xl font-bold text-emerald-400">{place.name}</h1>
-					<span class="font-mono text-sm text-zinc-500">{place.id}</span>
 				</div>
 				{#if place.placeType}
 					<div class="mt-1 text-xs font-bold tracking-widest text-zinc-500 uppercase">

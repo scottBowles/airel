@@ -30,8 +30,6 @@
 		<a href={resolve('/database')} class="hover:text-industrial-amber">DATABASE</a>
 		<span>/</span>
 		<a href={resolve('/database/characters')} class="hover:text-industrial-amber">CHARACTERS</a>
-		<span>/</span>
-		<span class="text-slate-300">ID: {page.params.id}</span>
 	</div>
 
 	{#if char && char.__typename === 'Character'}

@@ -29,7 +29,6 @@
 			<div>
 				<div class="flex items-baseline gap-3">
 					<h1 class="text-3xl font-bold text-emerald-400">{race.name}</h1>
-					<span class="font-mono text-sm text-zinc-500">{race.id}</span>
 				</div>
 			</div>
 			<a
