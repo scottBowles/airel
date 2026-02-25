@@ -47,7 +47,7 @@
 									alt={char.name}
 									width={40}
 									height={40}
-									class="w-full h-full object-cover"
+									class="h-full w-full object-cover"
 								/>
 							</div>
 						{:else}
