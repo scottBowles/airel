@@ -108,11 +108,11 @@
 
 	<!-- Main Content Viewport -->
 	<main
-		class="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[url('/grid.svg')] bg-[length:40px_40px]"
+		class="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[url('/grid.svg')] bg-size-[40px_40px]"
 	>
 		<!-- Scanline Overlay (Optional, keep low opacity) -->
 		<div
-			class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] opacity-10"
+			class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] opacity-10"
 		></div>
 
 		<!-- Scrollable content area -->

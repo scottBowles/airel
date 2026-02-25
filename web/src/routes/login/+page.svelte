@@ -96,7 +96,7 @@
 		<h1 class="text-industrial-amber font-display mb-6 text-2xl font-bold tracking-widest">
 			SYSTEM ACCESS
 		</h1>
-		<div class="border-industrial-dim flex min-h-[50px] items-center justify-center border-t pt-6">
+		<div class="border-industrial-dim flex min-h-12.5 items-center justify-center border-t pt-6">
 			<div bind:this={buttonContainer}></div>
 		</div>
 		<p class="mt-4 font-mono text-xs text-slate-500">AUTHORIZED PERSONNEL ONLY</p>
