@@ -4,7 +4,18 @@
 	let { imageIds }: { imageIds: string[] } = $props();
 	// We'll track the currently visible index
 	let selected = $state(0);
-	let carousel: HTMLDivElement;
+	let indicatorIndexes = $derived(imageIds.map((_, index) => index));
+	let carousel = $state<HTMLDivElement | null>(null);
+
+	function setCarousel(node: HTMLDivElement) {
+		carousel = node;
+
+		return () => {
+			if (carousel === node) {
+				carousel = null;
+			}
+		};
+	}
 
 	function handleScroll() {
 		if (!carousel) return;
@@ -26,12 +37,12 @@
 	}
 </script>
 
-<div class="group relative h-[350px] w-full overflow-hidden border border-slate-700 bg-slate-900">
+<div class="group relative h-87.5 w-full overflow-hidden border border-slate-700 bg-slate-900">
 	<!-- Main Carousel -->
 	{#if imageIds.length > 0}
 		<!-- Scroll Container -->
 		<div
-			bind:this={carousel}
+			{@attach setCarousel}
 			onscroll={handleScroll}
 			class="
         absolute inset-0 flex
@@ -115,7 +126,7 @@
 		<div
 			class="pointer-events-none absolute right-0 bottom-4 left-0 z-10 flex justify-center gap-2"
 		>
-			{#each imageIds as _, i}
+			{#each indicatorIndexes as i (i)}
 				<button
 					onclick={() => scroll(i)}
 					class="
