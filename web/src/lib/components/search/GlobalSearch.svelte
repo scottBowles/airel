@@ -17,6 +17,8 @@
 	} = $props();
 
 	let inputRef = $state<HTMLInputElement | null>(null);
+	let resultsViewportRef = $state<HTMLDivElement | null>(null);
+	let resultButtonRefs = $state<(HTMLButtonElement | null)[]>([]);
 	let query = $state('');
 	let results = $state<SearchResult[]>([]);
 	let highlightedIndex = $state(-1);
@@ -40,6 +42,7 @@
 		requestSequence += 1;
 		query = '';
 		results = [];
+		resultButtonRefs = [];
 		highlightedIndex = -1;
 		loading = false;
 		errorMessage = '';
@@ -50,15 +53,25 @@
 		onClose();
 	}
 
+	function setHighlightedIndex(index: number, shouldScroll = true) {
+		highlightedIndex = index;
+
+		if (shouldScroll && index >= 0) {
+			void tick().then(() => {
+				scrollHighlightedResultIntoView(index);
+			});
+		}
+	}
+
 	function moveHighlight(step: number) {
 		if (results.length === 0) return;
 
 		if (highlightedIndex < 0) {
-			highlightedIndex = step > 0 ? 0 : results.length - 1;
+			setHighlightedIndex(step > 0 ? 0 : results.length - 1);
 			return;
 		}
 
-		highlightedIndex = (highlightedIndex + step + results.length) % results.length;
+		setHighlightedIndex((highlightedIndex + step + results.length) % results.length);
 	}
 
 	async function selectResult(result: SearchResult) {
@@ -79,6 +92,15 @@
 		}
 
 		return `${baseClasses} border-slate-800 bg-slate-950/40`;
+	}
+
+	function scrollHighlightedResultIntoView(index: number) {
+		if (!resultsViewportRef || index < 0) return;
+
+		const highlightedElement = resultButtonRefs[index];
+		if (!highlightedElement || !resultsViewportRef.contains(highlightedElement)) return;
+
+		highlightedElement.scrollIntoView({ block: 'nearest' });
 	}
 
 	function handleInputKeydown(event: KeyboardEvent) {
@@ -129,6 +151,7 @@
 		if (!normalizedQuery) {
 			clearDebounceTimer();
 			results = [];
+			resultButtonRefs = [];
 			highlightedIndex = -1;
 			loading = false;
 			errorMessage = '';
@@ -149,7 +172,8 @@
 				}
 
 				results = nextResults;
-				highlightedIndex = nextResults.length > 0 ? 0 : -1;
+				resultButtonRefs = Array(nextResults.length).fill(null);
+				setHighlightedIndex(nextResults.length > 0 ? 0 : -1, false);
 			} catch (error) {
 				if (currentRequest !== requestSequence || !open) {
 					return;
@@ -157,7 +181,8 @@
 
 				console.error('Global search failed', error);
 				results = [];
-				highlightedIndex = -1;
+				resultButtonRefs = [];
+				setHighlightedIndex(-1, false);
 				errorMessage = 'Search is temporarily unavailable.';
 			} finally {
 				if (currentRequest === requestSequence && open) {
@@ -198,6 +223,7 @@
 					bind:this={inputRef}
 					bind:value={query}
 					onkeydown={handleInputKeydown}
+					role="combobox"
 					type="text"
 					placeholder="Search Database"
 					class="industrial-input min-w-0 flex-1 bg-slate-950"
@@ -205,7 +231,10 @@
 					autocomplete="off"
 					autocorrect="off"
 					aria-label="Search database"
+					aria-autocomplete="list"
 					aria-controls="global-search-results"
+					aria-expanded="true"
+					aria-haspopup="listbox"
 					aria-activedescendant={highlightedIndex >= 0
 						? getResultDomId(highlightedIndex)
 						: undefined}
@@ -223,7 +252,7 @@
 				class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] tracking-[0.18em] text-slate-500 uppercase"
 			>
 				<div>{searchableTypes}</div>
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-2" aria-live="polite">
 					{#if loading}
 						<LoaderCircle class="animate-spin" size={12} />
 						<span>Scanning</span>
@@ -234,7 +263,7 @@
 			</div>
 		</div>
 
-		<div class="max-h-[min(70dvh,34rem)] overflow-y-auto p-2 sm:p-3">
+		<div bind:this={resultsViewportRef} class="max-h-[min(70dvh,34rem)] overflow-y-auto p-2 sm:p-3">
 			{#if !algoliaConfigured}
 				<div class="border border-slate-800 bg-slate-900/60 px-4 py-6 text-sm text-slate-400">
 					Set <span class="font-mono text-slate-200">PUBLIC_ALGOLIA_APP_ID</span> and
@@ -255,16 +284,17 @@
 					No results found.
 				</div>
 			{:else}
-				<ul id="global-search-results" class="space-y-2" role="listbox">
+				<ul id="global-search-results" class="space-y-2" role="listbox" aria-busy={loading}>
 					{#each results as result, index (result.indexName + '-' + result.objectID)}
 						<li>
 							<button
+								bind:this={resultButtonRefs[index]}
 								id={getResultDomId(index)}
 								type="button"
 								role="option"
 								aria-selected={index === highlightedIndex}
 								onclick={() => selectResult(result)}
-								onmouseenter={() => (highlightedIndex = index)}
+								onmouseenter={() => setHighlightedIndex(index, false)}
 								class={getResultClasses(index)}
 							>
 								{#if result.thumbnail}
