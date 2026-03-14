@@ -2,19 +2,51 @@
 	import '../app.css';
 	import { Toaster } from 'svelte-sonner';
 	import favicon from '$lib/assets/favicon.svg';
+	import { browser } from '$app/environment';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import GlobalSearch from '$lib/components/search/GlobalSearch.svelte';
+	import GlobalSearchTrigger from '$lib/components/search/GlobalSearchTrigger.svelte';
 	import { fromStore } from 'svelte/store';
 	import { tick } from 'svelte';
 
 	let { data, children } = $props();
 	let mobileNavOpen = $state(false);
+	let globalSearchOpen = $state(false);
 	let meResult = $derived.by(() => fromStore(data.Me).current);
 	let mobileNavRef: HTMLElement | null = null;
 	let mobileCloseButtonRef: HTMLButtonElement | null = null;
 	let mobileMenuToggleRef: HTMLButtonElement | null = null;
 
 	let user = $derived(meResult?.data?.me);
+
+	function getShortcutLabel() {
+		if (!browser) return null;
+
+		const navigatorWithUserAgentData = navigator as Navigator & {
+			userAgentData?: {
+				mobile?: boolean;
+				platform?: string;
+			};
+		};
+
+		const isTouchFirst =
+			navigatorWithUserAgentData.userAgentData?.mobile === true ||
+			window.matchMedia('(pointer: coarse)').matches;
+
+		if (isTouchFirst) return null;
+
+		const platform = navigatorWithUserAgentData.userAgentData?.platform?.toLowerCase() ?? '';
+		const userAgent = navigator.userAgent.toLowerCase();
+		const isApple =
+			platform.includes('mac') ||
+			platform.includes('ios') ||
+			/apple|mac|iphone|ipad|ipod/.test(userAgent);
+
+		return isApple ? '⌘K' : 'Ctrl+K';
+	}
+
+	const shortcutLabel = getShortcutLabel();
 
 	function isActive(path: string) {
 		if (path === '/') return page.url.pathname === path;
@@ -32,6 +64,27 @@
 
 	function closeMobileNav() {
 		mobileNavOpen = false;
+	}
+
+	function openGlobalSearch() {
+		mobileNavOpen = false;
+		globalSearchOpen = true;
+	}
+
+	function closeGlobalSearch() {
+		globalSearchOpen = false;
+	}
+
+	function isEditableTarget(target: EventTarget | null) {
+		if (!(target instanceof HTMLElement)) return false;
+
+		return (
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			target.isContentEditable ||
+			Boolean(target.closest('[contenteditable="true"]'))
+		);
 	}
 
 	function getMobileNavFocusableElements() {
@@ -94,6 +147,30 @@
 			firstTarget?.focus();
 		});
 	});
+
+	function handleWindowKeydown(event: KeyboardEvent) {
+		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+			if (isEditableTarget(event.target) || event.altKey || event.shiftKey) return;
+
+			event.preventDefault();
+
+			if (globalSearchOpen) {
+				closeGlobalSearch();
+			} else {
+				openGlobalSearch();
+			}
+
+			return;
+		}
+
+		if (globalSearchOpen && event.key === 'Escape') {
+			event.preventDefault();
+			closeGlobalSearch();
+			return;
+		}
+
+		handleMobileNavKeydown(event);
+	}
 </script>
 
 <svelte:head>
@@ -101,7 +178,7 @@
 	<!-- Preload fonts if we were hosting them, but we are using Google Fonts maybe? Need to add font setup -->
 </svelte:head>
 
-<svelte:window onkeydown={handleMobileNavKeydown} />
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <div
 	class="font-body selection:bg-industrial-amber fixed inset-0 flex overflow-hidden bg-slate-950 text-slate-200 selection:text-slate-900"
@@ -250,8 +327,8 @@
 
 	<!-- Main Sidebar / Comms Array (Desktop) -->
 	<nav
-		inert={mobileNavOpen}
-		aria-hidden={mobileNavOpen}
+		inert={mobileNavOpen || globalSearchOpen}
+		aria-hidden={mobileNavOpen || globalSearchOpen}
 		class="hidden w-64 flex-col gap-4 border-r border-slate-800 bg-slate-900/50 p-4 backdrop-blur-md md:flex"
 	>
 		<div class="border-industrial-dim mb-4 border-b pb-4">
@@ -260,6 +337,8 @@
 				<span class="block text-xs text-slate-500">System Interface v2.5</span>
 			</h1>
 		</div>
+
+		<GlobalSearchTrigger {shortcutLabel} onActivate={openGlobalSearch} />
 
 		<div class="flex flex-col gap-1">
 			<a
@@ -348,8 +427,8 @@
 
 	<!-- Main Content Viewport -->
 	<main
-		inert={mobileNavOpen}
-		aria-hidden={mobileNavOpen}
+		inert={mobileNavOpen || globalSearchOpen}
+		aria-hidden={mobileNavOpen || globalSearchOpen}
 		class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[url('/grid.svg')] bg-size-[40px_40px]"
 	>
 		<!-- Mobile Command Header -->
@@ -380,7 +459,7 @@
 				<p class="text-[10px] text-slate-500 uppercase">System Interface</p>
 			</div>
 
-			<div class="machine-text text-industrial-green justify-self-end text-[10px]">ONLINE</div>
+			<GlobalSearchTrigger mobile onActivate={openGlobalSearch} />
 		</header>
 
 		<!-- Scanline Overlay (Optional, keep low opacity) -->
@@ -393,6 +472,8 @@
 			{@render children()}
 		</div>
 	</main>
+
+	<GlobalSearch open={globalSearchOpen} onClose={closeGlobalSearch} />
 
 	<Toaster richColors theme="dark" position="bottom-right" />
 </div>

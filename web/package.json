@@ -47,6 +47,7 @@
 		]
 	},
 	"dependencies": {
+		"algoliasearch": "^5.49.2",
 		"@cloudinary/url-gen": "^1.22.0",
 		"bits-ui": "^2.15.5",
 		"clsx": "^2.1.1",

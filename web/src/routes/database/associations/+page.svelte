@@ -19,16 +19,6 @@
 		</div>
 	</div>
 
-	<!-- Toolbar / Search -->
-	<div class="db-toolbar">
-		<input
-			type="text"
-			placeholder="FILTER ASSOCIATIONS..."
-			class="industrial-input w-full bg-slate-950 sm:max-w-sm"
-		/>
-		<button class="industrial-btn w-full sm:w-auto">SEARCH</button>
-	</div>
-
 	<!-- Grid -->
 	<div class="db-grid">
 		{#if $AssociationList.data?.associations?.edges}
