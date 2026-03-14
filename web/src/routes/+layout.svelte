@@ -121,7 +121,7 @@
 		id="mobile-nav"
 		bind:this={mobileNavRef}
 		tabindex="-1"
-		class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] -translate-x-full flex-col gap-4 border-r border-slate-800 bg-slate-900/95 p-4 backdrop-blur-md transition-transform duration-150 ease-out md:hidden"
+		class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] -translate-x-full flex-col gap-4 overflow-y-auto overscroll-contain border-r border-slate-800 bg-slate-900/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md transition-transform duration-150 ease-out md:hidden"
 		class:translate-x-0={mobileNavOpen}
 	>
 		<!-- Mobile Nav Header -->
@@ -131,7 +131,7 @@
 				type="button"
 				bind:this={mobileCloseButtonRef}
 				onclick={closeMobileNav}
-				class="machine-text flex h-9 w-9 items-center justify-center border border-slate-700 hover:border-slate-500"
+				class="machine-text flex h-11 w-11 items-center justify-center border border-slate-700 hover:border-slate-500"
 				aria-label="Close navigation menu"
 			>
 				<span class="sr-only">Close menu</span>
@@ -350,7 +350,7 @@
 	<main
 		inert={mobileNavOpen}
 		aria-hidden={mobileNavOpen}
-		class="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[url('/grid.svg')] bg-size-[40px_40px]"
+		class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[url('/grid.svg')] bg-size-[40px_40px]"
 	>
 		<!-- Mobile Command Header -->
 		<header
@@ -389,7 +389,7 @@
 		></div>
 
 		<!-- Scrollable content area -->
-		<div class="content-pad flex-1 overflow-y-auto">
+		<div class="content-pad min-h-0 flex-1 overflow-y-auto">
 			{@render children()}
 		</div>
 	</main>

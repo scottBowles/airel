@@ -38,11 +38,13 @@
 					<div class="log-card-body">
 						<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
 							<h3
-								class="font-display group-hover:text-industrial-amber text-xl font-medium text-slate-100 transition-colors"
+								class="font-display group-hover:text-industrial-amber min-w-0 flex-1 text-xl font-medium text-slate-100 transition-colors"
 							>
 								{log.title}
 							</h3>
-							<span class="font-mono text-xs text-slate-500">{formatGameDate(log.gameDate)}</span>
+							<span class="shrink-0 font-mono text-xs text-slate-500"
+								>{formatGameDate(log.gameDate)}</span
+							>
 						</div>
 
 						<p class="font-body line-clamp-2 text-sm leading-relaxed text-slate-300 sm:text-[15px]">

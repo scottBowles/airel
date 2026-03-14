@@ -116,10 +116,16 @@
 					<UploadWidget onUpload={handleUpload} />
 				</div>
 
+				<p
+					class="rounded border border-slate-700/70 bg-slate-950/70 px-3 py-2 text-center font-mono text-[11px] tracking-[0.18em] text-slate-400 uppercase"
+				>
+					Drag or long-press tiles to reorder. Use remove buttons to delete.
+				</p>
+
 				<ImageSortableGrid images={localImages} onUpdate={handleGridUpdate} />
 
 				<p class="mt-4 text-center font-mono text-xs text-slate-500">
-					Drag to reorder. Changes are local until you click SAVE.
+					Changes stay local until you click SAVE CHANGES.
 				</p>
 			</div>
 		{/if}

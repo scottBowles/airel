@@ -66,6 +66,36 @@ When adding a new screen:
 2. If you need a new spacing/type pattern in more than one place, add a named utility in `src/app.css`.
 3. Avoid copying large class strings between route files.
 
+### 4. Mobile Follow-Up
+
+Current state:
+
+- App shell, database routes, logs, image-management controls, and login now have a mobile-first baseline.
+- Shared responsive utilities in `src/app.css` are the default way to keep spacing and type decisions consistent.
+
+Next pass should focus on QA and the remaining product gaps, not another broad styling rewrite:
+
+1. Test key screens at 320px, 375px, 390px, 768px, and short landscape heights.
+2. Verify keyboard flow, focus visibility, and comfortable tap targets on navigation, login, logs, and image management.
+3. Review reduced-motion behavior and any hover-only affordances that need a touch fallback.
+4. Replace the placeholder bridge screen at `src/routes/+page.svelte` with a real mobile-ready landing page.
+5. Only add new shared utility classes when a responsive pattern repeats in more than one place.
+
+Viewport QA notes completed so far:
+
+- Mobile navigation now scrolls on short-height screens instead of clipping below the fold.
+- The main content viewport uses `min-h-0` so nested scroll areas behave correctly inside the fixed shell.
+- Login aligns from the top on shorter screens and re-centers on larger ones to reduce vertical clipping.
+- Logs allow safer title and metadata wrapping at narrow widths.
+- The image carousel now uses a smaller default mobile height and scales up at larger breakpoints.
+
+Accessibility pass notes completed so far:
+
+- Reduced-motion mode now suppresses long transitions, smooth scrolling, and pulsing animation globally.
+- The image carousel supports keyboard navigation with left/right arrows plus Home/End.
+- Reorderable image grids now expose visible drag guidance for touch users instead of relying only on hover.
+- The mobile navigation close control now matches the 44px touch-target baseline used elsewhere.
+
 ---
 
 ## Standard Development

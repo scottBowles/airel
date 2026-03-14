@@ -35,7 +35,7 @@
 				{gameLog.title}
 			</h1>
 			<div class="log-meta">
-				<span class="whitespace-nowrap">DATE: {formatGameDate(gameLog.gameDate)}</span>
+				<span>DATE: {formatGameDate(gameLog.gameDate)}</span>
 				{#if gameLog.url}
 					<span class="inline-flex items-center gap-2 whitespace-nowrap">
 						<span class="text-slate-600" aria-hidden="true">|</span>

@@ -31,6 +31,7 @@
 
 <div
 	class="grid max-h-150 grid-cols-2 gap-3 overflow-y-auto rounded border border-slate-700 bg-slate-900 p-3 shadow-inner sm:gap-4 sm:p-4 md:grid-cols-3 xl:grid-cols-4"
+	aria-label="Sortable image grid. Drag or long-press tiles to reorder."
 	use:dndzone={{
 		items,
 		flipDurationMs: 300,
@@ -42,6 +43,7 @@
 	{#each items as item (item.id)}
 		<div
 			class="group hover:border-industrial-amber relative rounded border border-slate-700/50 bg-slate-800 p-1 shadow-md transition-colors"
+			role="listitem"
 		>
 			<div
 				class="flex aspect-square items-center justify-center overflow-hidden rounded bg-slate-950"
@@ -59,6 +61,12 @@
 			<div
 				class="absolute inset-0 cursor-grab bg-black opacity-0 transition-opacity group-hover:opacity-10 active:cursor-grabbing"
 			></div>
+
+			<div
+				class="pointer-events-none absolute right-2 bottom-2 rounded bg-slate-950/85 px-2 py-1 font-mono text-[10px] tracking-[0.18em] text-slate-300 uppercase"
+			>
+				Drag
+			</div>
 
 			<!-- Delete Button -->
 			<button
