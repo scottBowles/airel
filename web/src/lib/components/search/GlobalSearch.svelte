@@ -185,7 +185,7 @@
 		role="dialog"
 		aria-modal="true"
 		aria-label="Global search"
-		class="fixed inset-x-3 top-3 z-70 overflow-hidden border border-slate-700 bg-slate-950/96 shadow-[0_20px_60px_rgba(0,0,0,0.45)] md:top-6 md:left-1/2 md:right-auto md:w-[min(64rem,calc(100vw-4rem))] md:-translate-x-1/2"
+		class="fixed inset-x-3 top-3 z-70 overflow-hidden border border-slate-700 bg-slate-950/96 shadow-[0_20px_60px_rgba(0,0,0,0.45)] md:top-6 md:right-auto md:left-1/2 md:w-[min(64rem,calc(100vw-4rem))] md:-translate-x-1/2"
 	>
 		<div class="border-b border-slate-800 bg-slate-900/90 px-4 py-4">
 			<div class="flex items-center gap-3">
@@ -206,7 +206,9 @@
 					autocorrect="off"
 					aria-label="Search database"
 					aria-controls="global-search-results"
-					aria-activedescendant={highlightedIndex >= 0 ? getResultDomId(highlightedIndex) : undefined}
+					aria-activedescendant={highlightedIndex >= 0
+						? getResultDomId(highlightedIndex)
+						: undefined}
 				/>
 				<button
 					type="button"
@@ -217,7 +219,9 @@
 				</button>
 			</div>
 
-			<div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] tracking-[0.18em] text-slate-500 uppercase">
+			<div
+				class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] tracking-[0.18em] text-slate-500 uppercase"
+			>
 				<div>{searchableTypes}</div>
 				<div class="flex items-center gap-2">
 					{#if loading}
@@ -234,8 +238,8 @@
 			{#if !algoliaConfigured}
 				<div class="border border-slate-800 bg-slate-900/60 px-4 py-6 text-sm text-slate-400">
 					Set <span class="font-mono text-slate-200">PUBLIC_ALGOLIA_APP_ID</span> and
-					<span class="font-mono text-slate-200">PUBLIC_ALGOLIA_SEARCH_API_KEY</span> to enable
-					global search.
+					<span class="font-mono text-slate-200">PUBLIC_ALGOLIA_SEARCH_API_KEY</span> to enable global
+					search.
 				</div>
 			{:else if errorMessage}
 				<div class="border border-red-500/30 bg-red-500/10 px-4 py-6 text-sm text-red-200">
@@ -243,8 +247,8 @@
 				</div>
 			{:else if !hasQuery}
 				<div class="border border-slate-800 bg-slate-900/50 px-4 py-6 text-sm text-slate-400">
-					Type to search database. Use the arrow keys to move, then press Enter to open the
-					selected record.
+					Type to search database. Use the arrow keys to move, then press Enter to open the selected
+					record.
 				</div>
 			{:else if !loading && results.length === 0}
 				<div class="border border-slate-800 bg-slate-900/50 px-4 py-6 text-sm text-slate-400">
@@ -280,15 +284,21 @@
 								<div class="min-w-0 flex-1">
 									<div class="flex items-start justify-between gap-3">
 										<div class="min-w-0">
-											<h3 class="font-display truncate text-base text-slate-100 uppercase sm:text-lg">
+											<h3
+												class="font-display truncate text-base text-slate-100 uppercase sm:text-lg"
+											>
 												{result.name}
 											</h3>
-											<div class="mt-1 font-mono text-[11px] tracking-[0.2em] text-slate-500 uppercase">
+											<div
+												class="mt-1 font-mono text-[11px] tracking-[0.2em] text-slate-500 uppercase"
+											>
 												{result.indexLabel}
 											</div>
 										</div>
 
-										<div class="hidden items-center gap-2 font-mono text-[11px] text-slate-500 sm:flex">
+										<div
+											class="hidden items-center gap-2 font-mono text-[11px] text-slate-500 sm:flex"
+										>
 											<CornerDownLeft size={12} />
 											<span>Open</span>
 										</div>

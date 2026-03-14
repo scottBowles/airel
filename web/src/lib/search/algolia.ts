@@ -11,9 +11,7 @@ import {
 
 const SEARCH_HITS_PER_INDEX = 4;
 
-export const algoliaConfigured = Boolean(
-	PUBLIC_ALGOLIA_APP_ID && PUBLIC_ALGOLIA_SEARCH_API_KEY
-);
+export const algoliaConfigured = Boolean(PUBLIC_ALGOLIA_APP_ID && PUBLIC_ALGOLIA_SEARCH_API_KEY);
 
 const searchClient = algoliaConfigured
 	? createLiteClient(PUBLIC_ALGOLIA_APP_ID, PUBLIC_ALGOLIA_SEARCH_API_KEY)

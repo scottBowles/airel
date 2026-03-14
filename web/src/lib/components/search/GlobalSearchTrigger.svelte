@@ -3,11 +3,11 @@
 
 	let {
 		mobile = false,
-		shortcutLabel = 'Ctrl+K',
+		shortcutLabel = null,
 		onActivate = () => {}
 	}: {
 		mobile?: boolean;
-		shortcutLabel?: string;
+		shortcutLabel?: string | null;
 		onActivate?: () => void;
 	} = $props();
 </script>
@@ -31,17 +31,19 @@
 		aria-label="Open global search"
 	>
 		<div
-			class="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-800 bg-slate-900 text-slate-400 transition-colors group-hover:text-industrial-amber"
+			class="group-hover:text-industrial-amber flex h-10 w-10 shrink-0 items-center justify-center border border-slate-800 bg-slate-900 text-slate-400 transition-colors"
 		>
 			<Search size={16} strokeWidth={1.75} />
 		</div>
 		<div class="min-w-0 flex-1">
 			<div class="machine-text text-[10px] whitespace-normal">Database Search</div>
 		</div>
-		<div
-			class="hidden shrink-0 items-center border border-slate-700 px-3 py-1.5 font-mono text-xs tracking-[0.12em] text-slate-300 lg:inline-flex"
-		>
-			{shortcutLabel}
-		</div>
+		{#if shortcutLabel}
+			<div
+				class="hidden shrink-0 items-center border border-slate-700 px-2 py-2 font-mono text-xs tracking-[0.12em] text-slate-300 lg:inline-flex"
+			>
+				{shortcutLabel}
+			</div>
+		{/if}
 	</button>
 {/if}

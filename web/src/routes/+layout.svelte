@@ -19,7 +19,34 @@
 	let mobileMenuToggleRef: HTMLButtonElement | null = null;
 
 	let user = $derived(meResult?.data?.me);
-	const shortcutLabel = browser && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K';
+
+	function getShortcutLabel() {
+		if (!browser) return null;
+
+		const navigatorWithUserAgentData = navigator as Navigator & {
+			userAgentData?: {
+				mobile?: boolean;
+				platform?: string;
+			};
+		};
+
+		const isTouchFirst =
+			navigatorWithUserAgentData.userAgentData?.mobile === true ||
+			window.matchMedia('(pointer: coarse)').matches;
+
+		if (isTouchFirst) return null;
+
+		const platform = navigatorWithUserAgentData.userAgentData?.platform?.toLowerCase() ?? '';
+		const userAgent = navigator.userAgent.toLowerCase();
+		const isApple =
+			platform.includes('mac') ||
+			platform.includes('ios') ||
+			/apple|mac|iphone|ipad|ipod/.test(userAgent);
+
+		return isApple ? '⌘K' : 'Ctrl+K';
+	}
+
+	const shortcutLabel = getShortcutLabel();
 
 	function isActive(path: string) {
 		if (path === '/') return page.url.pathname === path;
@@ -311,7 +338,7 @@
 			</h1>
 		</div>
 
-		<GlobalSearchTrigger shortcutLabel={shortcutLabel} onActivate={openGlobalSearch} />
+		<GlobalSearchTrigger {shortcutLabel} onActivate={openGlobalSearch} />
 
 		<div class="flex flex-col gap-1">
 			<a
