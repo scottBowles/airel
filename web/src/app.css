@@ -89,10 +89,6 @@ h6 {
 		@apply text-2xl font-bold tracking-widest text-slate-100 uppercase sm:text-3xl;
 	}
 
-	.db-toolbar {
-		@apply flex flex-col gap-3 border border-slate-800 bg-slate-900 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4;
-	}
-
 	.db-grid {
 		@apply grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3;
 	}
