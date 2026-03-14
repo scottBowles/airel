@@ -24,9 +24,9 @@
 	}
 </script>
 
-<div class="mx-auto max-w-5xl pb-20">
+<div class="mx-auto max-w-5xl px-1 pb-16 sm:pb-20">
 	<!-- Breadcrumbs -->
-	<div class="mb-6 flex items-center gap-2 font-mono text-xs text-slate-500">
+	<div class="mb-4 flex flex-wrap items-center gap-2 font-mono text-xs text-slate-500 sm:mb-6">
 		<a href={resolve('/database')} class="hover:text-industrial-amber">DATABASE</a>
 		<span>/</span>
 		<a href={resolve('/database/characters')} class="hover:text-industrial-amber">CHARACTERS</a>
@@ -34,7 +34,7 @@
 
 	{#if char && char.__typename === 'Character'}
 		<div
-			class="border-industrial-dim mb-8 grid grid-cols-1 gap-8 border-b pb-8 md:grid-cols-[250px_1fr]"
+			class="border-industrial-dim mb-6 grid grid-cols-1 gap-6 border-b pb-6 sm:mb-8 sm:gap-8 sm:pb-8 md:grid-cols-[220px_1fr] lg:grid-cols-[250px_1fr]"
 		>
 			<!-- Portrait Frame & Image Management -->
 			<div class="relative w-full">
@@ -50,11 +50,15 @@
 
 			<!-- Stats & Info -->
 			<div class="space-y-4">
-				<h1 class="font-display text-5xl font-bold tracking-widest text-white uppercase">
+				<h1
+					class="font-display text-3xl font-bold tracking-widest text-white uppercase sm:text-5xl"
+				>
 					{char.name}
 				</h1>
 
-				<div class="text-industrial-green flex gap-4 font-mono text-sm uppercase">
+				<div
+					class="text-industrial-green flex flex-wrap gap-2 font-mono text-xs uppercase sm:gap-4 sm:text-sm"
+				>
 					<span class="border-industrial-green border px-2 py-1">Class: UNKNOWN</span>
 					<span class="border-industrial-green border px-2 py-1">Race: UNKNOWN</span>
 				</div>
@@ -68,7 +72,7 @@
 		</div>
 
 		<!-- Relationship Matrix -->
-		<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+		<div class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2">
 			<!-- Features & Traits -->
 			<div class="panel-border p-4">
 				<h3

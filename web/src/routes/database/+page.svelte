@@ -58,26 +58,26 @@
 	]);
 </script>
 
-<div class="space-y-8">
-	<div class="border-industrial-dim flex items-center justify-between border-b pb-4">
-		<h2 class="text-3xl font-bold tracking-widest text-slate-100 uppercase">Database Core</h2>
+<div class="db-page-wide">
+	<div class="db-header">
+		<h2 class="db-title">Database Core</h2>
 		<div class="text-industrial-amber font-mono text-xs">{accessLevel}</div>
 	</div>
 
-	<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+	<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
 		{#each modules as mod (mod.name)}
 			<a
-				href={resolve(mod.href as any)}
-				class="group hover:border-industrial-green relative overflow-hidden border border-slate-700 bg-slate-900/40 p-6 transition-all duration-200"
+				href={mod.href}
+				class="group hover:border-industrial-green relative overflow-hidden border border-slate-700 bg-slate-900/40 p-4 transition-all duration-200 sm:p-6"
 			>
 				<div
-					class="font-display absolute top-0 right-0 p-2 text-6xl opacity-10 transition-all group-hover:scale-110 group-hover:opacity-20"
+					class="font-display absolute top-0 right-0 p-2 text-5xl opacity-10 transition-all group-hover:scale-110 group-hover:opacity-20 sm:text-6xl"
 				>
 					{mod.icon}
 				</div>
 
 				<h3
-					class="font-display group-hover:text-industrial-green mb-2 text-2xl text-slate-200 uppercase"
+					class="font-display group-hover:text-industrial-green mb-2 text-xl text-slate-200 uppercase sm:text-2xl"
 				>
 					{mod.name}
 				</h3>

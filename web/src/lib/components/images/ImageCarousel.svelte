@@ -77,7 +77,7 @@
 			{#if selected > 0}
 				<button
 					onclick={() => scroll(selected - 1)}
-					class="absolute top-1/2 left-2 z-10 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white/70 transition-all hover:bg-black/50 hover:text-white"
+					class="absolute top-1/2 left-2 z-10 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 p-2 text-white/70 transition-all hover:bg-black/60 hover:text-white"
 					aria-label="Previous image"
 				>
 					<svg
@@ -98,7 +98,7 @@
 			{#if selected < imageIds.length - 1}
 				<button
 					onclick={() => scroll(selected + 1)}
-					class="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white/70 transition-all hover:bg-black/50 hover:text-white"
+					class="absolute top-1/2 right-2 z-10 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 p-2 text-white/70 transition-all hover:bg-black/60 hover:text-white"
 					aria-label="Next image"
 				>
 					<svg
@@ -124,13 +124,13 @@
 	<!-- Indicators -->
 	{#if imageIds.length > 1}
 		<div
-			class="pointer-events-none absolute right-0 bottom-4 left-0 z-10 flex justify-center gap-2"
+			class="pointer-events-none absolute right-0 bottom-4 left-0 z-10 flex justify-center gap-2 sm:gap-3"
 		>
 			{#each indicatorIndexes as i (i)}
 				<button
 					onclick={() => scroll(i)}
 					class="
-            pointer-events-auto h-2 w-2 cursor-pointer rounded-full transition-colors
+						pointer-events-auto min-h-11 min-w-11 cursor-pointer rounded-full transition-colors
             {i === selected
 						? 'bg-industrial-amber shadow-[0_0_8px_rgba(255,176,0,0.5)]'
 						: 'bg-slate-600 hover:bg-slate-400'}

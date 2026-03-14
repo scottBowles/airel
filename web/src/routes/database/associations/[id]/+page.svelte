@@ -23,53 +23,46 @@
 </script>
 
 {#if association && association.__typename === 'Association'}
-	<div class="flex h-full flex-col overflow-hidden p-4">
+	<div class="db-detail">
 		<!-- Header -->
-		<div class="mb-6 flex items-start justify-between border-b border-zinc-800 pb-4">
+		<div class="db-detail-header">
 			<div>
 				<div class="flex items-baseline gap-3">
-					<h1 class="text-3xl font-bold text-emerald-400">{association.name}</h1>
+					<h1 class="db-detail-title">{association.name}</h1>
 				</div>
 			</div>
-			<a
-				href={resolve('/database/associations')}
-				class="text-sm text-zinc-500 transition-colors hover:text-emerald-400"
-			>
-				← Back to Associations
-			</a>
+			<a href={resolve('/database/associations')} class="db-back-link"> ← Back to Associations </a>
 		</div>
 
-		<div class="custom-scrollbar flex-1 overflow-y-auto pr-4">
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<!-- Images -->
-				<div class="lg:col-span-1">
-					<AdminImageManager
-						imageIds={association.imageIds || []}
-						canEdit={isAdmin}
-						onSave={saveImages}
-					/>
-				</div>
+		<div class="db-detail-grid">
+			<!-- Images -->
+			<div class="lg:col-span-1">
+				<AdminImageManager
+					imageIds={association.imageIds || []}
+					canEdit={isAdmin}
+					onSave={saveImages}
+				/>
+			</div>
 
-				<!-- Main Info -->
-				<div class="space-y-6 lg:col-span-2">
-					{#if association.description}
-						<div class="rounded-sm border border-zinc-800/50 bg-zinc-900/30 p-4">
-							<h3 class="mb-2 text-xs font-bold text-zinc-500 uppercase">Description</h3>
-							<p class="leading-relaxed whitespace-pre-wrap text-zinc-300">
-								{association.description}
-							</p>
-						</div>
-					{/if}
+			<!-- Main Info -->
+			<div class="db-detail-main">
+				{#if association.description}
+					<div class="db-detail-panel">
+						<h3 class="db-detail-panel-title">Description</h3>
+						<p class="leading-relaxed whitespace-pre-wrap text-zinc-300">
+							{association.description}
+						</p>
+					</div>
+				{/if}
 
-					{#if association.markdownNotes}
-						<div class="rounded-sm border border-zinc-800/50 bg-zinc-900/30 p-4">
-							<h3 class="mb-2 text-xs font-bold text-zinc-500 uppercase">Notes</h3>
-							<div class="prose prose-sm max-w-none text-zinc-400 prose-invert">
-								{association.markdownNotes}
-							</div>
+				{#if association.markdownNotes}
+					<div class="db-detail-panel">
+						<h3 class="db-detail-panel-title">Notes</h3>
+						<div class="prose prose-sm max-w-none text-zinc-400 prose-invert">
+							{association.markdownNotes}
 						</div>
-					{/if}
-				</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

@@ -6,12 +6,38 @@
 		PUBLIC_CLOUDINARY_UPLOAD_PRESET
 	} from '$env/static/public';
 
+	interface CloudinaryUploadResult {
+		event?: string;
+		info?: {
+			public_id: string;
+		};
+	}
+
+	interface CloudinaryWidget {
+		open: () => void;
+	}
+
+	interface CloudinaryGlobal {
+		createUploadWidget: (
+			options: Record<string, unknown>,
+			callback: (error: unknown, result: CloudinaryUploadResult) => void
+		) => CloudinaryWidget;
+	}
+
+	interface CloudinaryWindow extends Window {
+		cloudinary?: CloudinaryGlobal;
+	}
+
 	let { onUpload }: { onUpload: (publicId: string) => void } = $props();
-	let widget: any;
+	let widget: CloudinaryWidget | null = null;
 	let error: string | null = $state(null);
 
+	function getCloudinaryWindow() {
+		return window as CloudinaryWindow;
+	}
+
 	onMount(async () => {
-		if (typeof (window as any).cloudinary === 'undefined') {
+		if (typeof getCloudinaryWindow().cloudinary === 'undefined') {
 			const script = document.createElement('script');
 			script.src = 'https://upload-widget.cloudinary.com/global/all.js';
 			script.onload = initWidget;
@@ -27,7 +53,13 @@
 			return;
 		}
 
-		widget = (window as any).cloudinary.createUploadWidget(
+		const cloudinary = getCloudinaryWindow().cloudinary;
+		if (!cloudinary) {
+			error = 'Cloudinary widget failed to initialize';
+			return;
+		}
+
+		widget = cloudinary.createUploadWidget(
 			{
 				cloudName: PUBLIC_CLOUDINARY_CLOUD_NAME || 'demo',
 				uploadPreset: PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default', // Fallback preset
@@ -36,10 +68,12 @@
 				resourceType: 'image',
 				folder: 'airel' // Optional folder
 			},
-			(error: any, result: any) => {
+			(error: unknown, result: CloudinaryUploadResult) => {
 				if (!error && result && result.event === 'success') {
 					console.log('Done! Here is the image info: ', result.info);
-					onUpload(result.info.public_id);
+					if (result.info?.public_id) {
+						onUpload(result.info.public_id);
+					}
 				} else if (error) {
 					console.error('Cloudinary widget error:', error);
 				}
@@ -58,7 +92,7 @@
 
 <button
 	onclick={openWidget}
-	class="panel-border text-industrial-amber flex cursor-pointer items-center justify-center gap-2 bg-slate-900/50 px-4 py-2 font-mono text-sm transition-colors hover:bg-slate-800/80"
+	class="panel-border text-industrial-amber flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 bg-slate-900/50 px-4 py-2 font-mono text-sm transition-colors hover:bg-slate-800/80 sm:w-auto"
 >
 	<svg
 		xmlns="http://www.w3.org/2000/svg"

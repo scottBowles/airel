@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { fade, slide } from 'svelte/transition';
-	import { cubicInOut } from 'svelte/easing';
+	import { fade } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
 	import ImageCarousel from './ImageCarousel.svelte';
 	import ImageSortableGrid from './ImageSortableGrid.svelte';
@@ -67,7 +66,9 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between border-b border-white/5 pb-2">
+	<div
+		class="flex flex-col gap-3 border-b border-white/5 pb-3 sm:flex-row sm:items-center sm:justify-between"
+	>
 		<h3 class="font-display text-sm font-bold tracking-widest text-slate-400 uppercase">
 			VISUAL RECORDS
 		</h3>
@@ -75,23 +76,23 @@
 			{#if !isEditing}
 				<button
 					onclick={startEditing}
-					class="text-industrial-amber font-mono text-xs uppercase underline decoration-dotted underline-offset-4 transition-colors hover:text-white"
+					class="text-industrial-amber inline-flex min-h-11 items-center font-mono text-xs uppercase underline decoration-dotted underline-offset-4 transition-colors hover:text-white"
 				>
 					[EDIT MODE]
 				</button>
 			{:else}
-				<div class="flex gap-2">
+				<div class="flex flex-col gap-2 sm:flex-row">
 					<button
 						onclick={cancelEditing}
 						disabled={saving}
-						class="rounded border border-transparent px-3 py-1 text-xs text-slate-400 transition-colors hover:border-slate-600 hover:text-white"
+						class="inline-flex min-h-11 items-center justify-center rounded border border-transparent px-3 py-2 text-xs text-slate-400 transition-colors hover:border-slate-600 hover:text-white"
 					>
 						CANCEL
 					</button>
 					<button
 						onclick={saveChanges}
 						disabled={saving}
-						class="bg-industrial-amber rounded px-3 py-1 text-xs font-bold text-black shadow-lg transition-colors hover:bg-white disabled:opacity-50"
+						class="bg-industrial-amber inline-flex min-h-11 items-center justify-center rounded px-3 py-2 text-xs font-bold text-black shadow-lg transition-colors hover:bg-white disabled:opacity-50"
 					>
 						{saving ? 'SAVING...' : 'SAVE CHANGES'}
 					</button>
@@ -109,9 +110,9 @@
 			<div
 				in:fade={{ duration: 200 }}
 				out:fade={{ duration: 0 }}
-				class="space-y-4 bg-slate-900/90 p-4"
+				class="space-y-4 bg-slate-900/90 p-3 sm:p-4"
 			>
-				<div class="flex justify-end">
+				<div class="flex justify-stretch sm:justify-end">
 					<UploadWidget onUpload={handleUpload} />
 				</div>
 

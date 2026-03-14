@@ -51,6 +51,21 @@ In `+page.svelte`, access the store via `data` props and derived state.
 - Theme configuration is in `src/app.css` under the `@theme` block.
 - Import order in `app.css` is strict: `@import` -> `@plugin` -> `@theme`.
 
+### 3. Responsive Scale Rules
+
+To keep responsive styling maintainable, use shared utility classes from `src/app.css` instead of ad hoc spacing/type combinations.
+
+- App shell/content spacing: `content-pad`, `panel-pad`, `stack-space`
+- Shared typography: `title-display`, `copy-readable`, `machine-text`
+- Database list pages: `db-page`, `db-header`, `db-title`, `db-toolbar`, `db-grid`, `db-card`, `db-card-thumb`, `db-card-title`, `db-card-copy`
+- Database detail pages: `db-detail`, `db-detail-header`, `db-detail-title`, `db-back-link`, `db-detail-grid`, `db-detail-main`, `db-detail-side`, `db-detail-panel`, `db-detail-panel-title`
+
+When adding a new screen:
+
+1. Start with existing utility classes.
+2. If you need a new spacing/type pattern in more than one place, add a named utility in `src/app.css`.
+3. Avoid copying large class strings between route files.
+
 ---
 
 ## Standard Development

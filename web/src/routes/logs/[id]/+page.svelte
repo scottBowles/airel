@@ -5,14 +5,15 @@
 
 	let { data }: { data: PageData } = $props();
 	let LogDetail = $derived(data.LogDetail);
+
+	function openExternalSource(url: string) {
+		window.open(url, '_blank', 'noopener,noreferrer');
+	}
 </script>
 
-<div class="mx-auto max-w-4xl space-y-8 pb-20">
-	<div class="mb-6">
-		<a
-			href={resolve('/logs')}
-			class="machine-text hover:text-industrial-amber mb-4 flex items-center gap-2 text-xs text-slate-500"
-		>
+<div class="log-detail-page">
+	<div>
+		<a href={resolve('/logs')} class="log-back-link">
 			<span>&lt;</span> RETURN TO CHRONICLE
 		</a>
 	</div>
@@ -27,56 +28,57 @@
 			<pre class="mt-4 text-xs">{JSON.stringify($LogDetail.errors, null, 2)}</pre>
 		</div>
 	{:else if $LogDetail?.data?.node?.__typename === 'GameLog'}
+		{@const gameLog = $LogDetail.data.node}
 		<!-- Header Section -->
-		<header class="border-industrial-dim border-b pb-6">
-			<h1 class="font-display mb-2 text-4xl font-bold tracking-widest text-slate-100 uppercase">
-				{$LogDetail.data.node.title}
+		<header class="log-panel border-industrial-dim border-t-2">
+			<h1 class="log-title mb-2">
+				{gameLog.title}
 			</h1>
-			<div class="text-industrial-amber flex items-center gap-4 font-mono text-sm">
-				<span>DATE: {formatGameDate($LogDetail.data.node.gameDate)}</span>
-				{#if $LogDetail.data.node.url}
-					<span class="text-slate-600">|</span>
-					<a
-						href={$LogDetail.data.node.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="hover:text-white hover:underline"
-					>
-						SOURCE LINK ↗
-					</a>
+			<div class="log-meta">
+				<span class="whitespace-nowrap">DATE: {formatGameDate(gameLog.gameDate)}</span>
+				{#if gameLog.url}
+					<span class="inline-flex items-center gap-2 whitespace-nowrap">
+						<span class="text-slate-600" aria-hidden="true">|</span>
+						<button
+							type="button"
+							onclick={() => openExternalSource(gameLog.url)}
+							class="inline-flex min-h-11 items-center border border-transparent px-1 hover:text-white hover:underline"
+						>
+							SOURCE LINK ↗
+						</button>
+					</span>
 				{/if}
 			</div>
 		</header>
 
 		<!-- Brief / Abstract -->
-		{#if $LogDetail.data.node.brief}
-			<div class="border-industrial-amber border-l-2 bg-slate-900/50 p-4">
+		{#if gameLog.brief}
+			<div class="log-abstract border-industrial-amber border-l-3">
 				<h3 class="text-industrial-amber mb-2 font-mono text-xs uppercase">Abstract</h3>
-				<p class="font-body text-lg text-slate-300 italic">{$LogDetail.data.node.brief}</p>
+				<p class="font-body text-base text-slate-300 italic sm:text-lg">{gameLog.brief}</p>
 			</div>
 		{/if}
 
 		<!-- Main Content (Synopsis/Summary for now) -->
-		<div class="prose prose-lg max-w-none text-slate-300 prose-invert">
+		<div class="log-panel prose prose-lg max-w-none text-slate-300 prose-invert">
+			<h3 class="log-panel-title">Record</h3>
 			<p class="leading-relaxed whitespace-pre-wrap">
-				{$LogDetail.data.node.synopsis ||
-					$LogDetail.data.node.summary ||
-					'No detailed transcript available.'}
+				{gameLog.synopsis || gameLog.summary || 'No detailed transcript available.'}
 			</p>
 		</div>
 
 		<!-- Related Associations -->
-		<div class="grid grid-cols-1 gap-6 border-t border-slate-800 pt-8 md:grid-cols-3">
+		<div class="log-related-grid">
 			<!-- Characters -->
-			{#if $LogDetail.data.node.characters?.edges.length}
-				<div class="space-y-3">
-					<h4 class="font-display text-lg text-slate-500 uppercase">Personnel</h4>
+			{#if gameLog.characters?.edges.length}
+				<div class="log-related-group">
+					<h4 class="font-display text-lg text-slate-300 uppercase">Personnel</h4>
 					<ul class="space-y-1">
-						{#each $LogDetail.data.node.characters.edges as { node } (node.id)}
+						{#each gameLog.characters.edges as { node } (node.id)}
 							<li>
 								<a
 									href={resolve(`/database/characters/${node.id}`)}
-									class="machine-text text-industrial-green text-sm hover:underline"
+									class="log-related-link text-industrial-green"
 								>
 									{node.name}
 								</a>
@@ -87,15 +89,15 @@
 			{/if}
 
 			<!-- Places -->
-			{#if $LogDetail.data.node.placesSetIn?.edges.length}
-				<div class="space-y-3">
-					<h4 class="font-display text-lg text-slate-500 uppercase">Locations</h4>
+			{#if gameLog.placesSetIn?.edges.length}
+				<div class="log-related-group">
+					<h4 class="font-display text-lg text-slate-300 uppercase">Locations</h4>
 					<ul class="space-y-1">
-						{#each $LogDetail.data.node.placesSetIn.edges as { node } (node.id)}
+						{#each gameLog.placesSetIn.edges as { node } (node.id)}
 							<li>
 								<a
 									href={resolve(`/database/places/${node.id}`)}
-									class="machine-text text-industrial-amber text-sm hover:underline"
+									class="log-related-link text-industrial-amber"
 								>
 									{node.name}
 								</a>
@@ -106,15 +108,15 @@
 			{/if}
 
 			<!-- Items -->
-			{#if $LogDetail.data.node.items?.edges.length}
-				<div class="space-y-3">
-					<h4 class="font-display text-lg text-slate-500 uppercase">Assets</h4>
+			{#if gameLog.items?.edges.length}
+				<div class="log-related-group">
+					<h4 class="font-display text-lg text-slate-300 uppercase">Assets</h4>
 					<ul class="space-y-1">
-						{#each $LogDetail.data.node.items.edges as { node } (node.id)}
+						{#each gameLog.items.edges as { node } (node.id)}
 							<li>
 								<a
 									href={resolve(`/database/items/${node.id}`)}
-									class="machine-text text-xs text-slate-400 hover:text-slate-200"
+									class="log-related-link text-slate-400 hover:text-slate-200"
 								>
 									{node.name}
 								</a>

@@ -22,7 +22,7 @@
 }
 
 body {
-	@apply font-body bg-slate-950 text-slate-200 antialiased;
+	@apply font-body bg-slate-950 text-[15px] leading-relaxed text-slate-200 antialiased sm:text-base;
 	/* Scanline effect overlay can be added here later */
 }
 
@@ -39,7 +39,7 @@ h3,
 h4,
 h5,
 h6 {
-	@apply font-display tracking-widest text-slate-100 uppercase;
+	@apply font-display leading-tight tracking-[0.12em] text-slate-100 uppercase;
 }
 
 /* Utility to force "machine" look */
@@ -49,15 +49,172 @@ h6 {
 
 /* Custom Utilities for the Bits UI components */
 @layer utilities {
+	.content-pad {
+		@apply px-3 py-4 sm:px-4 sm:py-5 md:p-8;
+	}
+
+	.touch-target {
+		@apply min-h-11 min-w-11;
+	}
+
+	/* Database page layout scale */
+	.db-page {
+		@apply space-y-4 sm:space-y-6;
+	}
+
+	.db-page-wide {
+		@apply space-y-6 sm:space-y-8;
+	}
+
+	.db-header {
+		@apply border-industrial-dim flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between sm:pb-4;
+	}
+
+	.db-title {
+		@apply text-2xl font-bold tracking-widest text-slate-100 uppercase sm:text-3xl;
+	}
+
+	.db-toolbar {
+		@apply flex flex-col gap-3 border border-slate-800 bg-slate-900 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4;
+	}
+
+	.db-grid {
+		@apply grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3;
+	}
+
+	.db-card {
+		@apply hover:border-industrial-amber block border border-slate-800 bg-slate-900/40 p-3 transition-colors sm:p-4;
+	}
+
+	.db-card-thumb {
+		@apply flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-slate-800 font-mono text-xs text-slate-600 sm:h-10 sm:w-10;
+	}
+
+	.db-card-title {
+		@apply font-display group-hover:text-industrial-amber truncate text-lg text-slate-200 sm:text-xl;
+	}
+
+	.db-card-copy {
+		@apply font-body line-clamp-2 min-h-8 text-xs text-slate-400;
+	}
+
+	.db-detail {
+		@apply space-y-6 p-3 sm:p-4;
+	}
+
+	.db-detail-header {
+		@apply flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-start sm:justify-between;
+	}
+
+	.db-detail-title {
+		@apply text-2xl font-bold text-emerald-400 sm:text-3xl;
+	}
+
+	.db-back-link {
+		@apply inline-flex min-h-11 items-center py-2 text-xs text-zinc-500 transition-colors hover:text-emerald-400 sm:text-sm;
+	}
+
+	.db-detail-grid {
+		@apply grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3;
+	}
+
+	.db-detail-main {
+		@apply space-y-4 sm:space-y-6 lg:col-span-2;
+	}
+
+	.db-detail-side {
+		@apply space-y-4 sm:space-y-6;
+	}
+
+	.db-detail-panel {
+		@apply rounded-sm border border-zinc-800/50 bg-zinc-900/30 p-4;
+	}
+
+	.db-detail-panel-title {
+		@apply mb-2 text-xs font-bold text-zinc-500 uppercase;
+	}
+
+	.log-page {
+		@apply space-y-4 sm:space-y-6;
+	}
+
+	.log-detail-page {
+		@apply mx-auto max-w-4xl space-y-6 pb-16 sm:space-y-8 sm:pb-20;
+	}
+
+	.log-header {
+		@apply border-industrial-dim flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between sm:pb-4;
+	}
+
+	.log-title {
+		@apply text-2xl font-bold tracking-widest text-slate-100 uppercase sm:text-3xl md:text-4xl;
+	}
+
+	.log-card {
+		@apply hover:border-industrial-amber/60 relative block overflow-hidden rounded-sm border border-slate-700 bg-slate-900/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_10px_22px_rgba(0,0,0,0.18)] transition-all duration-150 hover:bg-slate-900/90 hover:shadow-[0_0_0_1px_rgba(255,176,0,0.12),0_14px_28px_rgba(0,0,0,0.24)];
+	}
+
+	.log-card-body {
+		@apply bg-slate-950/25 px-4 py-4 pl-6 sm:px-5 sm:py-4 sm:pl-7;
+	}
+
+	.log-back-link {
+		@apply hover:text-industrial-amber inline-flex min-h-11 items-center gap-2 py-2 font-mono text-xs tracking-wider text-slate-500 uppercase;
+	}
+
+	.log-panel {
+		@apply rounded-sm border border-slate-700 bg-slate-900/74 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_10px_22px_rgba(0,0,0,0.14)] sm:p-5;
+	}
+
+	.log-panel-title {
+		@apply font-display mb-3 text-lg text-slate-300 uppercase;
+	}
+
+	.log-meta {
+		@apply text-industrial-amber flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-sm;
+	}
+
+	.log-related-grid {
+		@apply grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-3;
+	}
+
+	.log-related-group {
+		@apply space-y-3 rounded-sm border border-slate-700 bg-slate-900/68 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.12)];
+	}
+
+	.log-related-link {
+		@apply text-industrial-amber inline-flex min-h-11 items-center py-1 font-mono text-sm tracking-wider uppercase hover:underline;
+	}
+
+	.log-abstract {
+		@apply rounded-sm border border-slate-700 bg-slate-900/78 py-4 pr-4 pl-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_10px_20px_rgba(0,0,0,0.12)] sm:py-5 sm:pr-5 sm:pl-6;
+	}
+
+	.panel-pad {
+		@apply p-3 sm:p-4 md:p-6;
+	}
+
+	.stack-space {
+		@apply space-y-3 sm:space-y-4 md:space-y-6;
+	}
+
+	.title-display {
+		@apply font-display text-xl leading-tight tracking-[0.14em] uppercase sm:text-2xl md:text-3xl;
+	}
+
+	.copy-readable {
+		@apply text-sm leading-relaxed sm:text-base;
+	}
+
 	.panel-border {
 		@apply border border-slate-700 bg-slate-900/80 backdrop-blur-sm;
 	}
 
 	.industrial-input {
-		@apply focus:border-industrial-amber focus:ring-industrial-amber border border-slate-700 bg-slate-900 p-2 font-mono text-slate-200 transition-colors duration-75 outline-none focus:ring-1;
+		@apply focus:border-industrial-amber focus:ring-industrial-amber min-h-11 border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-slate-200 transition-colors duration-75 outline-none focus:ring-1;
 	}
 
 	.industrial-btn {
-		@apply font-display border border-slate-600 bg-slate-800 px-4 py-2 tracking-wider text-slate-200 uppercase transition-all duration-75 hover:border-slate-400 hover:bg-slate-700 active:translate-y-[1px] active:bg-slate-600;
+		@apply font-display inline-flex min-h-11 items-center justify-center border border-slate-600 bg-slate-800 px-4 py-2 tracking-wider text-slate-200 uppercase transition-all duration-75 hover:border-slate-400 hover:bg-slate-700 active:translate-y-px active:bg-slate-600;
 	}
 }

@@ -389,7 +389,7 @@
 		></div>
 
 		<!-- Scrollable content area -->
-		<div class="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 md:p-8">
+		<div class="content-pad flex-1 overflow-y-auto">
 			{@render children()}
 		</div>
 	</main>

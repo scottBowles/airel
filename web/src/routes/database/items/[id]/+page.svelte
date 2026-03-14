@@ -23,50 +23,43 @@
 </script>
 
 {#if item && item.__typename === 'Item'}
-	<div class="flex h-full flex-col overflow-hidden p-4">
+	<div class="db-detail">
 		<!-- Header -->
-		<div class="mb-6 flex items-start justify-between border-b border-zinc-800 pb-4">
+		<div class="db-detail-header">
 			<div>
 				<div class="flex items-baseline gap-3">
-					<h1 class="text-3xl font-bold text-emerald-400">{item.name}</h1>
+					<h1 class="db-detail-title">{item.name}</h1>
 				</div>
 			</div>
-			<a
-				href={resolve('/database/items')}
-				class="text-sm text-zinc-500 transition-colors hover:text-emerald-400"
-			>
-				← Back to Items
-			</a>
+			<a href={resolve('/database/items')} class="db-back-link"> ← Back to Items </a>
 		</div>
 
-		<div class="custom-scrollbar flex-1 overflow-y-auto pr-4">
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<!-- Main Info -->
-				<div class="space-y-6 lg:col-span-2">
-					{#if item.description}
-						<div class="rounded-sm border border-zinc-800/50 bg-zinc-900/30 p-4">
-							<h3 class="mb-2 text-xs font-bold text-zinc-500 uppercase">Description</h3>
-							<p class="leading-relaxed whitespace-pre-wrap text-zinc-300">{item.description}</p>
-						</div>
-					{/if}
-
-					{#if item.markdownNotes}
-						<div class="rounded-sm border border-zinc-800/50 bg-zinc-900/30 p-4">
-							<h3 class="mb-2 text-xs font-bold text-zinc-500 uppercase">Notes</h3>
-							<div class="prose prose-sm max-w-none text-zinc-400 prose-invert">
-								{item.markdownNotes}
-							</div>
-						</div>
-					{/if}
-				</div>
-
-				<!-- Sidebar -->
-				<div class="space-y-6">
-					<AdminImageManager imageIds={item.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
-					<div class="rounded-sm border border-zinc-800 bg-zinc-900/50 p-4">
-						<h3 class="mb-4 text-sm font-bold tracking-wide text-zinc-400 uppercase">Details</h3>
-						<div class="text-sm text-zinc-500 italic">No additional stats available yet.</div>
+		<div class="db-detail-grid">
+			<!-- Main Info -->
+			<div class="db-detail-main">
+				{#if item.description}
+					<div class="db-detail-panel">
+						<h3 class="db-detail-panel-title">Description</h3>
+						<p class="leading-relaxed whitespace-pre-wrap text-zinc-300">{item.description}</p>
 					</div>
+				{/if}
+
+				{#if item.markdownNotes}
+					<div class="db-detail-panel">
+						<h3 class="db-detail-panel-title">Notes</h3>
+						<div class="prose prose-sm max-w-none text-zinc-400 prose-invert">
+							{item.markdownNotes}
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Sidebar -->
+			<div class="db-detail-side">
+				<AdminImageManager imageIds={item.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
+				<div class="rounded-sm border border-zinc-800 bg-zinc-900/50 p-4">
+					<h3 class="mb-4 text-sm font-bold tracking-wide text-zinc-400 uppercase">Details</h3>
+					<div class="text-sm text-zinc-500 italic">No additional stats available yet.</div>
 				</div>
 			</div>
 		</div>

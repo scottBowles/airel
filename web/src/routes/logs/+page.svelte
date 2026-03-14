@@ -8,9 +8,9 @@
 	let LogList = $derived(data.LogList);
 </script>
 
-<div class="space-y-4">
-	<div class="border-industrial-dim flex items-center justify-between border-b pb-4">
-		<h2 class="text-3xl font-bold tracking-widest text-slate-100 uppercase">Chronicle</h2>
+<div class="log-page">
+	<div class="log-header">
+		<h2 class="log-title">Chronicle</h2>
 		<div class="text-industrial-amber font-mono text-xs">
 			<!-- Safe access to store data -->
 			Records Found: {$LogList?.data?.gameLogs?.edges?.length || 0}
@@ -19,7 +19,7 @@
 
 	<div class="grid gap-4">
 		{#if $LogList?.fetching}
-			<div class="text-industrial-dim animate-pulse p-8 text-center font-mono">
+			<div class="log-panel text-industrial-dim animate-pulse text-center font-mono">
 				INITIALIZING DATALINK...
 			</div>
 		{:else if $LogList?.errors}
@@ -29,26 +29,23 @@
 			</div>
 		{:else if $LogList?.data}
 			{#each $LogList.data.gameLogs.edges as { node: log } (log.id)}
-				<a
-					href={resolve(`/logs/${log.id}`)}
-					class="group hover:border-industrial-amber/50 relative block overflow-hidden border border-slate-800 bg-slate-900/40 transition-all duration-150"
-				>
+				<a href={resolve(`/logs/${log.id}`)} class="group log-card">
 					<!-- Status Strip -->
 					<div
-						class="group-hover:bg-industrial-amber absolute top-0 bottom-0 left-0 w-1 bg-slate-800 transition-colors"
+						class="group-hover:bg-industrial-amber absolute top-0 bottom-0 left-0 w-1.5 bg-slate-700 transition-colors"
 					></div>
 
-					<div class="p-4 pl-6">
-						<div class="mb-2 flex items-baseline justify-between">
+					<div class="log-card-body">
+						<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
 							<h3
-								class="font-display group-hover:text-industrial-amber text-xl font-medium text-slate-200 transition-colors"
+								class="font-display group-hover:text-industrial-amber text-xl font-medium text-slate-100 transition-colors"
 							>
 								{log.title}
 							</h3>
 							<span class="font-mono text-xs text-slate-500">{formatGameDate(log.gameDate)}</span>
 						</div>
 
-						<p class="font-body line-clamp-2 text-sm text-slate-400">
+						<p class="font-body line-clamp-2 text-sm leading-relaxed text-slate-300 sm:text-[15px]">
 							{log.brief || log.synopsis}
 						</p>
 						<!-- Tech Chips removed as tags don't exist yet -->
