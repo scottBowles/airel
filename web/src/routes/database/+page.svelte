@@ -22,40 +22,34 @@
 		{
 			name: 'Characters',
 			href: '/database/characters',
-			icon: '👤',
 			count: counts.characters
 		},
 		{
 			name: 'Places',
 			href: '/database/places',
-			icon: '📍',
 			count: counts.places
 		},
 		{
 			name: 'Items',
 			href: '/database/items',
-			icon: '📦',
 			count: counts.items
 		},
 		{
 			name: 'Artifacts',
 			href: '/database/artifacts',
-			icon: '🔮',
 			count: counts.artifacts
 		},
 		{
 			name: 'Associations',
 			href: '/database/associations',
-			icon: '🤝',
 			count: counts.associations
 		},
 		{
 			name: 'Races',
 			href: '/database/races',
-			icon: '🧬',
 			count: counts.races
 		}
-	]);
+	] as const);
 </script>
 
 <div class="db-page-wide">
@@ -67,20 +61,16 @@
 	<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
 		{#each modules as mod (mod.name)}
 			<a
-				href={mod.href}
+				href={resolve(mod.href)}
 				class="group hover:border-industrial-green relative overflow-hidden border border-slate-700 bg-slate-900/40 p-4 transition-all duration-200 sm:p-6"
 			>
-				<div
-					class="font-display absolute top-0 right-0 p-2 text-5xl opacity-10 transition-all group-hover:scale-110 group-hover:opacity-20 sm:text-6xl"
-				>
-					{mod.icon}
+				<div class="mb-2 flex items-start justify-between gap-3">
+					<h3
+						class="font-display group-hover:text-industrial-green text-xl text-slate-200 uppercase sm:text-2xl"
+					>
+						{mod.name}
+					</h3>
 				</div>
-
-				<h3
-					class="font-display group-hover:text-industrial-green mb-2 text-xl text-slate-200 uppercase sm:text-2xl"
-				>
-					{mod.name}
-				</h3>
 
 				<div class="group-hover:text-industrial-green/70 font-mono text-xs text-slate-500">
 					RECORDS: {mod.count}
