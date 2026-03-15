@@ -7,7 +7,9 @@
 
 	let { data }: { data: PageData } = $props();
 	let { AssociationList } = $derived(data);
-	let associationEdges = $derived(sortEdgesByUpdatedDesc($AssociationList.data?.associations?.edges));
+	let associationEdges = $derived(
+		sortEdgesByUpdatedDesc($AssociationList.data?.associations?.edges)
+	);
 </script>
 
 <div class="db-page">
