@@ -26,6 +26,9 @@
 	const cld = new Cloudinary({
 		cloud: {
 			cloudName: PUBLIC_CLOUDINARY_CLOUD_NAME || 'demo' // Fallback to demo if not set
+		},
+		url: {
+			analytics: false
 		}
 	});
 
