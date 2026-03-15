@@ -3,6 +3,7 @@ query CharacterList {
 		edges {
 			node {
 				id
+				updated
 				name
 				description
 				imageIds

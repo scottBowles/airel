@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import { sortEdgesByUpdatedDesc } from '$lib/utils';
 	import CldImage from '$lib/components/images/CldImage.svelte';
 	import ScifiPlaceholder from '$lib/components/ui/ScifiPlaceholder.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let { AssociationList } = $derived(data);
+	let associationEdges = $derived(sortEdgesByUpdatedDesc($AssociationList.data?.associations?.edges));
 </script>
 
 <div class="db-page">
@@ -15,14 +17,14 @@
 			<h2 class="db-title">Associations</h2>
 		</div>
 		<div class="text-industrial-amber font-mono text-xs">
-			Count: {$AssociationList.data?.associations?.edges.length || 0}
+			Count: {associationEdges.length}
 		</div>
 	</div>
 
 	<!-- Grid -->
 	<div class="db-grid">
-		{#if $AssociationList.data?.associations?.edges}
-			{#each $AssociationList.data.associations.edges as edge (edge.node.id)}
+		{#if associationEdges.length}
+			{#each associationEdges as edge (edge.node.id)}
 				<a href={resolve(`/database/associations/${edge.node.id}`)} class="group db-card">
 					<div class="mb-3 flex items-center gap-3">
 						{#if edge.node.imageIds?.length > 0}

@@ -3,6 +3,7 @@ query ArtifactList {
 		edges {
 			node {
 				id
+				updated
 				name
 				description
 				imageIds

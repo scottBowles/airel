@@ -3,6 +3,7 @@ query AssociationList {
 		edges {
 			node {
 				id
+				updated
 				name
 				description
 				imageIds

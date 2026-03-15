@@ -3,6 +3,7 @@ query ItemList {
 		edges {
 			node {
 				id
+				updated
 				name
 				description
 				imageIds

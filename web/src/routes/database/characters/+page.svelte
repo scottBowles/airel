@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { resolve } from '$app/paths';
+	import { sortEdgesByUpdatedDesc } from '$lib/utils';
 	import CldImage from '$lib/components/images/CldImage.svelte';
 	import ScifiPlaceholder from '$lib/components/ui/ScifiPlaceholder.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let CharacterList = $derived(data.CharacterList);
+	let characterEdges = $derived(sortEdgesByUpdatedDesc($CharacterList.data?.characters?.edges));
 </script>
 
 <div class="db-page">
@@ -15,14 +17,14 @@
 			<h2 class="db-title">Characters</h2>
 		</div>
 		<div class="text-industrial-amber font-mono text-xs">
-			Count: {$CharacterList.data?.characters.edges.length || 0}
+			Count: {characterEdges.length}
 		</div>
 	</div>
 
 	<!-- Grid -->
 	<div class="db-grid">
-		{#if $CharacterList.data}
-			{#each $CharacterList.data.characters.edges as { node: char } (char.id)}
+		{#if characterEdges.length}
+			{#each characterEdges as { node: char } (char.id)}
 				<a href={resolve(`/database/characters/${char.id}`)} class="group db-card">
 					<div class="mb-3 flex items-center gap-3">
 						{#if char.imageIds?.length > 0}

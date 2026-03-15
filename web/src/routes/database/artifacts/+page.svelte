@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import { sortEdgesByUpdatedDesc } from '$lib/utils';
 	import CldImage from '$lib/components/images/CldImage.svelte';
 	import ScifiPlaceholder from '$lib/components/ui/ScifiPlaceholder.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let { ArtifactList } = $derived(data);
+	let artifactEdges = $derived(sortEdgesByUpdatedDesc($ArtifactList.data?.artifacts?.edges));
 </script>
 
 <div class="db-page">
@@ -15,14 +17,14 @@
 			<h2 class="db-title">Artifacts</h2>
 		</div>
 		<div class="text-industrial-amber font-mono text-xs">
-			Count: {$ArtifactList.data?.artifacts?.edges.length || 0}
+			Count: {artifactEdges.length}
 		</div>
 	</div>
 
 	<!-- Grid -->
 	<div class="db-grid">
-		{#if $ArtifactList.data?.artifacts?.edges}
-			{#each $ArtifactList.data.artifacts.edges as edge (edge.node.id)}
+		{#if artifactEdges.length}
+			{#each artifactEdges as edge (edge.node.id)}
 				<a href={resolve(`/database/artifacts/${edge.node.id}`)} class="group db-card">
 					<div class="mb-3 flex items-center gap-3">
 						{#if edge.node.imageIds?.length > 0}

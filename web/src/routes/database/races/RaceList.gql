@@ -3,6 +3,7 @@ query RaceList {
 		edges {
 			node {
 				id
+				updated
 				name
 				description
 				imageIds

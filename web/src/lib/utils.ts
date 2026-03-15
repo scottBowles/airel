@@ -42,3 +42,32 @@ export function formatGameDate(date: Date | string | null | undefined): string {
 		return 'INVALID DATE';
 	}
 }
+
+type EdgeWithUpdatedNode = {
+	readonly node: {
+		readonly updated: Date | string;
+	};
+};
+
+export function sortEdgesByUpdatedDesc<TEdge extends EdgeWithUpdatedNode>(
+	edges: readonly TEdge[] | null | undefined
+): TEdge[] {
+	return [...(edges ?? [])].sort((left, right) => {
+		const leftUpdated = new Date(left.node.updated).getTime();
+		const rightUpdated = new Date(right.node.updated).getTime();
+
+		if (Number.isNaN(leftUpdated) && Number.isNaN(rightUpdated)) {
+			return 0;
+		}
+
+		if (Number.isNaN(leftUpdated)) {
+			return 1;
+		}
+
+		if (Number.isNaN(rightUpdated)) {
+			return -1;
+		}
+
+		return rightUpdated - leftUpdated;
+	});
+}
