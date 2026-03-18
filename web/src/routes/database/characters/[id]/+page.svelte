@@ -6,62 +6,20 @@
 	import type { PageData } from './$houdini';
 	import { UpdateCharacterImagesStore } from '$houdini';
 	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
-
-	type NamedNode = {
-		id: string;
-		name: string;
-	};
-
-	type NamedConnection =
-		| {
-				edges?: Array<{
-					node: NamedNode;
-				}>;
-		  }
-		| null
-		| undefined;
-
-	type LogNode = {
-		id: string;
-		title: string | null;
-		url: string;
-	};
-
-	type LogConnection =
-		| {
-				edges?: Array<{
-					node: LogNode;
-				}>;
-		  }
-		| null
-		| undefined;
-
-	type RelationKind = 'artifacts' | 'associations' | 'characters' | 'items' | 'places' | 'races';
-
-	type RelationGroup = {
-		key: RelationKind;
-		label: string;
-		route:
-			| '/database/associations/[id]'
-			| '/database/artifacts/[id]'
-			| '/database/associations/[id]'
-			| '/database/characters/[id]'
-			| '/database/items/[id]'
-			| '/database/places/[id]'
-			| '/database/races/[id]';
-		nodes: NamedNode[];
-	};
-
-	function getNamedNodes(connection: NamedConnection): NamedNode[] {
-		return connection?.edges?.map(({ node }) => node) ?? [];
-	}
+	import {
+		buildRelationGroups,
+		detailPanelClass,
+		detailRailCardClass,
+		detailSectionTitleClass,
+		getLogNodes,
+		getNamedNodes,
+		type LogNode,
+		type NamedNode,
+		type RelationGroup
+	} from '$lib/database-detail';
 
 	function openExternalLog(url: string) {
 		window.open(url, '_blank', 'noopener,noreferrer');
-	}
-
-	function getLogNodes(connection: LogConnection): LogNode[] {
-		return connection?.edges?.map(({ node }) => node) ?? [];
 	}
 
 	let { data }: { data: PageData } = $props();
@@ -82,46 +40,14 @@
 			return [];
 		}
 
-		const groups: RelationGroup[] = [
-			{
-				key: 'artifacts',
-				label: 'Artifacts',
-				route: '/database/artifacts/[id]',
-				nodes: getNamedNodes(char.relatedArtifacts)
-			},
-			{
-				key: 'associations',
-				label: 'Associations',
-				route: '/database/associations/[id]',
-				nodes: getNamedNodes(char.relatedAssociations)
-			},
-			{
-				key: 'characters',
-				label: 'Characters',
-				route: '/database/characters/[id]',
-				nodes: getNamedNodes(char.relatedCharacters)
-			},
-			{
-				key: 'items',
-				label: 'Items',
-				route: '/database/items/[id]',
-				nodes: getNamedNodes(char.relatedItems)
-			},
-			{
-				key: 'places',
-				label: 'Places',
-				route: '/database/places/[id]',
-				nodes: getNamedNodes(char.relatedPlaces)
-			},
-			{
-				key: 'races',
-				label: 'Races',
-				route: '/database/races/[id]',
-				nodes: getNamedNodes(char.relatedRaces)
-			}
-		];
-
-		return groups.filter((group) => group.nodes.length > 0);
+		return buildRelationGroups({
+			relatedArtifacts: char.relatedArtifacts,
+			relatedAssociations: char.relatedAssociations,
+			relatedCharacters: char.relatedCharacters,
+			relatedItems: char.relatedItems,
+			relatedPlaces: char.relatedPlaces,
+			relatedRaces: char.relatedRaces
+		});
 	});
 	let logEntries = $derived.by((): LogNode[] => {
 		if (!char || char.__typename !== 'Character') {
@@ -149,12 +75,6 @@
 			imageIds: newIds
 		});
 	}
-
-	const panelClass =
-		'rounded-sm isolate overflow-hidden border border-slate-700/55 bg-slate-900/72 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.16)]';
-	const railCardClass =
-		'rounded-sm border border-slate-700/60 bg-slate-900/74 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.16)]';
-	const sectionTitleClass = 'mb-5 text-xs font-bold tracking-[0.18em] text-zinc-500 uppercase';
 </script>
 
 {#if char && char.__typename === 'Character'}
@@ -180,8 +100,8 @@
 			<div class="db-detail-side order-1 lg:order-2">
 				<AdminImageManager imageIds={char.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
 
-				<div class={railCardClass + ' hidden lg:block'}>
-					<h3 class={sectionTitleClass}>Logs</h3>
+				<div class={detailRailCardClass + ' hidden lg:block'}>
+					<h3 class={detailSectionTitleClass}>Logs</h3>
 
 					{#if logEntries.length > 0}
 						<ul class="max-h-80 space-y-1.5 overflow-y-auto pr-1">
@@ -213,15 +133,15 @@
 			</div>
 
 			<div class="db-detail-main order-2 lg:order-1">
-				<div class={panelClass}>
+				<div class={detailPanelClass}>
 					<p class="text-sm leading-relaxed whitespace-pre-wrap text-zinc-300 sm:text-base">
 						{char.description || 'No description provided.'}
 					</p>
 				</div>
 
 				{#if affiliationNodes.length > 0}
-					<div class={panelClass}>
-						<h3 class={sectionTitleClass}>Affiliations</h3>
+					<div class={detailPanelClass}>
+						<h3 class={detailSectionTitleClass}>Affiliations</h3>
 						<div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm leading-6">
 							{#each affiliationNodes as node (node.id)}
 								<a
@@ -239,15 +159,16 @@
 				{/if}
 
 				{#if hasMarkdownNotes}
-					<div class={panelClass}>
+					<div class={detailPanelClass}>
 						<div class="text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 							{@html sanitizedMarkdownNotes}
 						</div>
 					</div>
 				{/if}
 
-				<div class={panelClass}>
-					<h3 class={sectionTitleClass}>Related Entities</h3>
+				<div class={detailPanelClass}>
+					<h3 class={detailSectionTitleClass}>Related Entities</h3>
 
 					{#if relationGroups.length > 0}
 						<div class="space-y-3.5">
@@ -281,8 +202,8 @@
 					{/if}
 				</div>
 
-				<div class={panelClass + ' lg:hidden'}>
-					<h3 class={sectionTitleClass}>Logs</h3>
+				<div class={detailPanelClass + ' lg:hidden'}>
+					<h3 class={detailSectionTitleClass}>Logs</h3>
 
 					{#if logEntries.length > 0}
 						<ul class="space-y-1.5">

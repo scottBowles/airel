@@ -6,10 +6,29 @@ query PlaceDetail($id: ID!) {
 			description
 			markdownNotes
 			placeType
-			population
 			parent {
 				id
 				name
+				parent {
+					id
+					name
+					parent {
+						id
+						name
+						parent {
+							id
+							name
+							parent {
+								id
+								name
+								parent {
+									id
+									name
+								}
+							}
+						}
+					}
+				}
 			}
 			children {
 				edges {
@@ -20,6 +39,63 @@ query PlaceDetail($id: ID!) {
 				}
 			}
 			imageIds
+			relatedArtifacts {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedAssociations {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedCharacters {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedItems {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedPlaces {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedRaces {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			logs {
+				edges {
+					node {
+						id
+						title
+						url
+					}
+				}
+			}
 		}
 	}
 }
