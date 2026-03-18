@@ -4,10 +4,23 @@ query CharacterDetail($id: ID!) {
 			id
 			name
 			description
+			markdownNotes
 			imageIds
+			race {
+				id
+				name
+			}
+			associations {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
 
-			# Relationships
-			associations(first: 5) {
+			# Related entities
+			relatedArtifacts {
 				edges {
 					node {
 						id
@@ -15,7 +28,7 @@ query CharacterDetail($id: ID!) {
 					}
 				}
 			}
-			relatedPlaces(first: 5) {
+			relatedAssociations {
 				edges {
 					node {
 						id
@@ -23,11 +36,46 @@ query CharacterDetail($id: ID!) {
 					}
 				}
 			}
-			featuresAndTraits(first: 10) {
+			relatedCharacters {
 				edges {
 					node {
+						id
 						name
-						description
+					}
+				}
+			}
+			relatedItems {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedPlaces {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedRaces {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+
+			# Log appearances
+			logs {
+				edges {
+					node {
+						id
+						title
+						url
 					}
 				}
 			}

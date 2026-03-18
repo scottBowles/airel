@@ -1,10 +1,68 @@
 <script lang="ts">
+	import { ExternalLink } from 'lucide-svelte';
+	import DOMPurify from 'isomorphic-dompurify';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { PageData } from './$houdini';
 	import { UpdateCharacterImagesStore } from '$houdini';
-
-	import { resolve } from '$app/paths';
 	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
+
+	type NamedNode = {
+		id: string;
+		name: string;
+	};
+
+	type NamedConnection =
+		| {
+				edges?: Array<{
+					node: NamedNode;
+				}>;
+		  }
+		| null
+		| undefined;
+
+	type LogNode = {
+		id: string;
+		title: string | null;
+		url: string;
+	};
+
+	type LogConnection =
+		| {
+				edges?: Array<{
+					node: LogNode;
+				}>;
+		  }
+		| null
+		| undefined;
+
+	type RelationKind = 'artifacts' | 'associations' | 'characters' | 'items' | 'places' | 'races';
+
+	type RelationGroup = {
+		key: RelationKind;
+		label: string;
+		route:
+			| '/database/associations/[id]'
+			| '/database/artifacts/[id]'
+			| '/database/associations/[id]'
+			| '/database/characters/[id]'
+			| '/database/items/[id]'
+			| '/database/places/[id]'
+			| '/database/races/[id]';
+		nodes: NamedNode[];
+	};
+
+	function getNamedNodes(connection: NamedConnection): NamedNode[] {
+		return connection?.edges?.map(({ node }) => node) ?? [];
+	}
+
+	function openExternalLog(url: string) {
+		window.open(url, '_blank', 'noopener,noreferrer');
+	}
+
+	function getLogNodes(connection: LogConnection): LogNode[] {
+		return connection?.edges?.map(({ node }) => node) ?? [];
+	}
 
 	let { data }: { data: PageData } = $props();
 	let CharacterDetail = $derived(data.CharacterDetail);
@@ -12,106 +70,256 @@
 	let Me = $derived(data.Me);
 	let me = $derived($Me?.data?.me);
 	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
+	let affiliationNodes = $derived.by((): NamedNode[] => {
+		if (!char || char.__typename !== 'Character') {
+			return [];
+		}
+
+		return getNamedNodes(char.associations);
+	});
+	let relationGroups = $derived.by((): RelationGroup[] => {
+		if (!char || char.__typename !== 'Character') {
+			return [];
+		}
+
+		const groups: RelationGroup[] = [
+			{
+				key: 'artifacts',
+				label: 'Artifacts',
+				route: '/database/artifacts/[id]',
+				nodes: getNamedNodes(char.relatedArtifacts)
+			},
+			{
+				key: 'associations',
+				label: 'Associations',
+				route: '/database/associations/[id]',
+				nodes: getNamedNodes(char.relatedAssociations)
+			},
+			{
+				key: 'characters',
+				label: 'Characters',
+				route: '/database/characters/[id]',
+				nodes: getNamedNodes(char.relatedCharacters)
+			},
+			{
+				key: 'items',
+				label: 'Items',
+				route: '/database/items/[id]',
+				nodes: getNamedNodes(char.relatedItems)
+			},
+			{
+				key: 'places',
+				label: 'Places',
+				route: '/database/places/[id]',
+				nodes: getNamedNodes(char.relatedPlaces)
+			},
+			{
+				key: 'races',
+				label: 'Races',
+				route: '/database/races/[id]',
+				nodes: getNamedNodes(char.relatedRaces)
+			}
+		];
+
+		return groups.filter((group) => group.nodes.length > 0);
+	});
+	let logEntries = $derived.by((): LogNode[] => {
+		if (!char || char.__typename !== 'Character') {
+			return [];
+		}
+
+		return getLogNodes(char.logs);
+	});
+	let hasMarkdownNotes = $derived(
+		!!(char && char.__typename === 'Character' && char.markdownNotes?.trim())
+	);
+	let sanitizedMarkdownNotes = $derived.by(() => {
+		if (!char || char.__typename !== 'Character' || !char.markdownNotes) {
+			return '';
+		}
+
+		return DOMPurify.sanitize(char.markdownNotes);
+	});
 
 	const updateStore = new UpdateCharacterImagesStore();
 
 	async function saveImages(newIds: string[]) {
-		console.log('saving images with ids: ', newIds);
 		await updateStore.mutate({
 			id: page.params.id ?? '',
 			imageIds: newIds
 		});
 	}
+
+	const panelClass =
+		'rounded-sm isolate overflow-hidden border border-slate-700/55 bg-slate-900/72 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.16)]';
+	const railCardClass =
+		'rounded-sm border border-slate-700/60 bg-slate-900/74 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.16)]';
+	const sectionTitleClass = 'mb-5 text-xs font-bold tracking-[0.18em] text-zinc-500 uppercase';
 </script>
 
-<div class="mx-auto max-w-5xl px-1 pb-16 sm:pb-20">
-	<!-- Breadcrumbs -->
-	<div class="mb-4 flex flex-wrap items-center gap-2 font-mono text-xs text-slate-500 sm:mb-6">
-		<a href={resolve('/database')} class="hover:text-industrial-amber">DATABASE</a>
-		<span>/</span>
-		<a href={resolve('/database/characters')} class="hover:text-industrial-amber">CHARACTERS</a>
-	</div>
+{#if char && char.__typename === 'Character'}
+	<div class="db-detail">
+		<div class="db-detail-header">
+			<div class="space-y-2 sm:space-y-2.5">
+				<h1 class="db-detail-title">{char.name}</h1>
+				{#if char.race}
+					<a
+						href={resolve(`/database/races/${char.race.id}`)}
+						class="inline-flex items-center text-base leading-none tracking-[0.14em] text-emerald-400 uppercase transition-colors hover:text-emerald-300 sm:text-lg"
+					>
+						<span class="font-display text-lg tracking-[0.14em] text-emerald-400 sm:text-xl">
+							{char.race.name}
+						</span>
+					</a>
+				{/if}
+			</div>
+			<a href={resolve('/database/characters')} class="db-back-link"> ← Back to Characters </a>
+		</div>
 
-	{#if char && char.__typename === 'Character'}
-		<div
-			class="border-industrial-dim mb-6 grid grid-cols-1 gap-6 border-b pb-6 sm:mb-8 sm:gap-8 sm:pb-8 md:grid-cols-[220px_1fr] lg:grid-cols-[250px_1fr]"
-		>
-			<!-- Portrait Frame & Image Management -->
-			<div class="relative w-full">
+		<div class="db-detail-grid">
+			<div class="db-detail-side order-1 lg:order-2">
 				<AdminImageManager imageIds={char.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
-				<!-- Decorative corners -->
-				<div
-					class="border-industrial-amber pointer-events-none absolute -top-1 -left-1 h-2 w-2 border-t border-l"
-				></div>
-				<div
-					class="border-industrial-amber pointer-events-none absolute -right-1 -bottom-1 h-2 w-2 border-r border-b"
-				></div>
+
+				<div class={railCardClass + ' hidden lg:block'}>
+					<h3 class={sectionTitleClass}>Logs</h3>
+
+					{#if logEntries.length > 0}
+						<ul class="max-h-80 space-y-1.5 overflow-y-auto pr-1">
+							{#each logEntries as log (log.id)}
+								<li
+									class="flex items-center justify-between gap-2 rounded-sm border border-slate-800 bg-slate-950 px-2 py-1.5"
+								>
+									<a
+										href={resolve(`/logs/${log.id}`)}
+										class="min-w-0 truncate text-sm text-zinc-200 transition-colors hover:text-emerald-300"
+									>
+										{log.title || 'Untitled log'}
+									</a>
+									<button
+										type="button"
+										onclick={() => openExternalLog(log.url)}
+										class="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-zinc-400 transition-colors hover:text-emerald-300"
+										aria-label={`Open source document for ${log.title || 'this log'}`}
+									>
+										<ExternalLink class="h-3.5 w-3.5" aria-hidden="true" />
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="text-sm text-zinc-500">No linked logs recorded.</p>
+					{/if}
+				</div>
 			</div>
 
-			<!-- Stats & Info -->
-			<div class="space-y-4">
-				<h1
-					class="font-display text-3xl font-bold tracking-widest text-white uppercase sm:text-5xl"
-				>
-					{char.name}
-				</h1>
-
-				<div
-					class="text-industrial-green flex flex-wrap gap-2 font-mono text-xs uppercase sm:gap-4 sm:text-sm"
-				>
-					<span class="border-industrial-green border px-2 py-1">Class: UNKNOWN</span>
-					<span class="border-industrial-green border px-2 py-1">Race: UNKNOWN</span>
+			<div class="db-detail-main order-2 lg:order-1">
+				<div class={panelClass}>
+					<p class="text-sm leading-relaxed whitespace-pre-wrap text-zinc-300 sm:text-base">
+						{char.description || 'No description provided.'}
+					</p>
 				</div>
 
-				<div
-					class="prose mt-4 max-w-none border-l border-slate-700 bg-slate-900/30 p-4 leading-relaxed text-slate-300 prose-invert"
-				>
-					<p>{char.description || 'No description provided.'}</p>
+				{#if affiliationNodes.length > 0}
+					<div class={panelClass}>
+						<h3 class={sectionTitleClass}>Affiliations</h3>
+						<div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm leading-6">
+							{#each affiliationNodes as node (node.id)}
+								<a
+									href={resolve('/database/associations/[id]', { id: node.id })}
+									class="text-zinc-200 underline decoration-transparent underline-offset-3 transition-colors hover:text-emerald-300 hover:decoration-emerald-500/40"
+								>
+									{node.name}
+								</a>
+								{#if node !== affiliationNodes[affiliationNodes.length - 1]}
+									<span class="text-zinc-700" aria-hidden="true">•</span>
+								{/if}
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				{#if hasMarkdownNotes}
+					<div class={panelClass}>
+						<div class="text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">
+							{@html sanitizedMarkdownNotes}
+						</div>
+					</div>
+				{/if}
+
+				<div class={panelClass}>
+					<h3 class={sectionTitleClass}>Related Entities</h3>
+
+					{#if relationGroups.length > 0}
+						<div class="space-y-3.5">
+							{#each relationGroups as group (group.key)}
+								<div class="border-b border-slate-700/90 pb-3 last:border-0 last:pb-0">
+									<div class="space-y-1.5 sm:flex sm:items-baseline sm:gap-3 sm:space-y-0">
+										<h4
+											class="shrink-0 font-mono text-xs leading-6 tracking-[0.18em] text-zinc-500 uppercase sm:w-34"
+										>
+											{group.label}
+										</h4>
+										<div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm leading-6">
+											{#each group.nodes as node (node.id)}
+												<a
+													href={resolve(group.route, { id: node.id })}
+													class="text-zinc-200 underline decoration-transparent underline-offset-3 transition-colors hover:text-emerald-300 hover:decoration-emerald-500/40"
+												>
+													{node.name}
+												</a>
+												{#if node !== group.nodes[group.nodes.length - 1]}
+													<span class="text-zinc-700" aria-hidden="true">•</span>
+												{/if}
+											{/each}
+										</div>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<p class="text-sm text-zinc-500">No linked entities recorded.</p>
+					{/if}
+				</div>
+
+				<div class={panelClass + ' lg:hidden'}>
+					<h3 class={sectionTitleClass}>Logs</h3>
+
+					{#if logEntries.length > 0}
+						<ul class="space-y-1.5">
+							{#each logEntries as log (log.id)}
+								<li
+									class="flex items-center justify-between gap-2 rounded-sm border border-slate-800 bg-slate-950 px-2 py-1.5"
+								>
+									<div class="min-w-0">
+										<a
+											href={resolve(`/logs/${log.id}`)}
+											class="block truncate text-sm text-zinc-200 transition-colors hover:text-emerald-300"
+										>
+											{log.title || 'Untitled log'}
+										</a>
+									</div>
+									<button
+										type="button"
+										onclick={() => openExternalLog(log.url)}
+										class="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-zinc-400 transition-colors hover:text-emerald-300"
+										aria-label={`Open source document for ${log.title || 'this log'}`}
+									>
+										<ExternalLink class="h-3.5 w-3.5" aria-hidden="true" />
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="text-sm text-zinc-500">No linked logs recorded.</p>
+					{/if}
 				</div>
 			</div>
 		</div>
-
-		<!-- Relationship Matrix -->
-		<div class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2">
-			<!-- Features & Traits -->
-			<div class="panel-border p-4">
-				<h3
-					class="text-industrial-amber mb-3 inline-block bg-slate-900 px-1 font-mono text-xs uppercase"
-				>
-					Biology & Skills
-				</h3>
-				<ul class="space-y-2">
-					{#each char.featuresAndTraits?.edges || [] as { node } (node.name)}
-						<li class="border-b border-slate-800 pb-2 last:border-0">
-							<span class="font-display block text-slate-200">{node.name}</span>
-							<span class="font-body block text-xs text-slate-500">{node.description || ''}</span>
-						</li>
-					{/each}
-				</ul>
-			</div>
-
-			<!-- Associations -->
-			<div class="panel-border p-4">
-				<h3
-					class="text-industrial-amber mb-3 inline-block bg-slate-900 px-1 font-mono text-xs uppercase"
-				>
-					Known Associates
-				</h3>
-				<div class="flex flex-wrap gap-2">
-					{#each char.associations?.edges || [] as { node } (node.id)}
-						<a
-							href={resolve(`/database/associations/${node.id}`)}
-							class="bg-slate-800 px-2 py-1 font-mono text-xs text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
-						>
-							{node.name}
-						</a>
-					{/each}
-				</div>
-			</div>
-		</div>
-	{:else if $CharacterDetail.fetching}
-		<div class="text-industrial-amber animate-pulse p-12 text-center font-mono">
-			DECRYPTING FILE...
-		</div>
-	{/if}
-</div>
+	</div>
+{:else if $CharacterDetail.fetching}
+	<div class="p-12 text-center font-mono text-zinc-500">Retrieving character record...</div>
+{:else}
+	<div class="p-8 text-center text-zinc-500">
+		<p>Character not found or failed to load.</p>
+	</div>
+{/if}
