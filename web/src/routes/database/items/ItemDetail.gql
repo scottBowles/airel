@@ -6,15 +6,6 @@ query ItemDetail($id: ID!) {
 			description
 			markdownNotes
 			imageIds
-			armor {
-				acBonus
-			}
-			weapon {
-				attackBonus
-			}
-			equipment {
-				briefDescription
-			}
 			relatedArtifacts {
 				edges {
 					node {

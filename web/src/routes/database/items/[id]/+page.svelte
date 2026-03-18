@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Box, ExternalLink, Shield, Sword } from 'lucide-svelte';
+	import { ExternalLink } from 'lucide-svelte';
 	import DOMPurify from 'isomorphic-dompurify';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -14,59 +14,12 @@
 		getLogNodes
 	} from '$lib/database-detail';
 
-	type ItemTypeCard = {
-		key: 'armor' | 'weapon' | 'equipment';
-		label: string;
-		description: string;
-		icon: typeof Shield;
-		tone: string;
-	};
-
 	let { data }: { data: PageData } = $props();
 	let ItemDetail = $derived(data.ItemDetail);
 	let item = $derived($ItemDetail.data?.node);
 	let Me = $derived(data.Me);
 	let me = $derived($Me?.data?.me);
 	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
-	let itemTypeCards = $derived.by((): ItemTypeCard[] => {
-		if (!item || item.__typename !== 'Item') {
-			return [];
-		}
-
-		const cards: ItemTypeCard[] = [];
-
-		if (item.armor) {
-			cards.push({
-				key: 'armor',
-				label: 'Armor',
-				description: 'Built for protection and defensive utility.',
-				icon: Shield,
-				tone: 'border-sky-500/35 bg-sky-950/35 text-sky-200'
-			});
-		}
-
-		if (item.weapon) {
-			cards.push({
-				key: 'weapon',
-				label: 'Weapon',
-				description: 'Designed for offense and combat application.',
-				icon: Sword,
-				tone: 'border-amber-500/35 bg-amber-950/35 text-amber-200'
-			});
-		}
-
-		if (item.equipment) {
-			cards.push({
-				key: 'equipment',
-				label: 'Equipment',
-				description: item.equipment.briefDescription || 'General-purpose adventuring gear.',
-				icon: Box,
-				tone: 'border-emerald-500/35 bg-emerald-950/35 text-emerald-200'
-			});
-		}
-
-		return cards;
-	});
 	let relationGroups = $derived.by(() => {
 		if (!item || item.__typename !== 'Item') {
 			return [];
@@ -125,37 +78,6 @@
 		<div class="db-detail-grid">
 			<div class="db-detail-side order-1 lg:order-2">
 				<AdminImageManager imageIds={item.imageIds || []} canEdit={isAdmin} onSave={saveImages} />
-
-				<div class={detailRailCardClass}>
-					<h3 class={detailSectionTitleClass}>Item Type</h3>
-
-					{#if itemTypeCards.length > 0}
-						<div class="grid gap-2">
-							{#each itemTypeCards as typeCard (typeCard.key)}
-								{@const Icon = typeCard.icon}
-								<div class={'rounded-sm border p-3 ' + typeCard.tone}>
-									<div class="flex items-start gap-3">
-										<div
-											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-current/20 bg-black/15"
-										>
-											<Icon class="h-4.5 w-4.5" aria-hidden="true" />
-										</div>
-										<div class="min-w-0">
-											<div class="font-mono text-xs tracking-[0.18em] uppercase">
-												{typeCard.label}
-											</div>
-											<p class="mt-1 text-sm leading-relaxed text-current/80">
-												{typeCard.description}
-											</p>
-										</div>
-									</div>
-								</div>
-							{/each}
-						</div>
-					{:else}
-						<p class="text-sm text-zinc-500">No subtype metadata recorded for this item.</p>
-					{/if}
-				</div>
 
 				<div class={detailRailCardClass + ' hidden lg:block'}>
 					<h3 class={detailSectionTitleClass}>Logs</h3>
