@@ -112,6 +112,7 @@ type Artifact implements Entity & Lockable & Node {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!
@@ -329,6 +330,7 @@ type Association implements Entity & Lockable & Node {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!
@@ -556,6 +558,7 @@ type Character implements Entity & Lockable & Node {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!
@@ -953,6 +956,7 @@ interface Entity implements Lockable {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!
@@ -1356,6 +1360,7 @@ type Item implements Entity & Lockable & Node {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!
@@ -1806,6 +1811,7 @@ type Place implements Entity & Lockable & Node {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!
@@ -2324,6 +2330,7 @@ type Race implements Entity & Lockable & Node {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
+    order: GameLogOrder
   ): GameLogConnection!
   markdownNotes: String
   name: String!

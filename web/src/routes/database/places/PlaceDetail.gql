@@ -87,7 +87,7 @@ query PlaceDetail($id: ID!) {
 					}
 				}
 			}
-			logs {
+			logs(order: { gameDate: DESC }) {
 				edges {
 					node {
 						id

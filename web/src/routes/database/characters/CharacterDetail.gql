@@ -70,7 +70,7 @@ query CharacterDetail($id: ID!) {
 			}
 
 			# Log appearances
-			logs {
+			logs(order: { gameDate: DESC }) {
 				edges {
 					node {
 						id

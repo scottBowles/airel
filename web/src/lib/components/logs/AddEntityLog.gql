@@ -3,7 +3,7 @@ mutation AddEntityLog($entityId: ID!, $logUrl: String!) {
 		__typename
 		... on Entity {
 			id
-			logs {
+			logs(order: { gameDate: DESC }) {
 				edges {
 					node {
 						id

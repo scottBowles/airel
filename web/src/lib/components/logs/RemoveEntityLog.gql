@@ -3,7 +3,7 @@ mutation RemoveEntityLog($entityId: ID!, $logId: ID!) {
 		__typename
 		... on Entity {
 			id
-			logs {
+			logs(order: { gameDate: DESC }) {
 				edges {
 					node {
 						id

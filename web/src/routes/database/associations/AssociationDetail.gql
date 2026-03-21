@@ -62,7 +62,7 @@ query AssociationDetail($id: ID!) {
 					}
 				}
 			}
-			logs {
+			logs(order: { gameDate: DESC }) {
 				edges {
 					node {
 						id
