@@ -429,7 +429,7 @@
 	<main
 		inert={mobileNavOpen || globalSearchOpen}
 		aria-hidden={mobileNavOpen || globalSearchOpen}
-		class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[url('/grid.svg')] bg-size-[40px_40px]"
+		class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-950"
 	>
 		<!-- Mobile Command Header -->
 		<header
