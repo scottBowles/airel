@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import AddLogModal from '$lib/components/logs/AddLogModal.svelte';
 	import { formatGameDate } from '$lib/utils';
-	import { ExternalLink } from 'lucide-svelte';
+	import { ExternalLink, Plus } from 'lucide-svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { fromStore } from 'svelte/store';
 
@@ -41,7 +43,11 @@
 	let { data }: { data: PageData } = $props();
 
 	let LogList = $derived.by(() => fromStore(data.LogList).current);
+	let meResult = $derived.by(() => fromStore(data.Me).current);
+	let me = $derived(meResult?.data?.me);
+	let isAdmin = $derived(!!(me?.isStaff || me?.isSuperuser));
 	let activeStickyGroup = $state<string | null>(null);
+	let addFormOpen = $state(false);
 
 	const headingElements = new SvelteMap<string, HTMLElement>();
 	let scrollContainer: HTMLElement | null = null;
@@ -70,6 +76,18 @@
 
 	function getGroupId(group: LogGroup): string {
 		return `${group.key}-${group.logs[0]?.id ?? group.placeName}`;
+	}
+
+	function toggleAddForm() {
+		addFormOpen = !addFormOpen;
+	}
+
+	function closeAddForm() {
+		addFormOpen = false;
+	}
+
+	async function handleLogCreated(logId: string) {
+		await goto(resolve(`/logs/${logId}`));
 	}
 
 	function findScrollContainer(node: HTMLElement | null): HTMLElement | null {
@@ -176,9 +194,28 @@
 
 <div class="log-page">
 	<div class="log-header">
-		<h2 class="log-title">Chronicle</h2>
-		<div class="text-industrial-amber font-mono text-xs">
-			Records Found: {recordCount}
+		<div class="space-y-2">
+			<h2 class="log-title">Chronicle</h2>
+			<p class="copy-readable max-w-2xl text-slate-400">
+				Mission records indexed from their source Google Docs.
+			</p>
+		</div>
+
+		<div class="flex w-full max-w-xl flex-col gap-3 sm:items-end">
+			<div class="text-industrial-amber font-mono text-xs">
+				Records Found: {recordCount}
+			</div>
+
+			{#if isAdmin}
+				<button
+					type="button"
+					onclick={toggleAddForm}
+					class="text-industrial-amber inline-flex min-h-11 items-center gap-2 self-start border border-slate-700 bg-slate-900/70 px-3 py-2 font-mono text-xs tracking-[0.2em] uppercase transition-colors hover:border-slate-500 hover:text-slate-50 sm:self-auto"
+				>
+					<Plus class="h-4 w-4" aria-hidden="true" />
+					Add Log
+				</button>
+			{/if}
 		</div>
 	</div>
 
@@ -267,3 +304,5 @@
 		{/if}
 	</div>
 </div>
+
+<AddLogModal open={addFormOpen} onClose={closeAddForm} onCreated={handleLogCreated} />

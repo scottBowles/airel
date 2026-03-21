@@ -1,0 +1,30 @@
+mutation GetOrCreateGameLog($url: String!) {
+	getOrCreateGameLog(input: { url: $url }) {
+		__typename
+		... on GameLog {
+			id
+			title
+			brief
+			gameDate
+			url
+			synopsis
+			placesSetIn(first: 10) {
+				edges {
+					node {
+						id
+						name
+						placeType
+					}
+				}
+			}
+		}
+		... on OperationInfo {
+			messages {
+				code
+				field
+				kind
+				message
+			}
+		}
+	}
+}
