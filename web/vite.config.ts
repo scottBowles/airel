@@ -209,6 +209,7 @@ export default defineConfig({
 			'yarn.lock',
 			'bun.lock',
 			'bun.lockb',
+			'schema.graphql',
 			'/static/'
 		]
 	},
