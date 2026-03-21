@@ -1,0 +1,17 @@
+mutation AddEntityLog($entityId: ID!, $logUrl: String!) {
+	addEntityLog(input: { entityId: $entityId, logUrl: $logUrl }) {
+		__typename
+		... on Entity {
+			id
+			logs {
+				edges {
+					node {
+						id
+						title
+						url
+					}
+				}
+			}
+		}
+	}
+}

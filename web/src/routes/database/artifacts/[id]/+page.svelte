@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { ExternalLink } from 'lucide-svelte';
 	import DOMPurify from 'isomorphic-dompurify';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { PageData } from './$houdini';
 	import { UpdateArtifactImagesStore } from '$houdini';
 	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
+	import EntityLogManager from '$lib/components/logs/EntityLogManager.svelte';
 	import {
 		buildRelationGroups,
 		detailPanelClass,
@@ -62,10 +62,6 @@
 
 	const updateStore = new UpdateArtifactImagesStore();
 
-	function openExternalLog(url: string) {
-		window.open(url, '_blank', 'noopener,noreferrer');
-	}
-
 	async function saveImages(newIds: string[]) {
 		await updateStore.mutate({
 			id: page.params.id ?? '',
@@ -92,34 +88,7 @@
 				/>
 
 				<div class={detailRailCardClass + ' hidden lg:block'}>
-					<h3 class={detailSectionTitleClass}>Logs</h3>
-
-					{#if logEntries.length > 0}
-						<ul class="max-h-80 space-y-1.5 overflow-y-auto pr-1">
-							{#each logEntries as log (log.id)}
-								<li
-									class="flex items-center justify-between gap-2 rounded-sm border border-slate-800 bg-slate-950 px-2 py-1.5"
-								>
-									<a
-										href={resolve(`/logs/${log.id}`)}
-										class="min-w-0 truncate text-sm text-zinc-200 transition-colors hover:text-emerald-300"
-									>
-										{log.title || 'Untitled log'}
-									</a>
-									<button
-										type="button"
-										onclick={() => openExternalLog(log.url)}
-										class="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-zinc-400 transition-colors hover:text-emerald-300"
-										aria-label={`Open source document for ${log.title || 'this log'}`}
-									>
-										<ExternalLink class="h-3.5 w-3.5" aria-hidden="true" />
-									</button>
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="text-sm text-zinc-500">No linked logs recorded.</p>
-					{/if}
+					<EntityLogManager entityId={page.params.id ?? ''} logs={logEntries} canEdit={isAdmin} />
 				</div>
 			</div>
 
@@ -194,36 +163,7 @@
 				</div>
 
 				<div class={detailPanelClass + ' lg:hidden'}>
-					<h3 class={detailSectionTitleClass}>Logs</h3>
-
-					{#if logEntries.length > 0}
-						<ul class="space-y-1.5">
-							{#each logEntries as log (log.id)}
-								<li
-									class="flex items-center justify-between gap-2 rounded-sm border border-slate-800 bg-slate-950 px-2 py-1.5"
-								>
-									<div class="min-w-0">
-										<a
-											href={resolve(`/logs/${log.id}`)}
-											class="block truncate text-sm text-zinc-200 transition-colors hover:text-emerald-300"
-										>
-											{log.title || 'Untitled log'}
-										</a>
-									</div>
-									<button
-										type="button"
-										onclick={() => openExternalLog(log.url)}
-										class="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-zinc-400 transition-colors hover:text-emerald-300"
-										aria-label={`Open source document for ${log.title || 'this log'}`}
-									>
-										<ExternalLink class="h-3.5 w-3.5" aria-hidden="true" />
-									</button>
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="text-sm text-zinc-500">No linked logs recorded.</p>
-					{/if}
+					<EntityLogManager entityId={page.params.id ?? ''} logs={logEntries} canEdit={isAdmin} />
 				</div>
 			</div>
 		</div>

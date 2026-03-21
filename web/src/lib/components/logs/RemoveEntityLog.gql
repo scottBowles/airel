@@ -1,0 +1,17 @@
+mutation RemoveEntityLog($entityId: ID!, $logId: ID!) {
+	removeEntityLog(input: { entityId: $entityId, logId: $logId }) {
+		__typename
+		... on Entity {
+			id
+			logs {
+				edges {
+					node {
+						id
+						title
+						url
+					}
+				}
+			}
+		}
+	}
+}
