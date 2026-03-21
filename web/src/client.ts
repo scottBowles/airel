@@ -5,7 +5,7 @@ import { browser } from '$app/environment';
 
 const authPlugin: ClientPlugin = () => {
 	return {
-		async beforeNetwork(ctx, { next }) {
+		async beforeNetwork(ctx, client) {
 			const { session } = ctx;
 			let token = session?.token;
 
@@ -32,17 +32,25 @@ const authPlugin: ClientPlugin = () => {
 			}
 
 			// Merge auth header
+			const existingHeaders = ctx.fetchParams?.headers;
+			const requestHeaders =
+				existingHeaders instanceof Headers
+					? Object.fromEntries(existingHeaders.entries())
+					: Array.isArray(existingHeaders)
+						? Object.fromEntries(existingHeaders)
+						: (existingHeaders ?? {});
+
 			ctx.fetchParams = {
 				...ctx.fetchParams,
 				mode: 'cors',
 				headers: {
-					...ctx.fetchParams?.headers,
+					...requestHeaders,
 					'Content-Type': 'application/json',
 					...(token ? { Authorization: `JWT ${token}` } : {})
 				}
 			};
 
-			next(ctx);
+			return client.next(ctx);
 		}
 	};
 };

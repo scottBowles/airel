@@ -14,7 +14,7 @@ export function decodeJwt(token: string) {
 		if (claims && typeof claims.payload === 'string') {
 			try {
 				claims = JSON.parse(claims.payload);
-			} catch (e) {
+			} catch {
 				// ignore
 			}
 		}
@@ -28,7 +28,7 @@ export function decodeJwt(token: string) {
 		}
 
 		return claims;
-	} catch (e) {
+	} catch {
 		return null;
 	}
 }
@@ -38,7 +38,7 @@ export function formatGameDate(date: Date | string | null | undefined): string {
 	try {
 		const d = typeof date === 'string' ? new Date(date) : date;
 		return d.toISOString().split('T')[0];
-	} catch (e) {
+	} catch {
 		return 'INVALID DATE';
 	}
 }

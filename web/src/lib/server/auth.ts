@@ -7,7 +7,7 @@ interface GoogleLoginResponse {
 	data: {
 		googleLogin: {
 			success: boolean;
-			errors: any;
+			errors: unknown;
 			token: {
 				token: string;
 				payload: {
