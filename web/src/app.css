@@ -162,7 +162,31 @@ h6 {
 	}
 
 	.log-card {
-		@apply hover:border-industrial-amber/60 relative block overflow-hidden rounded-sm border border-slate-700 bg-slate-900/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_10px_22px_rgba(0,0,0,0.18)] transition-all duration-150 hover:bg-slate-900/90 hover:shadow-[0_0_0_1px_rgba(255,176,0,0.12),0_14px_28px_rgba(0,0,0,0.24)];
+		@apply relative block overflow-hidden rounded-sm border border-slate-700 bg-slate-900/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_10px_22px_rgba(0,0,0,0.18)];
+	}
+
+	.log-group-stack {
+		@apply space-y-6 sm:space-y-8;
+	}
+
+	.log-group {
+		@apply space-y-3 sm:space-y-4;
+	}
+
+	.log-group-heading {
+		@apply sticky -top-4 z-20 -mx-3 border-y border-slate-700/80 bg-slate-950/96 px-7 py-3 backdrop-blur-md transition-[padding,box-shadow,background-color] duration-150 sm:-top-5 sm:-mx-4 sm:px-9 md:-top-8 md:-mx-8 md:px-12;
+	}
+
+	.log-group-heading-active {
+		@apply border-industrial-amber/35 bg-slate-950/97 py-3.5 shadow-[0_14px_30px_rgba(0,0,0,0.34)];
+	}
+
+	.log-group-title {
+		@apply text-industrial-amber font-display text-base font-semibold tracking-[0.22em] uppercase transition-[font-size,letter-spacing,transform,color] duration-150 sm:text-lg;
+	}
+
+	.log-group-title-active {
+		@apply text-industrial-amber text-lg tracking-[0.28em] sm:text-[1.35rem] md:text-[1.7rem];
 	}
 
 	.log-card-body {

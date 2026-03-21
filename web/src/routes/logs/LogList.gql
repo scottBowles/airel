@@ -1,12 +1,22 @@
 query LogList {
-	gameLogs(first: 50) {
+	gameLogs(order: { gameDate: DESC }) {
 		edges {
 			node {
 				id
 				title
 				brief
 				gameDate
+				url
 				synopsis
+				placesSetIn(first: 10) {
+					edges {
+						node {
+							id
+							name
+							placeType
+						}
+					}
+				}
 			}
 		}
 	}
