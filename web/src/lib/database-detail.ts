@@ -59,6 +59,15 @@ type RelatedEntityCollections = {
 	relatedRaces?: NamedConnection;
 };
 
+type GameLogEntityCollections = {
+	artifacts?: NamedConnection;
+	associations?: NamedConnection;
+	characters?: NamedConnection;
+	items?: NamedConnection;
+	places?: NamedConnection;
+	races?: NamedConnection;
+};
+
 type BreadcrumbNode = NamedNode & {
 	parent?: BreadcrumbNode | null;
 };
@@ -107,6 +116,50 @@ const RELATION_GROUP_META: Array<{
 	}
 ];
 
+const GAME_LOG_RELATION_GROUP_META: Array<{
+	key: RelationKind;
+	label: string;
+	route: RelationRoute;
+	field: keyof GameLogEntityCollections;
+}> = [
+	{
+		key: 'artifacts',
+		label: 'Artifacts',
+		route: '/database/artifacts/[id]',
+		field: 'artifacts'
+	},
+	{
+		key: 'associations',
+		label: 'Associations',
+		route: '/database/associations/[id]',
+		field: 'associations'
+	},
+	{
+		key: 'characters',
+		label: 'Characters',
+		route: '/database/characters/[id]',
+		field: 'characters'
+	},
+	{
+		key: 'items',
+		label: 'Items',
+		route: '/database/items/[id]',
+		field: 'items'
+	},
+	{
+		key: 'places',
+		label: 'Places',
+		route: '/database/places/[id]',
+		field: 'places'
+	},
+	{
+		key: 'races',
+		label: 'Races',
+		route: '/database/races/[id]',
+		field: 'races'
+	}
+];
+
 export const detailPanelClass =
 	'rounded-sm isolate overflow-hidden border border-slate-700/55 bg-slate-900/72 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.16)]';
 
@@ -126,6 +179,15 @@ export function getLogNodes(connection: LogConnection): LogNode[] {
 
 export function buildRelationGroups(connections: RelatedEntityCollections): RelationGroup[] {
 	return RELATION_GROUP_META.map((group) => ({
+		key: group.key,
+		label: group.label,
+		route: group.route,
+		nodes: getNamedNodes(connections[group.field])
+	})).filter((group) => group.nodes.length > 0);
+}
+
+export function buildGameLogRelationGroups(connections: GameLogEntityCollections): RelationGroup[] {
+	return GAME_LOG_RELATION_GROUP_META.map((group) => ({
 		key: group.key,
 		label: group.label,
 		route: group.route,

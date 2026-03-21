@@ -1,10 +1,35 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
 	import { resolve } from '$app/paths';
+	import RelationGroupList from '$lib/components/database/RelationGroupList.svelte';
+	import {
+		buildGameLogRelationGroups,
+		detailPanelClass,
+		detailSectionTitleClass,
+		getNamedNodes
+	} from '$lib/database-detail';
 	import { formatGameDate } from '$lib/utils';
+	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let LogDetail = $derived(data.LogDetail);
+	let gameLog = $derived(
+		$LogDetail?.data?.node?.__typename === 'GameLog' ? $LogDetail.data.node : null
+	);
+	let logRelationGroups = $derived.by(() => {
+		if (!gameLog) {
+			return [];
+		}
+
+		return buildGameLogRelationGroups({
+			artifacts: gameLog.artifacts,
+			associations: gameLog.associations,
+			characters: gameLog.characters,
+			items: gameLog.items,
+			places: gameLog.places,
+			races: gameLog.races
+		});
+	});
+	let placesSetIn = $derived.by(() => (gameLog ? getNamedNodes(gameLog.placesSetIn) : []));
 
 	function openExternalSource(url: string) {
 		window.open(url, '_blank', 'noopener,noreferrer');
@@ -27,9 +52,7 @@
 			ERROR: UNABLE TO DECRYPT LOG DATA.
 			<pre class="mt-4 text-xs">{JSON.stringify($LogDetail.errors, null, 2)}</pre>
 		</div>
-	{:else if $LogDetail?.data?.node?.__typename === 'GameLog'}
-		{@const gameLog = $LogDetail.data.node}
-		<!-- Header Section -->
+	{:else if gameLog}
 		<header class="log-panel border-industrial-dim border-t-2">
 			<h1 class="log-title mb-2">
 				{gameLog.title}
@@ -51,80 +74,48 @@
 			</div>
 		</header>
 
-		<!-- Brief / Abstract -->
 		{#if gameLog.brief}
 			<div class="log-abstract border-industrial-amber border-l-3">
-				<h3 class="text-industrial-amber mb-2 font-mono text-xs uppercase">Abstract</h3>
 				<p class="font-body text-base text-slate-300 italic sm:text-lg">{gameLog.brief}</p>
 			</div>
 		{/if}
 
-		<!-- Main Content (Synopsis/Summary for now) -->
-		<div class="log-panel prose prose-lg max-w-none text-slate-300 prose-invert">
-			<h3 class="log-panel-title">Record</h3>
-			<p class="leading-relaxed whitespace-pre-wrap">
-				{gameLog.synopsis || gameLog.summary || 'No detailed transcript available.'}
-			</p>
-		</div>
+		<div class="space-y-6">
+			<div class={detailPanelClass}>
+				<h3 class={detailSectionTitleClass}>Places Set In</h3>
 
-		<!-- Related Associations -->
-		<div class="log-related-grid">
-			<!-- Characters -->
-			{#if gameLog.characters?.edges.length}
-				<div class="log-related-group">
-					<h4 class="font-display text-lg text-slate-300 uppercase">Personnel</h4>
-					<ul class="space-y-1">
-						{#each gameLog.characters.edges as { node } (node.id)}
-							<li>
-								<a
-									href={resolve(`/database/characters/${node.id}`)}
-									class="log-related-link text-industrial-green"
-								>
-									{node.name}
-								</a>
-							</li>
+				{#if placesSetIn.length > 0}
+					<div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm leading-6">
+						{#each placesSetIn as place (place.id)}
+							<a
+								href={resolve('/database/places/[id]', { id: place.id })}
+								class="text-zinc-200 underline decoration-transparent underline-offset-3 transition-colors hover:text-emerald-300 hover:decoration-emerald-500/40"
+							>
+								{place.name}
+							</a>
+							{#if place !== placesSetIn[placesSetIn.length - 1]}
+								<span class="text-zinc-700" aria-hidden="true">•</span>
+							{/if}
 						{/each}
-					</ul>
-				</div>
-			{/if}
+					</div>
+				{:else}
+					<p class="text-sm text-zinc-500">No locations recorded for this log.</p>
+				{/if}
+			</div>
 
-			<!-- Places -->
-			{#if gameLog.placesSetIn?.edges.length}
-				<div class="log-related-group">
-					<h4 class="font-display text-lg text-slate-300 uppercase">Locations</h4>
-					<ul class="space-y-1">
-						{#each gameLog.placesSetIn.edges as { node } (node.id)}
-							<li>
-								<a
-									href={resolve(`/database/places/${node.id}`)}
-									class="log-related-link text-industrial-amber"
-								>
-									{node.name}
-								</a>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
+			<div class="log-panel prose prose-lg max-w-none text-slate-300 prose-invert">
+				<p class="leading-relaxed whitespace-pre-wrap">
+					{gameLog.synopsis || gameLog.summary || 'No detailed transcript available.'}
+				</p>
+			</div>
 
-			<!-- Items -->
-			{#if gameLog.items?.edges.length}
-				<div class="log-related-group">
-					<h4 class="font-display text-lg text-slate-300 uppercase">Assets</h4>
-					<ul class="space-y-1">
-						{#each gameLog.items.edges as { node } (node.id)}
-							<li>
-								<a
-									href={resolve(`/database/items/${node.id}`)}
-									class="log-related-link text-slate-400 hover:text-slate-200"
-								>
-									{node.name}
-								</a>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
+			<div class={detailPanelClass}>
+				<RelationGroupList
+					title="Found In This Log"
+					groups={logRelationGroups}
+					emptyMessage="No linked entities recorded for this log."
+				/>
+			</div>
 		</div>
 	{/if}
 </div>

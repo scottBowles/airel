@@ -9,7 +9,7 @@ query LogDetail($id: ID!) {
 			gameDate
 			url
 
-			characters(first: 10) {
+			artifacts {
 				edges {
 					node {
 						id
@@ -17,7 +17,7 @@ query LogDetail($id: ID!) {
 					}
 				}
 			}
-			placesSetIn(first: 5) {
+			associations {
 				edges {
 					node {
 						id
@@ -25,7 +25,39 @@ query LogDetail($id: ID!) {
 					}
 				}
 			}
-			items(first: 5) {
+			characters {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			items {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			places {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			races {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			placesSetIn {
 				edges {
 					node {
 						id
