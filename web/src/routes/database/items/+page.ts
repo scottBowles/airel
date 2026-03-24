@@ -3,6 +3,6 @@ import type { PageLoad } from './$types';
 
 export const load: PageLoad = async (event) => {
 	return {
-		...(await load_ItemList({ event }))
+		...(await load_ItemList({ event, variables: { first: 100 } }))
 	};
 };

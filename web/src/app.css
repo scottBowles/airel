@@ -1,43 +1,455 @@
-@import './lib/styles/fonts.css';
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 @plugin '@tailwindcss/forms';
 
-@theme {
-	--color-industrial-amber: #ffb000;
-	--color-industrial-dim: #4a3e20;
-	--color-industrial-dark: #1a1a1a;
-	--color-industrial-slate: #1e293b;
-	--color-industrial-green: #00ff41;
-	--color-industrial-border: #3f3f3f;
+/* ──────────────────────────────────────────────────────────
+   KSS KONTULARIEN – SHIPBOARD CONSOLE INTERFACE
+   RETRO SCI-FI TERMINAL DESIGN SYSTEM
+   Fonts: Orbitron (display), Share Tech Mono (everything else)
+   ────────────────────────────────────────────────────────── */
 
-	--font-mono: 'Space Mono', monospace;
-	--font-display: 'Rajdhani', sans-serif;
-	--font-body: 'Inter', sans-serif;
+@theme {
+	/* ── Colour Tokens ── */
+	--color-void: #050505;
+	--color-hull: #0c0c0f;
+	--color-panel: #111114;
+	--color-panel-light: #1a1a1f;
+	--color-panel-hover: #16161b;
+	--color-border-dim: rgba(255, 176, 0, 0.08);
+	--color-border-subtle: rgba(255, 176, 0, 0.15);
+	--color-border-accent: rgba(255, 176, 0, 0.3);
+
+	/* Accent palette — CRT phosphor tones */
+	--color-accent-cyan: #4de8e0;
+	--color-accent-cyan-dim: rgba(77, 232, 224, 0.1);
+	--color-accent-cyan-glow: rgba(77, 232, 224, 0.3);
+	--color-accent-amber: #ffb000;
+	--color-accent-amber-dim: rgba(255, 176, 0, 0.08);
+	--color-accent-green: #39ff14;
+	--color-accent-green-dim: rgba(57, 255, 20, 0.08);
+	--color-accent-red: #ff2a2a;
+	--color-accent-red-dim: rgba(255, 42, 42, 0.1);
+	--color-accent-purple: #c084fc;
+
+	/* Text — terminal phosphor tones */
+	--color-text-primary: #d4c5a0;
+	--color-text-secondary: #8a7e60;
+	--color-text-muted: #5c553e;
+	--color-text-accent: #ffb000;
+
+	/* ── Typography ── */
+	--font-display: 'Orbitron', ui-monospace, monospace;
+	--font-body: 'Share Tech Mono', ui-monospace, monospace;
+	--font-mono: 'Share Tech Mono', ui-monospace, monospace;
+
+	/* ── Spacing extras ── */
+	--spacing-18: 4.5rem;
+
+	/* ── Border radius — NONE. Industrial. ── */
+	--radius-panel: 0px;
+
+	/* ── Shadows ── */
+	--shadow-glow-cyan: 0 0 8px rgba(77, 232, 224, 0.2), 0 0 30px rgba(77, 232, 224, 0.06);
+	--shadow-glow-amber: 0 0 8px rgba(255, 176, 0, 0.25), 0 0 30px rgba(255, 176, 0, 0.08);
+	--shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 2px 8px rgba(0, 0, 0, 0.6);
+	--shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+
+	/* ── Animations ── */
+	--animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+	--animate-scan: scanline 8s linear infinite;
+	--animate-fade-in: fade-in 0.3s ease-out;
+	--animate-slide-up: slide-up 0.3s ease-out;
+	--animate-slide-down: slide-down 0.2s ease-out;
+	--animate-blink: blink 1.2s step-end infinite;
+	--animate-flicker: flicker 0.15s ease-in-out;
 }
 
-/* Base Industrial Theme setup */
-:root {
-	color-scheme: dark;
+@keyframes pulse-glow {
+	0%,
+	100% {
+		opacity: 0.3;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+@keyframes scanline {
+	0% {
+		transform: translateY(-100%);
+	}
+	100% {
+		transform: translateY(100%);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slide-down {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+@keyframes flicker {
+	0% {
+		opacity: 1;
+	}
+	25% {
+		opacity: 0.8;
+	}
+	50% {
+		opacity: 1;
+	}
+	75% {
+		opacity: 0.9;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+@keyframes crt-on {
+	0% {
+		transform: scaleY(0.005) scaleX(0);
+		opacity: 0;
+	}
+	40% {
+		transform: scaleY(0.005) scaleX(1);
+		opacity: 0.5;
+	}
+	60% {
+		transform: scaleY(1) scaleX(1);
+		opacity: 0.8;
+	}
+	100% {
+		transform: scaleY(1) scaleX(1);
+		opacity: 1;
+	}
+}
+
+/* ── Global Base ── */
+html {
+	background-color: var(--color-void);
+	color: var(--color-text-primary);
+	font-family: var(--font-body);
+	font-size: 14px;
+	line-height: 1.5;
+	letter-spacing: 0.02em;
 }
 
 body {
-	@apply font-body bg-slate-950 text-[15px] leading-relaxed text-slate-200 antialiased sm:text-base;
-	/* Scanline effect overlay can be added here later */
+	min-height: 100dvh;
+	background-color: var(--color-void);
+	/* CRT vignette effect */
+	background-image: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+	background-attachment: fixed;
 }
 
-@layer base {
-	:focus-visible {
-		outline: 2px solid rgb(255 176 0 / 0.95);
-		outline-offset: 2px;
+/* Persistent CRT scanlines over everything */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 9999;
+	background: repeating-linear-gradient(
+		0deg,
+		transparent 0px,
+		transparent 2px,
+		rgba(0, 0, 0, 0.12) 2px,
+		rgba(0, 0, 0, 0.12) 4px
+	);
+	mix-blend-mode: multiply;
+}
+
+/* Subtle noise grain texture */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 9998;
+	opacity: 0.03;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-size: 256px 256px;
+}
+
+/* Selection */
+::selection {
+	background-color: rgba(255, 176, 0, 0.3);
+	color: #fff;
+}
+
+/* Scrollbar styling — industrial */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--color-void);
+	border-left: 1px solid rgba(255, 176, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(255, 176, 0, 0.15);
+	border: 1px solid rgba(255, 176, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 176, 0, 0.25);
+}
+
+/* ── Shared Utility Classes ── */
+
+/* Panel styling — industrial frame */
+@utility panel-border {
+	border: 1px solid var(--color-border-dim);
+	outline: 1px solid rgba(255, 176, 0, 0.03);
+	outline-offset: 2px;
+}
+
+@utility panel-bg {
+	background-color: var(--color-panel);
+	box-shadow: var(--shadow-panel);
+}
+
+@utility panel-glow {
+	box-shadow: var(--shadow-glow-amber);
+	border-color: rgba(255, 176, 0, 0.3);
+}
+
+/* Content spacing */
+@utility content-pad {
+	padding: 0.75rem;
+	@media (min-width: 640px) {
+		padding: 1rem;
+	}
+	@media (min-width: 1024px) {
+		padding: 1.5rem;
 	}
 }
 
+@utility panel-pad {
+	padding: 0.75rem;
+	@media (min-width: 640px) {
+		padding: 1rem;
+	}
+}
+
+@utility stack-space {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	@media (min-width: 640px) {
+		gap: 1rem;
+	}
+}
+
+/* Typography */
+@utility title-display {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+@utility title-section {
+	font-family: var(--font-mono);
+	font-weight: 400;
+	font-size: 0.7rem;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	border-bottom: 1px solid var(--color-border-dim);
+	padding-bottom: 0.35rem;
+}
+
+@utility copy-readable {
+	font-family: var(--font-mono);
+	line-height: 1.6;
+	font-weight: 400;
+}
+
+@utility machine-text {
+	font-family: var(--font-mono);
+	font-size: 0.7rem;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+/* Text glow helpers — phosphor style */
+@utility text-glow-cyan {
+	color: var(--color-accent-cyan);
+	text-shadow:
+		0 0 6px rgba(77, 232, 224, 0.4),
+		0 0 20px rgba(77, 232, 224, 0.15);
+}
+
+@utility text-glow-amber {
+	color: var(--color-accent-amber);
+	text-shadow:
+		0 0 6px rgba(255, 176, 0, 0.5),
+		0 0 20px rgba(255, 176, 0, 0.2);
+}
+
+@utility text-glow-green {
+	color: var(--color-accent-green);
+	text-shadow:
+		0 0 6px rgba(57, 255, 20, 0.4),
+		0 0 20px rgba(57, 255, 20, 0.15);
+}
+
+@utility text-glow-red {
+	color: var(--color-accent-red);
+	text-shadow:
+		0 0 6px rgba(255, 42, 42, 0.4),
+		0 0 20px rgba(255, 42, 42, 0.15);
+}
+
+/* Industrial border styles */
+@utility border-industrial-dim {
+	border-color: var(--color-border-dim);
+}
+
+@utility border-industrial-accent {
+	border-color: var(--color-border-accent);
+}
+
+/* Corner bracket decoration */
+@utility console-frame {
+	position: relative;
+	&::before,
+	&::after {
+		content: '';
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		border-color: var(--color-accent-amber);
+		opacity: 0.3;
+	}
+	&::before {
+		top: -1px;
+		left: -1px;
+		border-top: 1px solid;
+		border-left: 1px solid;
+	}
+	&::after {
+		bottom: -1px;
+		right: -1px;
+		border-bottom: 1px solid;
+		border-right: 1px solid;
+	}
+}
+
+/* Status indicator dot */
+@utility status-dot {
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 0;
+	background-color: currentColor;
+	box-shadow: 0 0 4px currentColor;
+}
+
+/* Horizontal rule — circuit trace style */
+@utility trace-line {
+	height: 1px;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		var(--color-border-subtle) 15%,
+		var(--color-border-subtle) 85%,
+		transparent
+	);
+}
+
+/* Database page layout helpers */
+@utility db-page {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	@media (min-width: 640px) {
+		gap: 1.25rem;
+	}
+}
+
+@utility db-grid {
+	display: grid;
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+	gap: 2px;
+	@media (min-width: 640px) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	@media (min-width: 1024px) {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	@media (min-width: 1280px) {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+/* Scan line overlay effect */
+@utility scanline-overlay {
+	position: relative;
+	&::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: repeating-linear-gradient(
+			transparent 0px,
+			transparent 2px,
+			rgba(255, 176, 0, 0.01) 2px,
+			rgba(255, 176, 0, 0.01) 4px
+		);
+		z-index: 50;
+	}
+}
+
+/* Inset panel — recessed instrument effect */
+@utility panel-inset {
+	background-color: var(--color-void);
+	box-shadow: var(--shadow-inset);
+	border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-	html:focus-within {
-		scroll-behavior: auto;
-	}
-
 	*,
 	*::before,
 	*::after {
@@ -46,210 +458,35 @@ body {
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
 	}
+	body::after,
+	body::before {
+		display: none !important;
+	}
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-	@apply font-display leading-tight tracking-[0.12em] text-slate-100 uppercase;
+/* ── Focus visible — amber ring ── */
+:focus-visible {
+	outline: 1px solid var(--color-accent-amber);
+	outline-offset: 1px;
 }
 
-/* Utility to force "machine" look */
-.machine-text {
-	@apply text-industrial-amber font-mono tracking-wider uppercase;
+/* ── Form inputs — terminal style ── */
+input[type='text'],
+input[type='url'],
+input[type='email'],
+input[type='search'],
+textarea,
+select {
+	font-family: var(--font-mono) !important;
+	background-color: var(--color-void) !important;
+	border: 1px solid var(--color-border-dim) !important;
+	color: var(--color-text-primary) !important;
+	caret-color: var(--color-accent-amber);
+	border-radius: 0 !important;
 }
 
-/* Custom Utilities for the Bits UI components */
-@layer utilities {
-	.content-pad {
-		@apply px-3 py-4 sm:px-4 sm:py-5 md:p-8;
-	}
-
-	.touch-target {
-		@apply min-h-11 min-w-11;
-	}
-
-	/* Database page layout scale */
-	.db-page {
-		@apply space-y-4 sm:space-y-6;
-	}
-
-	.db-page-wide {
-		@apply space-y-6 sm:space-y-8;
-	}
-
-	.db-header {
-		@apply border-industrial-dim flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between sm:pb-4;
-	}
-
-	.db-title {
-		@apply text-2xl font-bold tracking-widest text-slate-100 uppercase sm:text-3xl;
-	}
-
-	.db-grid {
-		@apply grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3;
-	}
-
-	.db-card {
-		@apply hover:border-industrial-amber block border border-slate-800 bg-slate-900/40 p-3 transition-colors sm:p-4;
-	}
-
-	.db-card-thumb {
-		@apply flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-slate-800 font-mono text-xs text-slate-600 sm:h-10 sm:w-10;
-	}
-
-	.db-card-title {
-		@apply font-display group-hover:text-industrial-amber truncate text-lg text-slate-200 sm:text-xl;
-	}
-
-	.db-card-copy {
-		@apply font-body line-clamp-2 min-h-8 text-xs text-slate-400;
-	}
-
-	.db-detail {
-		@apply space-y-6 p-3 sm:p-4;
-	}
-
-	.db-detail-header {
-		@apply flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-start sm:justify-between;
-	}
-
-	.db-detail-title {
-		@apply text-2xl font-bold text-emerald-400 sm:text-3xl;
-	}
-
-	.db-back-link {
-		@apply inline-flex min-h-11 items-center py-2 text-xs text-zinc-500 transition-colors hover:text-emerald-400 sm:text-sm;
-	}
-
-	.db-detail-grid {
-		@apply grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3;
-	}
-
-	.db-detail-main {
-		@apply space-y-4 sm:space-y-6 lg:col-span-2;
-	}
-
-	.db-detail-side {
-		@apply space-y-4 sm:space-y-6;
-	}
-
-	.db-detail-panel {
-		@apply rounded-sm border border-zinc-800/50 bg-zinc-900/30 p-4;
-	}
-
-	.db-detail-panel-title {
-		@apply mb-2 text-xs font-bold text-zinc-500 uppercase;
-	}
-
-	.log-page {
-		@apply space-y-4 sm:space-y-6;
-	}
-
-	.log-detail-page {
-		@apply mx-auto max-w-4xl space-y-6 pb-16 sm:space-y-8 sm:pb-20;
-	}
-
-	.log-header {
-		@apply border-industrial-dim flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between sm:pb-4;
-	}
-
-	.log-title {
-		@apply text-2xl font-bold tracking-widest text-slate-100 uppercase sm:text-3xl md:text-4xl;
-	}
-
-	.log-card {
-		@apply relative block overflow-hidden rounded-sm border border-slate-700 bg-slate-900/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_10px_22px_rgba(0,0,0,0.18)];
-	}
-
-	.log-group-stack {
-		@apply space-y-6 sm:space-y-8;
-	}
-
-	.log-group {
-		@apply space-y-3 sm:space-y-4;
-	}
-
-	.log-group-heading {
-		@apply sticky -top-4 z-20 -mx-3 border-y border-slate-700/80 bg-slate-950/96 px-7 py-3 backdrop-blur-md transition-[padding,box-shadow,background-color] duration-150 sm:-top-5 sm:-mx-4 sm:px-9 md:-top-8 md:-mx-8 md:px-12;
-	}
-
-	.log-group-heading-active {
-		@apply border-industrial-amber/35 bg-slate-950/97 py-3.5 shadow-[0_14px_30px_rgba(0,0,0,0.34)];
-	}
-
-	.log-group-title {
-		@apply text-industrial-amber font-display text-base font-semibold tracking-[0.22em] uppercase transition-[font-size,letter-spacing,transform,color] duration-150 sm:text-lg;
-	}
-
-	.log-group-title-active {
-		@apply text-industrial-amber text-lg tracking-[0.28em] sm:text-[1.35rem] md:text-[1.7rem];
-	}
-
-	.log-card-body {
-		@apply bg-slate-950/25 px-4 py-4 pl-6 sm:px-5 sm:py-4 sm:pl-7;
-	}
-
-	.log-back-link {
-		@apply hover:text-industrial-amber inline-flex min-h-11 items-center gap-2 py-2 font-mono text-xs tracking-wider text-slate-500 uppercase;
-	}
-
-	.log-panel {
-		@apply rounded-sm border border-slate-700 bg-slate-900/74 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_10px_22px_rgba(0,0,0,0.14)] sm:p-5;
-	}
-
-	.log-panel-title {
-		@apply font-display mb-3 text-lg text-slate-300 uppercase;
-	}
-
-	.log-meta {
-		@apply text-industrial-amber flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-sm;
-	}
-
-	.log-related-grid {
-		@apply grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-3;
-	}
-
-	.log-related-group {
-		@apply space-y-3 rounded-sm border border-slate-700 bg-slate-900/68 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_8px_18px_rgba(0,0,0,0.12)];
-	}
-
-	.log-related-link {
-		@apply text-industrial-amber inline-flex min-h-11 items-center py-1 font-mono text-sm tracking-wider uppercase hover:underline;
-	}
-
-	.log-abstract {
-		@apply rounded-sm border border-slate-700 bg-slate-900/78 py-4 pr-4 pl-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_10px_20px_rgba(0,0,0,0.12)] sm:py-5 sm:pr-5 sm:pl-6;
-	}
-
-	.panel-pad {
-		@apply p-3 sm:p-4 md:p-6;
-	}
-
-	.stack-space {
-		@apply space-y-3 sm:space-y-4 md:space-y-6;
-	}
-
-	.title-display {
-		@apply font-display text-xl leading-tight tracking-[0.14em] uppercase sm:text-2xl md:text-3xl;
-	}
-
-	.copy-readable {
-		@apply text-sm leading-relaxed sm:text-base;
-	}
-
-	.panel-border {
-		@apply border border-slate-700 bg-slate-900/80 backdrop-blur-sm;
-	}
-
-	.industrial-input {
-		@apply focus:border-industrial-amber focus:ring-industrial-amber min-h-11 border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-slate-200 transition-colors duration-75 outline-none focus:ring-1;
-	}
-
-	.industrial-btn {
-		@apply font-display inline-flex min-h-11 items-center justify-center border border-slate-600 bg-slate-800 px-4 py-2 tracking-wider text-slate-200 uppercase transition-all duration-75 hover:border-slate-400 hover:bg-slate-700 active:translate-y-px active:bg-slate-600;
-	}
+input::placeholder,
+textarea::placeholder {
+	color: var(--color-text-muted) !important;
+	font-family: var(--font-mono) !important;
 }

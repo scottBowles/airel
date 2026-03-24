@@ -17,14 +17,10 @@
 
 - **Engine**: `Tailwind CSS` (v4)
 - **Component Primitives**: `Bits UI` (Headless accessibility)
-- **Icons**: `Lucide Svelte` (Recommended, install if needed) or `Phosphor`
-- **Theme**: "Industrial Sci-Fi" / "Nostromo"
-  - **Fonts**: `Space Mono` (Mono), `Rajdhani` (Headers), `Inter` (Body).
-  - **Colors**: Slate/Charcoal background, Amber/Green for data.
-  - **Class Utility**: `clsx` + `tailwind-merge` for class overrides.
+- **Icons**: `Lucide Svelte`
+- **Theme**: "Sci-Fi" / "Spaceship's Console"
 
 ## AI Development Patterns
 
 - **Context Awareness**: Always check `.ai/context/` before major architectural changes.
-- **Routing**: Domain-driven naming (`/logs`, `/database/characters`, `/comms`).
-- **Data**: New entities must verify schema consistency via `schema.graphql` or `schema-summary.md`.
+- **Data**: New entities must verify schema consistency via `schema.graphql`.

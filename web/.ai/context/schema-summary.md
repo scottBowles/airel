@@ -16,11 +16,11 @@ All implement interface `Entity` & `Lockable`.
   - **Character**: Has `race`, `relatedPlaces`, `relatedItems`.
   - **Place**: Has `parentPlace`, `childPlaces`.
   - **Item**: General items.
-  - **Artifact**: Special items.
-  - \*\*Association`: Organizations or groups.
+  - **Artifact**: Specific (individual) items.
+  - **Association**: Organizations or groups.
   - **Race**: Species/Lineage.
 
-## Core Domain: "Comms" (Processors)
+## Core Domain: "Comms"
 
 - **ChatSessionType**: A conversation with the AI.
 - **ChatMessageType**: Individual messages.

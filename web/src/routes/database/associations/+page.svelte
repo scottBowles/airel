@@ -1,59 +1,38 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import { resolve } from '$app/paths';
-	import { sortEdgesByUpdatedDesc } from '$lib/utils';
-	import CldImage from '$lib/components/images/CldImage.svelte';
-	import ScifiPlaceholder from '$lib/components/ui/ScifiPlaceholder.svelte';
+	import { fromStore } from 'svelte/store';
+	import { Globe, Plus } from 'lucide-svelte';
+	import Button from '$lib/components/Button.svelte';
+	import EntityGrid from '$lib/components/EntityGrid.svelte';
+	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
-	let { AssociationList } = $derived(data);
-	let associationEdges = $derived(
-		sortEdgesByUpdatedDesc($AssociationList.data?.associations?.edges)
+	let store = $derived(fromStore(data.AssociationList).current);
+	let entities = $derived(
+		(store?.data?.associations?.edges ?? []).map((e) => e.node),
 	);
 </script>
 
-<div class="db-page">
-	<div class="db-header">
-		<div>
-			<div class="mb-1 font-mono text-xs text-slate-500">DATABASE / ORGANIZATIONS</div>
-			<h2 class="db-title">Associations</h2>
+<svelte:head>
+	<title>Associations — Database — KSS Kontularien</title>
+</svelte:head>
+
+<div class="content-pad db-page">
+	<div class="border border-border-dim bg-hull">
+		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
+			<div class="flex items-center gap-2">
+				<Globe class="h-3 w-3 text-accent-amber/40" />
+				<span class="machine-text text-[9px] text-text-muted/60">ASC // ASSOCIATIONS</span>
+			</div>
+			<span class="machine-text text-[9px] text-text-muted/40">{entities.length} RECORDS</span>
 		</div>
-		<div class="text-industrial-amber font-mono text-xs">
-			Count: {associationEdges.length}
+		<div class="flex items-center justify-between px-3 py-3">
+			<h1 class="title-display text-lg text-accent-amber text-glow-amber">ASSOCIATIONS</h1>
+			<Button variant="primary" href="/database/associations/new">
+				<Plus class="h-3 w-3" />
+				New
+			</Button>
 		</div>
 	</div>
 
-	<!-- Grid -->
-	<div class="db-grid">
-		{#if associationEdges.length}
-			{#each associationEdges as edge (edge.node.id)}
-				<a href={resolve(`/database/associations/${edge.node.id}`)} class="group db-card">
-					<div class="mb-3 flex items-center gap-3">
-						{#if edge.node.imageIds?.length > 0}
-							<div class="db-card-thumb">
-								<CldImage
-									id={edge.node.imageIds[0]}
-									alt={edge.node.name}
-									width={40}
-									height={40}
-									class="h-full w-full object-cover"
-								/>
-							</div>
-						{:else}
-							<ScifiPlaceholder type="association" />
-						{/if}
-						<div class="min-w-0">
-							<h3 class="db-card-title">
-								{edge.node.name}
-							</h3>
-						</div>
-					</div>
-
-					<p class="db-card-copy">
-						{edge.node.description || 'No description available.'}
-					</p>
-				</a>
-			{/each}
-		{/if}
-	</div>
+	<EntityGrid {entities} basePath="/database/associations" emptyMessage="No associations in database" />
 </div>

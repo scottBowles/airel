@@ -1,13 +1,19 @@
-query ItemList {
-	items {
+query ItemList($first: Int, $after: String) {
+	items(first: $first, after: $after) {
 		edges {
 			node {
 				id
-				updated
 				name
 				description
+				thumbnailId
 				imageIds
+				updated
 			}
 		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
 	}
 }

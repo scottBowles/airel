@@ -1,8 +1,0 @@
-mutation UpdateCharacterImages($id: ID!, $imageIds: [String!]) {
-	updateCharacter(input: { id: $id, imageIds: $imageIds }) {
-		... on Character {
-			id
-			imageIds
-		}
-	}
-}

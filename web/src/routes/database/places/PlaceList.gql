@@ -1,17 +1,20 @@
-query PlaceList {
-	places {
+query PlaceList($first: Int, $after: String) {
+	places(first: $first, after: $after) {
 		edges {
 			node {
 				id
-				updated
 				name
 				description
+				thumbnailId
 				imageIds
 				placeType
-				parent {
-					name
-				}
+				updated
 			}
 		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
 	}
 }

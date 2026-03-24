@@ -1,86 +1,54 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import type { PageData } from './$types';
+	import { Users, MapPin, Globe, Swords, Gem, Dna } from 'lucide-svelte';
 
-	let { data }: { data: PageData } = $props();
-	let { DatabaseStats, Me } = $derived(data);
-
-	let accessLevel = $derived(
-		$Me?.data?.me?.isStaff ? 'ACCESS LEVEL: UNRESTRICTED' : 'ACCESS LEVEL: RESTRICTED'
-	);
-
-	let counts = $derived({
-		characters: $DatabaseStats.data?.characters?.totalCount ?? '---',
-		places: $DatabaseStats.data?.places?.totalCount ?? '---',
-		items: $DatabaseStats.data?.items?.totalCount ?? '---',
-		artifacts: $DatabaseStats.data?.artifacts?.totalCount ?? '---',
-		associations: $DatabaseStats.data?.associations?.totalCount ?? '---',
-		races: $DatabaseStats.data?.races?.totalCount ?? '---'
-	});
-
-	let modules = $derived([
-		{
-			name: 'Characters',
-			href: '/database/characters',
-			count: counts.characters
-		},
-		{
-			name: 'Places',
-			href: '/database/places',
-			count: counts.places
-		},
-		{
-			name: 'Items',
-			href: '/database/items',
-			count: counts.items
-		},
-		{
-			name: 'Artifacts',
-			href: '/database/artifacts',
-			count: counts.artifacts
-		},
-		{
-			name: 'Associations',
-			href: '/database/associations',
-			count: counts.associations
-		},
-		{
-			name: 'Races',
-			href: '/database/races',
-			count: counts.races
-		}
-	] as const);
+	const categories = [
+		{ slug: 'characters', label: 'CHARACTERS', code: 'CHR', description: 'Crew, NPCs, and notable figures', icon: Users },
+		{ slug: 'places', label: 'PLACES', code: 'LOC', description: 'Planets, stations, and regions', icon: MapPin },
+		{ slug: 'associations', label: 'ASSOCIATIONS', code: 'ASC', description: 'Factions, guilds, and organizations', icon: Globe },
+		{ slug: 'items', label: 'ITEMS', code: 'ITM', description: 'Weapons, armor, and equipment', icon: Swords },
+		{ slug: 'artifacts', label: 'ARTIFACTS', code: 'ART', description: 'Rare and powerful relics', icon: Gem },
+		{ slug: 'races', label: 'RACES', code: 'RCE', description: 'Species and lineages', icon: Dna },
+	];
 </script>
 
-<div class="db-page-wide">
-	<div class="db-header">
-		<h2 class="db-title">Database Core</h2>
-		<div class="text-industrial-amber font-mono text-xs">{accessLevel}</div>
+<svelte:head>
+	<title>Database — KSS Kontularien</title>
+</svelte:head>
+
+<div class="content-pad db-page">
+	<!-- Header bar -->
+	<div class="border border-border-dim bg-hull">
+		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
+			<div class="flex items-center gap-2">
+				<span class="status-dot text-accent-green"></span>
+				<span class="machine-text text-[9px] text-text-muted/60">DAT-02 // DATABASE</span>
+			</div>
+			<span class="machine-text text-[9px] text-text-muted/40">{categories.length} SUBSYSTEMS</span>
+		</div>
+		<div class="px-3 py-3">
+			<h1 class="title-display text-lg text-accent-amber text-glow-amber">DATABASE</h1>
+			<p class="machine-text text-[10px] text-text-muted mt-0.5">Ship knowledge archives</p>
+		</div>
 	</div>
 
-	<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-		{#each modules as mod (mod.name)}
+	<div class="grid gap-px sm:grid-cols-2 lg:grid-cols-3 border border-border-dim">
+		{#each categories as cat}
 			<a
-				href={resolve(mod.href)}
-				class="group hover:border-industrial-green relative overflow-hidden border border-slate-700 bg-slate-900/40 p-4 transition-all duration-200 sm:p-6"
+				href="/database/{cat.slug}"
+				class="group relative flex flex-col gap-2 bg-panel px-3 py-3 transition-all hover:bg-panel-hover"
 			>
-				<div class="mb-2 flex items-start justify-between gap-3">
-					<h3
-						class="font-display group-hover:text-industrial-green text-xl text-slate-200 uppercase sm:text-2xl"
-					>
-						{mod.name}
-					</h3>
+				<div class="flex items-center justify-between">
+					<span class="machine-text text-[9px] text-text-muted/40">{cat.code}</span>
+					<cat.icon class="h-3.5 w-3.5 text-accent-amber/30 group-hover:text-accent-amber transition-colors" />
 				</div>
-
-				<div class="group-hover:text-industrial-green/70 font-mono text-xs text-slate-500">
-					RECORDS: {mod.count}
+				<h2 class="text-xs font-bold text-text-primary uppercase tracking-widest group-hover:text-accent-amber transition-colors">
+					{cat.label}
+				</h2>
+				<p class="text-[11px] text-text-muted leading-relaxed">{cat.description}</p>
+				<div class="border-t border-border-dim pt-1.5 mt-auto">
+					<span class="machine-text text-[9px] text-text-muted/40 group-hover:text-accent-amber transition-colors">ACCESS &gt;</span>
 				</div>
-
-				<div class="mt-4 h-1 w-full bg-slate-800">
-					<div
-						class="group-hover:bg-industrial-green h-full w-1/3 bg-slate-600 transition-all duration-500"
-					></div>
-				</div>
+				<div class="absolute bottom-0 left-0 h-px w-0 bg-accent-amber transition-all duration-300 group-hover:w-full"></div>
 			</a>
 		{/each}
 	</div>

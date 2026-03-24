@@ -1,0 +1,11 @@
+mutation UnlockEntity($id: ID!) {
+	unlock(input: { id: $id }) {
+		id
+		lockedBySelf
+		lockUser {
+			id
+			username
+		}
+		lockTime
+	}
+}

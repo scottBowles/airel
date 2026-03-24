@@ -1,8 +1,0 @@
-mutation UpdateAssociationImages($id: ID!, $imageIds: [String!]) {
-	updateAssociation(input: { id: $id, imageIds: $imageIds }) {
-		... on Association {
-			id
-			imageIds
-		}
-	}
-}

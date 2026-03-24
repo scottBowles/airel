@@ -127,25 +127,35 @@
 </script>
 
 <div
-	class="relative flex min-h-full w-full items-start justify-center overflow-hidden bg-slate-950 py-4 sm:items-center sm:py-6"
+	class="relative flex min-h-dvh w-full items-start justify-center overflow-hidden bg-void py-4 sm:items-center sm:py-6"
 >
+	<!-- Amber glow from top -->
 	<div
-		class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,176,0,0.08),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.25),rgba(2,6,23,0.92))]"
+		class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,176,0,0.04),transparent_35%)]"
+	></div>
+
+	<!-- Grid background -->
+	<div
+		class="pointer-events-none absolute inset-0 opacity-[0.03]"
+		style="background-image: linear-gradient(rgba(255,176,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,176,0,0.3) 1px, transparent 1px); background-size: 60px 60px;"
 	></div>
 
 	<section
-		class="panel-border panel-pad relative mx-auto flex w-full max-w-md flex-col gap-4 rounded-sm bg-slate-900/82 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_18px_48px_rgba(0,0,0,0.32)]"
+		class="relative mx-auto flex w-full max-w-md flex-col gap-4 border border-border-dim bg-hull/90 px-6 py-5 text-center shadow-panel backdrop-blur-sm"
 	>
-		<p class="font-mono text-[11px] tracking-[0.28em] text-slate-500 uppercase">Computer Access</p>
+		<div class="flex items-center justify-between border-b border-border-dim pb-2">
+			<span class="machine-text text-[9px] text-text-muted/50">KSS-7742 // TERMINAL ACCESS</span>
+			<span class="machine-text text-[9px] text-accent-amber/40">SEC-GATE</span>
+		</div>
 
-		<div class="space-y-3">
-			<h1 class="title-display text-industrial-amber text-2xl sm:text-3xl">System Access</h1>
-			<p class="copy-readable mx-auto max-w-sm text-slate-400">
-				Sign in to access the Kontularien's onboard systems.
+		<div class="space-y-2">
+			<h1 class="title-display text-lg text-accent-amber text-glow-amber">SYSTEM ACCESS</h1>
+			<p class="machine-text text-[10px] text-text-muted">
+				Authenticate to access the Kontularien's onboard systems.
 			</p>
 		</div>
 
-		<div class="border-industrial-dim border-t pt-5 sm:pt-6">
+		<div class="border-t border-border-dim pt-4">
 			<div bind:this={buttonShell} class="mx-auto w-full max-w-[320px]">
 				{#key googleButtonWidth}
 					<div bind:this={buttonContainer} class="mx-auto min-h-11 w-full"></div>
@@ -153,7 +163,7 @@
 			</div>
 		</div>
 
-		<p class="font-mono text-xs tracking-[0.2em] text-slate-500 uppercase">
+		<p class="machine-text text-[9px] tracking-[0.2em] text-text-muted/40 uppercase">
 			Authorized Personnel Only
 		</p>
 	</section>

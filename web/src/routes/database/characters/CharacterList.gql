@@ -1,14 +1,23 @@
-query CharacterList {
-	characters {
+query CharacterList($first: Int, $after: String) {
+	characters(first: $first, after: $after) {
 		edges {
 			node {
 				id
-				updated
 				name
 				description
-				imageIds
 				thumbnailId
+				imageIds
+				race {
+					id
+					name
+				}
+				updated
 			}
 		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
 	}
 }

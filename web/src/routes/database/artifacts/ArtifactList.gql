@@ -1,13 +1,19 @@
-query ArtifactList {
-	artifacts {
+query ArtifactList($first: Int, $after: String) {
+	artifacts(first: $first, after: $after) {
 		edges {
 			node {
 				id
-				updated
 				name
 				description
+				thumbnailId
 				imageIds
+				updated
 			}
 		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
 	}
 }

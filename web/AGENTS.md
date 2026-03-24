@@ -105,6 +105,6 @@ These commands map to their corresponding tools. For example, `vp dev --port 300
 
 ## Review Checklist for Agents
 
-- [ ] If a task fails due to a missing module or 'command not found', run vp install to sync the environment before retrying.
+- [ ] Run `vp install` after pulling remote changes and before getting started.
 - [ ] Run `vp check` and `vp test` to validate changes.
 <!--VITE PLUS END-->

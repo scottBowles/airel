@@ -1,0 +1,70 @@
+query GameLogDetail($id: ID!) {
+	node(id: $id) {
+		... on GameLog {
+			id
+			title
+			brief
+			synopsis
+			gameDate
+			url
+			lockedBySelf
+			lockUser {
+				id
+				username
+			}
+			lockTime
+			characters(first: 50) {
+				edges {
+					node {
+						id
+						name
+						thumbnailId
+						imageIds
+					}
+				}
+			}
+			places(first: 50) {
+				edges {
+					node {
+						id
+						name
+						thumbnailId
+						imageIds
+					}
+				}
+			}
+			associations(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			items(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			artifacts(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			races(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+		}
+	}
+}

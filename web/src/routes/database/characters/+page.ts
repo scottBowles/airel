@@ -1,8 +1,8 @@
 import { load_CharacterList } from '$houdini';
-import type { PageLoad } from './$houdini';
+import type { PageLoad } from './$types';
 
 export const load: PageLoad = async (event) => {
 	return {
-		...(await load_CharacterList({ event }))
+		...(await load_CharacterList({ event, variables: { first: 100 } }))
 	};
 };

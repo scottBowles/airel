@@ -1,0 +1,97 @@
+query ItemDetail($id: ID!) {
+	node(id: $id) {
+		... on Item {
+			id
+			name
+			description
+			thumbnailId
+			imageIds
+			markdownNotes
+			created
+			updated
+			lockedBySelf
+			lockUser {
+				id
+				username
+			}
+			lockTime
+			weapon {
+				id
+				attackBonus
+			}
+			armor {
+				id
+				acBonus
+			}
+			equipment {
+				id
+				briefDescription
+			}
+			artifacts(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedCharacters(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedPlaces(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedAssociations(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedItems(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedArtifacts(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedRaces(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			logs(first: 20, order: { gameDate: DESC }) {
+				edges {
+					node {
+						id
+						title
+						gameDate
+					}
+				}
+			}
+		}
+	}
+}
