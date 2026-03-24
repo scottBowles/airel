@@ -8,28 +8,6 @@ query GameLogList($first: Int, $after: String, $order: GameLogOrder) {
 				synopsis
 				gameDate
 				url
-				lockedBySelf
-				lockUser {
-					id
-					username
-				}
-				lockTime
-				characters(first: 10) {
-					edges {
-						node {
-							id
-							name
-						}
-					}
-				}
-				places(first: 10) {
-					edges {
-						node {
-							id
-							name
-						}
-					}
-				}
 			}
 		}
 		pageInfo {

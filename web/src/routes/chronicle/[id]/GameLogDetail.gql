@@ -65,6 +65,14 @@ query GameLogDetail($id: ID!) {
 					}
 				}
 			}
+			placesSetIn(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
 		}
 	}
 }

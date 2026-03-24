@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
-	import { goto } from '$app/navigation';
 	import { formatGameDate } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -21,6 +20,7 @@
 	import Panel from '$lib/components/Panel.svelte';
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
 	import RelatedEntitiesBlock from '$lib/components/RelatedEntitiesBlock.svelte';
+	import EntityPicker from '$lib/components/EntityPicker.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
@@ -30,6 +30,15 @@
 	let editTitle = $state('');
 	let editBrief = $state('');
 	let editSynopsis = $state('');
+	let saving = $state(false);
+	let editSetInChanges: { add: { id: string; name: string }[]; remove: string[] } = $state({ add: [], remove: [] });
+
+	function getEffectiveSetIn() {
+		const original = log?.placesSetIn?.edges.map(e => e.node) ?? [];
+		const kept = original.filter(p => !editSetInChanges.remove.includes(p.id));
+		const removed = original.filter(p => editSetInChanges.remove.includes(p.id));
+		return { kept, added: editSetInChanges.add, removed };
+	}
 
 	const lockMutation = graphql(`
 		mutation LockGameLog($id: ID!) {
@@ -62,6 +71,7 @@
 					brief
 					synopsis
 					lockedBySelf
+					placesSetIn(first: 50) { edges { node { id name } } }
 				}
 				... on OperationInfo {
 					messages { field kind message }
@@ -75,9 +85,9 @@
 		await lockMutation.mutate({ id: log.id });
 	}
 
-	async function handleUnlock() {
+	function handleUnlock() {
 		if (!log) return;
-		await unlockMutation.mutate({ id: log.id });
+		unlockMutation.mutate({ id: log.id });
 	}
 
 	$effect(() => {
@@ -85,27 +95,43 @@
 			editTitle = log.title ?? '';
 			editBrief = log.brief ?? '';
 			editSynopsis = log.synopsis ?? '';
+			editSetInChanges = { add: [], remove: [] };
 		}
 	});
 
 	let editing = $derived(!!log?.lockedBySelf);
 
 	function discardEdits() {
+		editSetInChanges = { add: [], remove: [] };
 		handleUnlock();
 	}
 
 	async function saveEdits() {
 		if (!log) return;
+		if (!editTitle.trim()) {
+			toast.error('Title is required');
+			return;
+		}
+		saving = true;
+		const placesSetIn = editSetInChanges.add.length || editSetInChanges.remove.length
+			? {
+				...(editSetInChanges.add.length ? { add: editSetInChanges.add.map(e => ({ id: e.id })) } : {}),
+				...(editSetInChanges.remove.length ? { remove: editSetInChanges.remove.map(id => ({ id })) } : {}),
+			}
+			: undefined;
 		const result = await updateMutation.mutate({
 			input: {
 				id: log.id,
 				title: editTitle,
 				brief: editBrief,
 				synopsis: editSynopsis,
+				placesSetIn,
 			},
 		});
+		saving = false;
 		if (result.data?.updateGamelog?.__typename === 'GameLog') {
-			await handleUnlock();
+			editSetInChanges = { add: [], remove: [] };
+			handleUnlock();
 			toast.success('Log updated');
 		} else {
 			toast.error('Failed to update log');
@@ -189,11 +215,11 @@
 						onunlock={handleUnlock}
 					/>
 					{#if editing}
-						<Button variant="primary" size="sm" onclick={saveEdits}>
+						<Button size="sm" onclick={saveEdits} disabled={saving}>
 							<Save class="h-3 w-3" />
-							Commit
+							{saving ? 'Saving...' : 'Commit'}
 						</Button>
-						<Button variant="ghost" size="sm" onclick={discardEdits}>
+						<Button variant="ghost" size="sm" onclick={discardEdits} disabled={saving}>
 							<X class="h-3 w-3" />
 							Discard
 						</Button>
@@ -205,6 +231,61 @@
 		<div class="grid gap-3 lg:grid-cols-[1fr_260px]">
 			<!-- Main content -->
 			<div class="stack-space">
+				<!-- Set In -->
+				{#if editing}
+					<Panel>
+						<h2 class="title-section mb-3">Set In</h2>
+						{@const effective = getEffectiveSetIn()}
+						{#if effective.kept.length || effective.added.length || effective.removed.length}
+							<div class="flex flex-wrap gap-2 mb-3">
+								{#each effective.kept as place}
+									<span class="inline-flex items-center gap-1 border border-border-dim bg-void px-2 py-0.5 text-xs text-accent-amber">
+										{place.name}
+										<button type="button" onclick={() => { editSetInChanges.remove = [...editSetInChanges.remove, place.id]; }} class="cursor-pointer text-text-muted hover:text-accent-red ml-1">✕</button>
+									</span>
+								{/each}
+								{#each effective.added as place}
+									<span class="inline-flex items-center gap-1 border border-accent-green/30 bg-accent-green/5 px-2 py-0.5 text-xs text-accent-green">
+										+ {place.name}
+										<button type="button" onclick={() => { editSetInChanges.add = editSetInChanges.add.filter(e => e.id !== place.id); }} class="cursor-pointer text-text-muted hover:text-accent-red ml-1">✕</button>
+									</span>
+								{/each}
+								{#each effective.removed as place}
+									<span class="inline-flex items-center gap-1 border border-border-dim bg-void px-2 py-0.5 text-xs text-text-muted line-through opacity-50">
+										{place.name}
+										<button type="button" onclick={() => { editSetInChanges.remove = editSetInChanges.remove.filter(id => id !== place.id); }} class="cursor-pointer text-accent-amber hover:text-accent-amber ml-1 no-underline">↩</button>
+									</span>
+								{/each}
+							</div>
+						{/if}
+						<EntityPicker
+							entityType="Place"
+							onselect={(e) => {
+								if (!editSetInChanges.add.some(a => a.id === e.id)) {
+									editSetInChanges.add = [...editSetInChanges.add, { id: e.id, name: e.name }];
+								}
+							}}
+							exclude={[...(log?.placesSetIn?.edges.map(e => e.node.id) ?? []), ...editSetInChanges.add.map(e => e.id)].filter(id => !editSetInChanges.remove.includes(id))}
+						/>
+					</Panel>
+				{:else if log.placesSetIn && log.placesSetIn.edges.length > 0}
+					<Panel>
+						<h2 class="title-section mb-3 flex items-center gap-2">
+							<MapPin class="h-3 w-3 text-text-muted" />
+							Set In
+						</h2>
+						<div class="flex flex-wrap gap-2">
+							{#each log.placesSetIn.edges as edge}
+								<a
+									href="/database/places/{edge.node.id}"
+									class="border border-border-dim bg-void px-2 py-0.5 text-xs text-accent-amber transition-colors hover:bg-accent-amber/10"
+								>
+									{edge.node.name}
+								</a>
+							{/each}
+						</div>
+					</Panel>
+				{/if}
 				{#if log.brief || editing}
 					<Panel>
 						<h2 class="title-section mb-2">Brief</h2>

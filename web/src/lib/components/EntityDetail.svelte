@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Component, Snippet } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import {
 		ArrowLeft,
 		Users,
@@ -187,6 +188,10 @@
 
 	async function saveEdits() {
 		if (!onsave) return;
+		if (!editName.trim()) {
+			toast.error('Name is required');
+			return;
+		}
 		saving = true;
 		const relatedFields: Record<string, NodeInputList> = {};
 		for (const section of allSections) {

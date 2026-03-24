@@ -6,7 +6,6 @@ export const load: PageLoad = async (event) => {
 		...(await load_GameLogList({
 			event,
 			variables: {
-				first: 50,
 				order: { gameDate: 'DESC' }
 			}
 		}))
