@@ -6,11 +6,15 @@
 	import { ExternalLink, Plus, X } from 'lucide-svelte';
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
+	import { getUserContext } from '$lib/auth';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.GameLogList).current);
 	let logs = $derived(store?.data?.gameLogs?.edges ?? []);
+
+	const getUser = getUserContext();
+	let isStaff = $derived(!!getUser()?.isStaff);
 
 	let showNewForm = $state(false);
 	let url = $state('');
@@ -80,6 +84,7 @@
 				<h1 class="title-display text-lg text-accent-amber text-glow-amber">CHRONICLE</h1>
 				<p class="machine-text text-[10px] text-text-muted mt-0.5">Mission logs and session records</p>
 			</div>
+		{#if isStaff}
 			<Button variant="primary" onclick={() => { showNewForm = !showNewForm; }}>
 				{#if showNewForm}
 					<X class="h-3 w-3" />
@@ -89,18 +94,19 @@
 					New Log
 				{/if}
 			</Button>
+		{/if}
 		</div>
 	</div>
 
 	<!-- Inline new log form -->
-	{#if showNewForm}
+	{#if isStaff && showNewForm}
 		<form onsubmit={handleSubmit} class="flex gap-2 border border-accent-amber/30 bg-hull px-3 py-3">
 			<input
 				type="url"
 				bind:this={urlInput}
 				bind:value={url}
 				placeholder="https://docs.google.com/document/d/..."
-				class="flex-1 bg-void border border-border-dim px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-accent-amber focus:outline-none"
+				class="flex-1 bg-void border border-border-dim px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-faint focus:border-accent-amber focus:outline-none"
 			/>
 			<Button type="submit" variant="primary" disabled={loading}>
 				<Plus class="h-3 w-3" />
