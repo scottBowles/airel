@@ -66,7 +66,7 @@
 			</div>
 			<span class="machine-text text-[9px] text-accent-green/60">● ONLINE</span>
 		</div>
-		<div class="flex items-center justify-between px-3 py-3">
+		<div class="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
 			<div>
 				<h1 class="title-display text-lg text-accent-green text-glow-green">KOZMO</h1>
 				<p class="machine-text text-[10px] text-text-muted mt-0.5">
