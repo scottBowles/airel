@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
+	import { getUserContext } from '$lib/auth';
 	import { Lock, Unlock } from 'lucide-svelte';
 
 	let {
@@ -17,6 +18,9 @@
 		onunlock: () => void;
 		class?: string;
 	} = $props();
+
+	const getUser = getUserContext();
+	let isStaff = $derived(!!getUser()?.isStaff);
 </script>
 
 <div class={cn('flex items-center gap-2', className)}>
@@ -34,7 +38,7 @@
 			<Unlock class="h-3 w-3" />
 			EDITING
 		</span>
-	{:else}
+	{:else if isStaff}
 		<button
 			onclick={onlock}
 			class="machine-text flex items-center gap-1.5 text-text-muted text-[10px] transition-colors hover:text-accent-amber cursor-pointer"

@@ -3,14 +3,18 @@
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
+	import EntityPicker from '$lib/components/EntityPicker.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+	import { X } from 'lucide-svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.CharacterDetail).current);
 	let entity = $derived(store?.data?.node?.__typename === 'Character' ? store.data.node : null);
 
-	let editSize = $state('');
+	let editRaceId = $state<string | null>(null);
+	let editRaceName = $state('');
+	let raceCleared = $state(false);
 
 	const lockMutation = graphql(`
 		mutation LockCharacter($id: ID!) {
@@ -26,7 +30,14 @@
 		mutation UpdateCharacterDetail($input: CharacterInputPartial!) {
 			updateCharacter(input: $input) {
 				... on Character {
-					id name description markdownNotes size lockedBySelf
+					id name description markdownNotes lockedBySelf
+					race { id name }
+					relatedCharacters(first: 50) { edges { node { id name } } }
+					relatedPlaces(first: 50) { edges { node { id name } } }
+					relatedAssociations(first: 50) { edges { node { id name } } }
+					relatedItems(first: 50) { edges { node { id name } } }
+					relatedArtifacts(first: 50) { edges { node { id name } } }
+					relatedRaces(first: 50) { edges { node { id name } } }
 				}
 				... on OperationInfo {
 					messages { field kind message }
@@ -42,15 +53,17 @@
 		if (entity) await unlockMutation.mutate({ id: entity.id });
 	}
 
-	async function handleSave(fields: { name: string; description: string; markdownNotes: string }) {
+	async function handleSave(fields: Record<string, unknown> & { name: string; description: string; markdownNotes: string }) {
 		if (!entity) return false;
+		const { name: n, description: d, markdownNotes: m, ...relatedChanges } = fields;
 		const result = await updateMutation.mutate({
 			input: {
 				id: entity.id,
-				name: fields.name,
-				description: fields.description,
-				markdownNotes: fields.markdownNotes,
-				size: editSize,
+				name: n,
+				description: d,
+				markdownNotes: m,
+				race: editRaceId ? { id: editRaceId } : undefined,
+				...relatedChanges,
 			},
 		});
 		if (result.data?.updateCharacter?.__typename === 'Character') {
@@ -68,6 +81,7 @@
 
 {#if entity}
 	<EntityDetail
+		entityId={entity.id}
 		name={entity.name}
 		description={entity.description}
 		thumbnailId={entity.thumbnailId}
@@ -81,7 +95,11 @@
 		onlock={handleLock}
 		onunlock={handleUnlock}
 		onsave={handleSave}
-		onstartediting={() => { editSize = entity?.size ?? ''; }}
+		onstartediting={() => {
+			editRaceId = entity?.race?.id ?? null;
+			editRaceName = entity?.race?.name ?? '';
+			raceCleared = false;
+		}}
 		relatedCharacters={entity.relatedCharacters}
 		relatedPlaces={entity.relatedPlaces}
 		relatedAssociations={entity.relatedAssociations}
@@ -91,22 +109,14 @@
 		logs={entity.logs}
 	>
 		{#snippet extraInfo()}
-			<div class="flex flex-wrap gap-4">
-				{#if entity.race}
-					<Panel class="flex-1">
-						<h2 class="title-section mb-1">Race</h2>
-						<a href="/database/races/{entity.race.id}" class="text-accent-amber hover:text-accent-amber/80">
-							{entity.race.name}
-						</a>
-					</Panel>
-				{/if}
-				{#if entity.size}
-					<Panel class="flex-1">
-						<h2 class="title-section mb-1">Size</h2>
-						<p class="text-text-primary">{entity.size}</p>
-					</Panel>
-				{/if}
-			</div>
+			{#if entity.race}
+				<Panel>
+					<h2 class="title-section mb-1">Race</h2>
+					<a href="/database/races/{entity.race.id}" class="text-accent-amber hover:text-accent-amber/80">
+						{entity.race.name}
+					</a>
+				</Panel>
+			{/if}
 
 			{#if entity.featuresAndTraits && entity.featuresAndTraits.edges.length > 0}
 				<Panel>
@@ -146,12 +156,17 @@
 				<h2 class="title-section mb-2">Character Details</h2>
 				<div class="space-y-3">
 					<div>
-						<label class="machine-text mb-1 block text-[10px] text-text-muted uppercase">Size</label>
-						<input
-							bind:value={editSize}
-							placeholder="e.g. Medium, Small..."
-							class="w-full border border-border-dim bg-bg-inset px-2 py-1 text-xs text-text-primary outline-none focus:border-accent-amber"
-						/>
+						<label class="machine-text mb-1 block text-[10px] text-text-muted uppercase">Race</label>
+						{#if editRaceId && !raceCleared}
+							<div class="flex items-center gap-2">
+								<span class="text-xs text-accent-amber">{editRaceName}</span>
+								<button onclick={() => { editRaceId = null; editRaceName = ''; raceCleared = true; }} class="cursor-pointer text-xs text-text-muted hover:text-accent-red">
+									<X class="h-3 w-3" />
+								</button>
+							</div>
+						{:else}
+							<EntityPicker entityType="Race" onselect={(e) => { editRaceId = e.id; editRaceName = e.name; raceCleared = false; }} />
+						{/if}
 					</div>
 				</div>
 			</Panel>

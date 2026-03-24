@@ -5,10 +5,13 @@
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+	import EntityPicker from '$lib/components/EntityPicker.svelte';
 
 	let name = $state('');
 	let description = $state('');
 	let markdownNotes = $state('');
+	let raceId = $state<string | null>(null);
+	let raceName = $state('');
 	let loading = $state(false);
 
 	const createMutation = graphql(`
@@ -25,7 +28,12 @@
 		loading = true;
 		try {
 			const result = await createMutation.mutate({
-				input: { name: name.trim(), description: description.trim() || undefined, markdownNotes: markdownNotes.trim() || undefined },
+				input: {
+					name: name.trim(),
+					description: description.trim() || undefined,
+					markdownNotes: markdownNotes.trim() || undefined,
+					race: raceId ? { id: raceId } : undefined,
+				},
 			});
 			const payload = result.data?.createCharacter;
 			if (payload?.__typename === 'Character') {
@@ -56,6 +64,17 @@
 			<div>
 				<label for="name" class="title-section mb-2 block">Name *</label>
 				<input id="name" bind:value={name} class="w-full bg-void border border-border-dim px-2.5 py-2 text-text-primary placeholder:text-text-muted/50 focus:border-accent-amber focus:outline-none" placeholder="Character name" />
+			</div>
+			<div>
+				<label class="title-section mb-2 block">Race</label>
+				{#if raceName}
+					<div class="flex items-center gap-2">
+						<span class="text-xs text-accent-amber">{raceName}</span>
+						<button type="button" onclick={() => { raceId = null; raceName = ''; }} class="cursor-pointer text-xs text-text-muted hover:text-accent-red">✕</button>
+					</div>
+				{:else}
+					<EntityPicker entityType="Race" onselect={(e) => { raceId = e.id; raceName = e.name; }} />
+				{/if}
 			</div>
 			<div>
 				<label for="desc" class="title-section mb-2 block">Description</label>

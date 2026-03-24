@@ -23,6 +23,30 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	interface CloudinaryUploadWidget {
+		open(): void;
+		close(): void;
+		destroy(): void;
+	}
+
+	interface CloudinaryUploadResult {
+		event: string;
+		info: {
+			public_id: string;
+			secure_url: string;
+			[key: string]: unknown;
+		};
+	}
+
+	interface Window {
+		cloudinary?: {
+			createUploadWidget(
+				options: Record<string, unknown>,
+				callback: (error: unknown, result: CloudinaryUploadResult) => void
+			): CloudinaryUploadWidget;
+		};
+	}
 }
 
 export {};

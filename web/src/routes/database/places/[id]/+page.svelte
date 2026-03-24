@@ -3,6 +3,8 @@
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
+	import EntityPicker from '$lib/components/EntityPicker.svelte';
+	import PlaceBreadcrumbs from '$lib/components/PlaceBreadcrumbs.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import type { PageData } from './$houdini';
 
@@ -11,6 +13,9 @@
 	let entity = $derived(store?.data?.node?.__typename === 'Place' ? store.data.node : null);
 
 	let editPlaceType = $state('');
+	let editParentId = $state<string | null>(null);
+	let editParentName = $state('');
+	let parentCleared = $state(false);
 
 	const lockMutation = graphql(`
 		mutation LockPlace($id: ID!) {
@@ -27,6 +32,13 @@
 			updatePlace(input: $input) {
 				... on Place {
 					id name description markdownNotes placeType lockedBySelf
+					parent { id name placeType }
+					relatedCharacters(first: 50) { edges { node { id name } } }
+					relatedPlaces(first: 50) { edges { node { id name } } }
+					relatedAssociations(first: 50) { edges { node { id name } } }
+					relatedItems(first: 50) { edges { node { id name } } }
+					relatedArtifacts(first: 50) { edges { node { id name } } }
+					relatedRaces(first: 50) { edges { node { id name } } }
 				}
 				... on OperationInfo {
 					messages { field kind message }
@@ -42,15 +54,23 @@
 		if (entity) await unlockMutation.mutate({ id: entity.id });
 	}
 
-	async function handleSave(fields: { name: string; description: string; markdownNotes: string }) {
+	async function handleSave(fields: Record<string, unknown> & { name: string; description: string; markdownNotes: string }) {
 		if (!entity) return false;
+		const { name: n, description: d, markdownNotes: m, ...relatedChanges } = fields;
+		const parentInput = editParentId
+			? { id: editParentId }
+			: parentCleared
+				? null
+				: undefined;
 		const result = await updateMutation.mutate({
 			input: {
 				id: entity.id,
-				name: fields.name,
-				description: fields.description,
-				markdownNotes: fields.markdownNotes,
+				name: n,
+				description: d,
+				markdownNotes: m,
 				placeType: editPlaceType || undefined,
+				...(parentInput !== undefined ? { parent: parentInput } : {}),
+				...relatedChanges,
 			},
 		});
 		if (result.data?.updatePlace?.__typename === 'Place') {
@@ -70,6 +90,7 @@
 
 {#if entity}
 	<EntityDetail
+		entityId={entity.id}
 		name={entity.name}
 		description={entity.description}
 		thumbnailId={entity.thumbnailId}
@@ -83,7 +104,7 @@
 		onlock={handleLock}
 		onunlock={handleUnlock}
 		onsave={handleSave}
-		onstartediting={() => { editPlaceType = entity?.placeType ?? ''; }}
+		onstartediting={() => { editPlaceType = entity?.placeType ?? ''; editParentId = null; editParentName = ''; parentCleared = false; }}
 		relatedCharacters={entity.relatedCharacters}
 		relatedPlaces={entity.relatedPlaces}
 		relatedAssociations={entity.relatedAssociations}
@@ -92,6 +113,9 @@
 		relatedRaces={entity.relatedRaces}
 		logs={entity.logs}
 	>
+		{#snippet breadcrumbs()}
+			<PlaceBreadcrumbs place={entity} />
+		{/snippet}
 		{#snippet extraInfo()}
 			<div class="flex flex-wrap gap-4">
 				{#if entity.placeType}
@@ -148,6 +172,32 @@
 								<option value={pt}>{pt.charAt(0) + pt.slice(1).toLowerCase()}</option>
 							{/each}
 						</select>
+					</div>
+					<div>
+						<label class="machine-text mb-1 block text-[10px] text-text-muted uppercase">Parent Place</label>
+						{#if editParentId}
+							<div class="flex items-center gap-2">
+								<span class="text-xs text-accent-amber">{editParentName}</span>
+								<button type="button" onclick={() => { editParentId = null; editParentName = ''; parentCleared = true; }} class="cursor-pointer text-xs text-text-muted hover:text-accent-red">✕</button>
+							</div>
+						{:else if !parentCleared && entity?.parent}
+							<div class="flex items-center gap-2">
+								<span class="text-xs text-accent-amber">{entity.parent.name}</span>
+								<button type="button" onclick={() => { parentCleared = true; }} class="cursor-pointer text-xs text-text-muted hover:text-accent-red">✕</button>
+							</div>
+						{:else}
+							{#if parentCleared && entity?.parent}
+								<div class="mb-1">
+									<span class="text-xs text-text-muted line-through opacity-50">{entity.parent.name}</span>
+									<button type="button" onclick={() => { parentCleared = false; }} class="cursor-pointer text-xs text-accent-amber hover:text-accent-amber ml-1">↩</button>
+								</div>
+							{/if}
+							<EntityPicker
+								entityType="Place"
+								onselect={(e) => { editParentId = e.id; editParentName = e.name; parentCleared = false; }}
+								exclude={[entity?.id ?? '']}
+							/>
+						{/if}
 					</div>
 				</div>
 			</Panel>

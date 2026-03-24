@@ -1,17 +1,13 @@
 <script lang="ts">
-	import { formatGameDate } from '$lib/utils';
-	import { cn } from '$lib/utils';
+	import type { Component, Snippet } from 'svelte';
 	import {
 		ArrowLeft,
-		Calendar,
 		Users,
 		MapPin,
 		Globe,
 		Swords,
 		Gem,
 		Dna,
-		BookOpen,
-		ImageIcon,
 		Save,
 		X,
 	} from 'lucide-svelte';
@@ -19,16 +15,44 @@
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
 	import CloudinaryImage from '$lib/components/CloudinaryImage.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import ImageGallery from '$lib/components/ImageGallery.svelte';
+	import EntityLogsBlock from '$lib/components/EntityLogsBlock.svelte';
+	import RelatedEntitiesBlock from '$lib/components/RelatedEntitiesBlock.svelte';
+	import EntityPicker from '$lib/components/EntityPicker.svelte';
 
 	type RelatedConnection = {
-		edges: Array<{ node: { id: string; name: string; thumbnailId?: string | null; imageIds?: string[] | null } }>;
+		edges: Array<{ node: { id: string; name: string } }>;
 	} | null;
 
 	type LogConnection = {
 		edges: Array<{ node: { id: string; title: string | null; gameDate: Date | null } }>;
 	} | null;
 
+	type NodeInputList = { add?: Array<{ id: string }>; remove?: Array<{ id: string }> };
+
+	type SaveFields = {
+		name: string;
+		description: string;
+		markdownNotes: string;
+		relatedCharacters?: NodeInputList;
+		relatedPlaces?: NodeInputList;
+		relatedAssociations?: NodeInputList;
+		relatedItems?: NodeInputList;
+		relatedArtifacts?: NodeInputList;
+		relatedRaces?: NodeInputList;
+	};
+
+	type SectionDef = {
+		key: string;
+		label: string;
+		icon: Component;
+		data: RelatedConnection;
+		route: string;
+		entityType: 'Character' | 'Place' | 'Association' | 'Item' | 'Artifact' | 'Race';
+	};
+
 	let {
+		entityId,
 		name,
 		description,
 		thumbnailId,
@@ -45,6 +69,7 @@
 		onstartediting,
 		extraInfo,
 		editExtraInfo,
+		breadcrumbs,
 		relatedCharacters,
 		relatedPlaces,
 		relatedAssociations,
@@ -52,8 +77,8 @@
 		relatedArtifacts,
 		relatedRaces,
 		logs,
-		headerActions,
 	}: {
+		entityId: string;
 		name: string;
 		description?: string | null;
 		thumbnailId?: string | null;
@@ -66,10 +91,11 @@
 		lockUser?: { username: string } | null;
 		onlock: () => void;
 		onunlock: () => void;
-		onsave?: (fields: { name: string; description: string; markdownNotes: string }) => Promise<boolean>;
+		onsave?: (fields: SaveFields) => Promise<boolean>;
 		onstartediting?: () => void;
-		extraInfo?: import('svelte').Snippet;
-		editExtraInfo?: import('svelte').Snippet;
+		extraInfo?: Snippet;
+		editExtraInfo?: Snippet;
+		breadcrumbs?: Snippet;
 		relatedCharacters?: RelatedConnection;
 		relatedPlaces?: RelatedConnection;
 		relatedAssociations?: RelatedConnection;
@@ -77,7 +103,6 @@
 		relatedArtifacts?: RelatedConnection;
 		relatedRaces?: RelatedConnection;
 		logs?: LogConnection;
-		headerActions?: import('svelte').Snippet;
 	} = $props();
 
 	let editing = $derived(lockedBySelf);
@@ -86,46 +111,108 @@
 	let editDescription = $state('');
 	let editMarkdownNotes = $state('');
 
+	// Related entity editing state
+	let relatedAdds = $state<Record<string, Array<{ id: string; name: string }>>>({});
+	let relatedRemoves = $state<Record<string, string[]>>({});
+
+	const allSections: SectionDef[] = $derived([
+		{ key: 'relatedCharacters', label: 'Characters', icon: Users, data: relatedCharacters, route: '/database/characters', entityType: 'Character' },
+		{ key: 'relatedPlaces', label: 'Places', icon: MapPin, data: relatedPlaces, route: '/database/places', entityType: 'Place' },
+		{ key: 'relatedAssociations', label: 'Associations', icon: Globe, data: relatedAssociations, route: '/database/associations', entityType: 'Association' },
+		{ key: 'relatedItems', label: 'Items', icon: Swords, data: relatedItems, route: '/database/items', entityType: 'Item' },
+		{ key: 'relatedArtifacts', label: 'Artifacts', icon: Gem, data: relatedArtifacts, route: '/database/artifacts', entityType: 'Artifact' },
+		{ key: 'relatedRaces', label: 'Races', icon: Dna, data: relatedRaces, route: '/database/races', entityType: 'Race' },
+	]);
+
+	// Read-only view: only non-empty sections
+	const relatedSections = $derived(
+		allSections.filter((s) => s.data && s.data.edges.length > 0),
+	);
+
 	$effect(() => {
 		if (lockedBySelf) {
 			editName = name;
 			editDescription = description ?? '';
 			editMarkdownNotes = markdownNotes ?? '';
+			relatedAdds = {};
+			relatedRemoves = {};
 			onstartediting?.();
 		}
 	});
 
 	function discardEdits() {
+		relatedAdds = {};
+		relatedRemoves = {};
 		onunlock();
+	}
+
+	function addRelated(key: string, entity: { id: string; name: string }) {
+		relatedAdds[key] = [...(relatedAdds[key] ?? []), entity];
+	}
+
+	function removeRelated(key: string, id: string) {
+		const current = relatedRemoves[key] ?? [];
+		if (!current.includes(id)) {
+			relatedRemoves[key] = [...current, id];
+		}
+	}
+
+	function undoAdd(key: string, id: string) {
+		relatedAdds[key] = (relatedAdds[key] ?? []).filter((e) => e.id !== id);
+	}
+
+	function undoRemove(key: string, id: string) {
+		relatedRemoves[key] = (relatedRemoves[key] ?? []).filter((x) => x !== id);
+	}
+
+	function getEffectiveItems(section: SectionDef) {
+		const existing = section.data?.edges.map((e) => e.node) ?? [];
+		const removes = relatedRemoves[section.key] ?? [];
+		const adds = relatedAdds[section.key] ?? [];
+		return {
+			kept: existing.filter((e) => !removes.includes(e.id)),
+			removed: existing.filter((e) => removes.includes(e.id)),
+			added: adds,
+		};
+	}
+
+	function getExcludeIds(section: SectionDef): string[] {
+		const existing = section.data?.edges.map((e) => e.node.id) ?? [];
+		const addedIds = (relatedAdds[section.key] ?? []).map((e) => e.id);
+		const removedIds = relatedRemoves[section.key] ?? [];
+		// Exclude all that would appear in the list (existing - removed + added) + self
+		const inList = [...existing, ...addedIds].filter((id) => !removedIds.includes(id));
+		return [entityId, ...inList];
 	}
 
 	async function saveEdits() {
 		if (!onsave) return;
 		saving = true;
+		const relatedFields: Record<string, NodeInputList> = {};
+		for (const section of allSections) {
+			const adds = relatedAdds[section.key] ?? [];
+			const removes = [...(relatedRemoves[section.key] ?? [])];
+			if (adds.length || removes.length) {
+				relatedFields[section.key] = {
+					...(adds.length ? { add: adds.map((e) => ({ id: e.id })) } : {}),
+					...(removes.length ? { remove: removes.map((id) => ({ id })) } : {}),
+				};
+			}
+		}
+
 		const ok = await onsave({
 			name: editName,
 			description: editDescription,
 			markdownNotes: editMarkdownNotes,
+			...relatedFields,
 		});
 		saving = false;
-		if (ok) onunlock();
+		if (ok) {
+			relatedAdds = {};
+			relatedRemoves = {};
+			onunlock();
+		}
 	}
-
-	const relatedSections = $derived(
-		[
-			{ label: 'Characters', icon: Users, data: relatedCharacters, route: '/database/characters' },
-			{ label: 'Places', icon: MapPin, data: relatedPlaces, route: '/database/places' },
-			{
-				label: 'Associations',
-				icon: Globe,
-				data: relatedAssociations,
-				route: '/database/associations',
-			},
-			{ label: 'Items', icon: Swords, data: relatedItems, route: '/database/items' },
-			{ label: 'Artifacts', icon: Gem, data: relatedArtifacts, route: '/database/artifacts' },
-			{ label: 'Races', icon: Dna, data: relatedRaces, route: '/database/races' },
-		].filter((s) => s.data && s.data.edges.length > 0),
-	);
 </script>
 
 <div class="content-pad db-page">
@@ -137,6 +224,10 @@
 		<ArrowLeft class="h-3.5 w-3.5" />
 		<span>{backLabel}</span>
 	</a>
+
+	{#if breadcrumbs}
+		{@render breadcrumbs()}
+	{/if}
 
 	<!-- Header panel -->
 	<div class="panel-border panel-bg panel-pad console-frame">
@@ -184,9 +275,6 @@
 						Discard
 					</Button>
 				{/if}
-				{#if headerActions}
-					{@render headerActions()}
-				{/if}
 			</div>
 		</div>
 	</div>
@@ -219,67 +307,85 @@
 				</Panel>
 			{/if}
 
-			{#if imageIds.length > 1}
-				<Panel>
-					<h2 class="title-section mb-2 flex items-center gap-2">
-						<ImageIcon class="h-3 w-3 text-text-muted" />
-						Gallery
-					</h2>
-					<div class="grid grid-cols-2 gap-1 sm:grid-cols-3">
-						{#each imageIds as imgId}
-							<CloudinaryImage
-								imageId={imgId}
-								alt={name}
-								width={400}
-								crop="fit"
-								class="w-full"
-							/>
-						{/each}
-					</div>
-				</Panel>
-			{/if}
+			<ImageGallery {entityId} {imageIds} {name} />
 		</div>
 
 		<!-- Sidebar -->
 		<aside class="stack-space">
-			{#each relatedSections as section}
-				<Panel>
-					<h3 class="title-section mb-2 flex items-center gap-2">
-						<section.icon class="h-3 w-3 text-text-muted" />
-						{section.label}
-					</h3>
-					<div class="space-y-px">
-						{#each section.data?.edges ?? [] as edge}
-							<a
-								href="{section.route}/{edge.node.id}"
-								class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-							>
-								{edge.node.name}
-							</a>
-						{/each}
-					</div>
-				</Panel>
-			{/each}
-
-			{#if logs && logs.edges.length > 0}
-				<Panel>
-					<h3 class="title-section mb-2 flex items-center gap-2">
-						<BookOpen class="h-3 w-3 text-text-muted" />
-						Appears In
-					</h3>
-					<div class="space-y-px">
-						{#each logs.edges as edge}
-							<a
-								href="/chronicle/{edge.node.id}"
-								class="flex items-center gap-2 px-2 py-1 text-[11px] text-text-secondary transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-							>
-								<Calendar class="h-3 w-3 shrink-0 text-accent-amber/30" />
-								<span class="truncate uppercase tracking-wider">{edge.node.title ?? formatGameDate(edge.node.gameDate)}</span>
-							</a>
-						{/each}
-					</div>
-				</Panel>
+			{#if editing}
+				{#each allSections as section}
+					{@const effective = getEffectiveItems(section)}
+					{@const hasContent = effective.kept.length > 0 || effective.added.length > 0}
+					<Panel>
+						<h3 class="title-section mb-2 flex items-center gap-2">
+							<section.icon class="h-3 w-3 text-text-muted" />
+							{section.label}
+						</h3>
+						{#if hasContent}
+							<div class="space-y-px">
+								{#each effective.kept as item}
+									<div class="group flex items-center justify-between">
+										<a
+											href="{section.route}/{item.id}"
+											class="flex-1 truncate px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:text-accent-amber"
+										>
+											{item.name}
+										</a>
+										<button
+											onclick={() => removeRelated(section.key, item.id)}
+											class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100"
+										>
+											<X class="h-3 w-3" />
+										</button>
+									</div>
+								{/each}
+								{#each effective.added as item}
+									<div class="group flex items-center justify-between">
+										<span class="flex-1 truncate px-2 py-1 text-[11px] text-accent-green uppercase tracking-wider">
+											+ {item.name}
+										</span>
+										<button
+											onclick={() => undoAdd(section.key, item.id)}
+											class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100"
+										>
+											<X class="h-3 w-3" />
+										</button>
+									</div>
+								{/each}
+							</div>
+						{/if}
+						{#if effective.removed.length > 0}
+							<div class="mt-1 space-y-px border-t border-border-dim pt-1">
+								{#each effective.removed as item}
+									<div class="group flex items-center justify-between opacity-50">
+										<span class="flex-1 truncate px-2 py-1 text-[11px] text-text-muted line-through uppercase tracking-wider">
+											{item.name}
+										</span>
+										<button
+											onclick={() => undoRemove(section.key, item.id)}
+											class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-green group-hover:opacity-100"
+											title="Undo remove"
+										>
+											↩
+										</button>
+									</div>
+								{/each}
+							</div>
+						{/if}
+						<div class="mt-1.5">
+							<EntityPicker
+								entityType={section.entityType}
+								onselect={(e) => addRelated(section.key, e)}
+								exclude={getExcludeIds(section)}
+								placeholder="Add {section.label.toLowerCase()}..."
+							/>
+						</div>
+					</Panel>
+				{/each}
+			{:else}
+				<RelatedEntitiesBlock sections={relatedSections} />
 			{/if}
+			<EntityLogsBlock {entityId} {logs} />
 		</aside>
 	</div>
 </div>

@@ -5,11 +5,14 @@
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+	import EntityPicker from '$lib/components/EntityPicker.svelte';
 
 	let name = $state('');
 	let description = $state('');
 	let markdownNotes = $state('');
 	let placeType = $state('');
+	let parentId = $state<string | null>(null);
+	let parentName = $state('');
 	let loading = $state(false);
 
 	const placeTypes = ['DISTRICT', 'LOCATION', 'MOON', 'PLANET', 'REGION', 'STAR', 'TOWN'];
@@ -33,6 +36,7 @@
 					description: description.trim() || undefined,
 					markdownNotes: markdownNotes.trim() || undefined,
 					placeType: placeType || undefined,
+					parent: parentId ? { id: parentId } : undefined,
 				},
 			});
 			const payload = result.data?.createPlace;
@@ -73,6 +77,17 @@
 						<option value={pt}>{pt.charAt(0) + pt.slice(1).toLowerCase()}</option>
 					{/each}
 				</select>
+			</div>
+			<div>
+				<label class="title-section mb-2 block">Parent Location</label>
+				{#if parentName}
+					<div class="flex items-center gap-2">
+						<span class="text-xs text-accent-amber">{parentName}</span>
+						<button type="button" onclick={() => { parentId = null; parentName = ''; }} class="cursor-pointer text-xs text-text-muted hover:text-accent-red">✕</button>
+					</div>
+				{:else}
+					<EntityPicker entityType="Place" onselect={(e) => { parentId = e.id; parentName = e.name; }} />
+				{/if}
 			</div>
 			<div>
 				<label for="desc" class="title-section mb-2 block">Description</label>

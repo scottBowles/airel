@@ -20,6 +20,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
+	import RelatedEntitiesBlock from '$lib/components/RelatedEntitiesBlock.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
@@ -114,9 +115,18 @@
 	type RelatedEntity = { id: string; name: string; thumbnailId?: string | null; imageIds?: string[] | null };
 	type RelatedEdge = { node: RelatedEntity };
 
-	function entityUrl(type: string, id: string) {
-		return `/database/${type}/${id}`;
-	}
+	const relatedSections = $derived(
+		log
+			? [
+					{ label: 'Characters', icon: Users, data: log.characters, route: '/database/characters' },
+					{ label: 'Places', icon: MapPin, data: log.places, route: '/database/places' },
+					{ label: 'Associations', icon: Globe, data: log.associations, route: '/database/associations' },
+					{ label: 'Items', icon: Swords, data: log.items, route: '/database/items' },
+					{ label: 'Artifacts', icon: Gem, data: log.artifacts, route: '/database/artifacts' },
+					{ label: 'Races', icon: Dna, data: log.races, route: '/database/races' },
+				]
+			: [],
+	);
 </script>
 
 <svelte:head>
@@ -230,119 +240,7 @@
 
 			<!-- Sidebar — Related entities -->
 			<aside class="stack-space">
-				{#if (log.characters?.edges?.length ?? 0) > 0}
-					<Panel>
-						<h3 class="title-section mb-2 flex items-center gap-2">
-							<Users class="h-3 w-3 text-accent-cyan/40" />
-							Characters
-						</h3>
-						<div class="space-y-px">
-							{#each log.characters?.edges ?? [] as edge}
-								<a
-									href={entityUrl('characters', edge.node.id)}
-									class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-								>
-									{edge.node.name}
-								</a>
-							{/each}
-						</div>
-					</Panel>
-				{/if}
-
-				{#if (log.places?.edges?.length ?? 0) > 0}
-					<Panel>
-						<h3 class="title-section mb-2 flex items-center gap-2">
-							<MapPin class="h-3 w-3 text-accent-amber/40" />
-							Places
-						</h3>
-						<div class="space-y-px">
-							{#each log.places?.edges ?? [] as edge}
-								<a
-									href={entityUrl('places', edge.node.id)}
-									class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-								>
-									{edge.node.name}
-								</a>
-							{/each}
-						</div>
-					</Panel>
-				{/if}
-
-				{#if (log.associations?.edges?.length ?? 0) > 0}
-					<Panel>
-						<h3 class="title-section mb-2 flex items-center gap-2">
-							<Globe class="h-3 w-3 text-accent-purple/40" />
-							Associations
-						</h3>
-						<div class="space-y-px">
-							{#each log.associations?.edges ?? [] as edge}
-								<a
-									href={entityUrl('associations', edge.node.id)}
-									class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-								>
-									{edge.node.name}
-								</a>
-							{/each}
-						</div>
-					</Panel>
-				{/if}
-
-				{#if (log.items?.edges?.length ?? 0) > 0}
-					<Panel>
-						<h3 class="title-section mb-2 flex items-center gap-2">
-							<Swords class="h-3 w-3 text-accent-green/40" />
-							Items
-						</h3>
-						<div class="space-y-px">
-							{#each log.items?.edges ?? [] as edge}
-								<a
-									href={entityUrl('items', edge.node.id)}
-									class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-								>
-									{edge.node.name}
-								</a>
-							{/each}
-						</div>
-					</Panel>
-				{/if}
-
-				{#if (log.artifacts?.edges?.length ?? 0) > 0}
-					<Panel>
-						<h3 class="title-section mb-2 flex items-center gap-2">
-							<Gem class="h-3 w-3 text-accent-amber/40" />
-							Artifacts
-						</h3>
-						<div class="space-y-px">
-							{#each log.artifacts?.edges ?? [] as edge}
-								<a
-									href={entityUrl('artifacts', edge.node.id)}
-									class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-								>
-									{edge.node.name}
-								</a>
-							{/each}
-						</div>
-					</Panel>
-				{/if}
-
-				{#if (log.races?.edges?.length ?? 0) > 0}
-					<Panel>
-						<h3 class="title-section mb-2 flex items-center gap-2">
-							<Dna class="h-3 w-3 text-accent-green/40" />
-							Races
-						</h3>
-						<div class="space-y-px">
-							{#each log.races?.edges ?? [] as edge}
-								<a
-									href={entityUrl('races', edge.node.id)}
-									class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-								>
-									{edge.node.name}
-								</a>
-							{/each}
-						</div>
-					</Panel>
-				{/if}
+				<RelatedEntitiesBlock sections={relatedSections} />
 			</aside>
 		</div>
 	{:else}

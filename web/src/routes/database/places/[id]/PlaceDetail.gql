@@ -20,6 +20,32 @@ query PlaceDetail($id: ID!) {
 			parent {
 				id
 				name
+				placeType
+				parent {
+					id
+					name
+					placeType
+					parent {
+						id
+						name
+						placeType
+						parent {
+							id
+							name
+							placeType
+							parent {
+								id
+								name
+								placeType
+								parent {
+									id
+									name
+									placeType
+								}
+							}
+						}
+					}
+				}
 			}
 			children(first: 50) {
 				edges {

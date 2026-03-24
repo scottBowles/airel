@@ -2,12 +2,15 @@
 	import '../app.css';
 	import { fromStore } from 'svelte/store';
 	import { Toaster } from 'svelte-sonner';
+	import { setUserContext } from '$lib/auth';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 
 	let { data, children } = $props();
 	let meResult = $derived.by(() => fromStore(data.Me).current);
 	let user = $derived(meResult?.data?.me);
+
+	setUserContext(() => user);
 
 	let searchOpen = $state(false);
 </script>

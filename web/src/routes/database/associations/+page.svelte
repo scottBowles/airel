@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
 	import { Globe, Plus } from 'lucide-svelte';
+	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import EntityGrid from '$lib/components/EntityGrid.svelte';
 	import type { PageData } from './$houdini';
+
+	const getUser = getUserContext();
+	let isStaff = $derived(!!getUser()?.isStaff);
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.AssociationList).current);
@@ -27,10 +31,12 @@
 		</div>
 		<div class="flex items-center justify-between px-3 py-3">
 			<h1 class="title-display text-lg text-accent-amber text-glow-amber">ASSOCIATIONS</h1>
-			<Button variant="primary" href="/database/associations/new">
-				<Plus class="h-3 w-3" />
-				New
-			</Button>
+			{#if isStaff}
+				<Button variant="primary" href="/database/associations/new">
+					<Plus class="h-3 w-3" />
+					New
+				</Button>
+			{/if}
 		</div>
 	</div>
 
