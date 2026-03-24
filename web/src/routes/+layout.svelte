@@ -22,7 +22,7 @@
 	<Sidebar {user} onsearch={() => (searchOpen = true)} />
 
 	<!-- Main content area -->
-	<main class="min-h-dvh flex-1 lg:pl-56">
+	<main class="min-h-dvh flex-1 pt-9 pb-14 lg:pl-56 lg:pt-0 lg:pb-0">
 		{@render children()}
 	</main>
 </div>

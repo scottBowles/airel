@@ -68,7 +68,7 @@
 </svelte:head>
 
 <div class="content-pad flex min-h-dvh flex-col">
-	<div class="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center py-8 lg:py-0">
+	<div class="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center py-2 lg:py-0">
 
 		<!-- System header bar -->
 		<div class="border border-border-dim bg-hull px-4 py-2 mb-4">

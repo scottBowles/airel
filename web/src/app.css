@@ -256,9 +256,9 @@ body::before {
 
 /* Content spacing */
 @utility content-pad {
-	padding: 0.75rem;
+	padding: 0.25rem 0.75rem 0.75rem;
 	@media (min-width: 640px) {
-		padding: 1rem;
+		padding: 0.25rem 1rem 1rem;
 	}
 	@media (min-width: 1024px) {
 		padding: 1.5rem;

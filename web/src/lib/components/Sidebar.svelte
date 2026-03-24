@@ -9,8 +9,6 @@
 		Search,
 		LogIn,
 		LogOut,
-		Menu,
-		X,
 	} from 'lucide-svelte';
 
 	let {
@@ -20,8 +18,6 @@
 		user: { username: string; isStaff?: boolean } | null | undefined;
 		onsearch: () => void;
 	} = $props();
-
-	let mobileOpen = $state(false);
 
 	const navItems = [
 		{ href: '/', label: 'BRIDGE', icon: Home, code: 'SYS-00' },
@@ -35,48 +31,73 @@
 		return page.url.pathname.startsWith(href);
 	}
 
-	function closeMobile() {
-		mobileOpen = false;
-	}
-
 	async function logout() {
 		await fetch('/auth/logout', { method: 'POST' });
 		window.location.href = '/login';
 	}
 </script>
 
-<!-- Mobile hamburger -->
-<button
-	class="fixed left-2 top-2 z-50 flex h-9 w-9 items-center justify-center border border-border-dim bg-hull text-accent-amber lg:hidden"
-	onclick={() => (mobileOpen = !mobileOpen)}
-	aria-label="Toggle navigation"
->
-	{#if mobileOpen}
-		<X class="h-4 w-4" />
+<!-- ═══ Mobile: top bar ═══ -->
+<div class="fixed left-0 right-0 top-0 z-50 flex h-9 items-center justify-between border-b border-border-dim bg-hull px-3 lg:hidden">
+	<a href="/" class="title-display text-xs text-accent-amber text-glow-amber">
+		KSS KONTULARIEN
+	</a>
+	{#if user}
+		<button
+			onclick={logout}
+			class="flex h-7 w-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 text-[10px] font-bold text-accent-amber uppercase"
+			title="Log out ({user.username})"
+		>
+			{user.username.charAt(0)}
+		</button>
 	{:else}
-		<Menu class="h-4 w-4" />
+		<a
+			href="/login"
+			class="flex h-7 w-7 items-center justify-center border border-border-dim text-text-muted transition-colors hover:text-accent-amber"
+			title="Log in"
+		>
+			<LogIn class="h-3.5 w-3.5" />
+		</a>
 	{/if}
-</button>
+</div>
 
-<!-- Mobile overlay -->
-{#if mobileOpen}
+<!-- ═══ Mobile: bottom tab bar ═══ -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-stretch border-t border-border-dim bg-hull lg:hidden" aria-label="Main navigation">
+	{#each navItems as item}
+		{@const active = isActive(item.href)}
+		<a
+			href={item.href}
+			class={cn(
+				'flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors',
+				active
+					? 'text-accent-amber'
+					: 'text-text-muted hover:text-accent-amber',
+			)}
+		>
+			<item.icon class="h-4 w-4" />
+			<span class="text-[8px] uppercase tracking-wider">{item.label}</span>
+			{#if active}
+				<div class="absolute top-0 h-0.5 w-8 bg-accent-amber"></div>
+			{/if}
+		</a>
+	{/each}
 	<button
-		class="fixed inset-0 z-30 bg-black/70 lg:hidden"
-		onclick={closeMobile}
-		aria-label="Close navigation"
-	></button>
-{/if}
+		onclick={onsearch}
+		class="flex flex-1 flex-col items-center justify-center gap-0.5 text-text-muted transition-colors hover:text-accent-amber"
+	>
+		<Search class="h-4 w-4" />
+		<span class="text-[8px] uppercase tracking-wider">SEARCH</span>
+	</button>
+</nav>
 
-<!-- Sidebar -->
+<!-- ═══ Desktop: sidebar ═══ -->
 <nav
-	class={cn(
-		'fixed left-0 top-0 z-40 flex h-dvh w-56 flex-col border-r border-border-subtle bg-hull transition-transform duration-200 lg:translate-x-0',
-		mobileOpen ? 'translate-x-0' : '-translate-x-full',
-	)}
+	class="fixed left-0 top-0 z-40 hidden h-dvh w-56 flex-col border-r border-border-subtle bg-hull lg:flex"
+	aria-label="Main navigation"
 >
 	<!-- Ship identity — top panel -->
 	<div class="border-b border-border-subtle px-4 py-3">
-		<a href="/" class="group block" onclick={closeMobile}>
+		<a href="/" class="group block">
 			<div class="flex items-center gap-2 mb-1">
 				<span class="status-dot text-accent-green animate-pulse-glow"></span>
 				<span class="machine-text text-[9px] text-text-muted">ONLINE</span>
@@ -94,15 +115,12 @@
 	<!-- Search trigger -->
 	<div class="border-b border-border-dim px-3 py-2">
 		<button
-			onclick={() => {
-				closeMobile();
-				onsearch();
-			}}
+			onclick={onsearch}
 			class="flex w-full items-center gap-2 border border-border-dim bg-void px-2.5 py-1.5 text-left text-text-muted transition-colors hover:border-accent-amber/30 hover:text-accent-amber"
 		>
 			<Search class="h-3.5 w-3.5" />
 			<span class="text-[11px] uppercase tracking-widest flex-1">Search</span>
-			<kbd class="hidden border border-border-dim bg-panel px-1 py-0.5 text-[9px] sm:inline">
+			<kbd class="border border-border-dim bg-panel px-1 py-0.5 text-[9px]">
 				⌘K
 			</kbd>
 		</button>
@@ -116,7 +134,6 @@
 				{@const active = isActive(item.href)}
 				<a
 					href={item.href}
-					onclick={closeMobile}
 					class={cn(
 						'group flex items-center gap-2.5 px-2 py-2 text-xs uppercase tracking-wider transition-all',
 						active
@@ -171,7 +188,6 @@
 		{:else}
 			<a
 				href="/login"
-				onclick={closeMobile}
 				class="flex items-center gap-2.5 text-xs text-text-secondary uppercase tracking-wider transition-colors hover:text-accent-amber"
 			>
 				<LogIn class="h-3.5 w-3.5 text-text-muted" />
