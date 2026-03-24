@@ -5,6 +5,13 @@ query PlaceDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
 			placeType
 			parent {
 				id

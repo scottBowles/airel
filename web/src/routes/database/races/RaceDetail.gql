@@ -6,6 +6,21 @@ query RaceDetail($id: ID!) {
 			description
 			markdownNotes
 			imageIds
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
+			characters {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
 			relatedArtifacts {
 				edges {
 					node {

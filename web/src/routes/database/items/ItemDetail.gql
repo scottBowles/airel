@@ -6,6 +6,30 @@ query ItemDetail($id: ID!) {
 			description
 			markdownNotes
 			imageIds
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
+			artifacts {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			armor {
+				acBonus
+			}
+			equipment {
+				briefDescription
+			}
+			weapon {
+				attackBonus
+			}
 			relatedArtifacts {
 				edges {
 					node {

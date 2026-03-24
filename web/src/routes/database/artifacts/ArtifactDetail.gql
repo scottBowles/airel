@@ -5,7 +5,15 @@ query ArtifactDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			notes
 			imageIds
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
 			items {
 				edges {
 					node {

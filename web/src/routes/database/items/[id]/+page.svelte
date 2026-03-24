@@ -2,17 +2,52 @@
 	import DOMPurify from 'isomorphic-dompurify';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import type { PageData } from './$houdini';
-	import { UpdateItemImagesStore } from '$houdini';
+	import type { PageData as RoutePageData } from './$houdini';
+	import {
+		type EntityEditorOptionsStore,
+		LockItemEditorStore,
+		UnlockItemEditorStore,
+		UpdateItemEditorStore,
+		UpdateItemImagesStore
+	} from '$houdini';
 	import RelationGroupList from '$lib/components/database/RelationGroupList.svelte';
+	import DatabaseEntityEditor from '$lib/components/database/DatabaseEntityEditor.svelte';
+	import {
+		DEFAULT_DATABASE_ENTITY_DRAFT,
+		type DatabaseEntityDraft,
+		type DatabaseEntityEditorConfig
+	} from '$lib/components/database/database-entity-editor-types';
 	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
 	import EntityLogManager from '$lib/components/logs/EntityLogManager.svelte';
+	import {
+		buildEntityEditorRelationOptions,
+		buildNodeInputList,
+		getLockUserDisplayName,
+		mapNamedRelationOptions,
+		normalizeTextValue
+	} from '$lib/database-entity-edit';
 	import {
 		buildRelationGroups,
 		detailPanelClass,
 		detailRailCardClass,
 		getLogNodes
 	} from '$lib/database-detail';
+	import { extractMutationErrorMessage, getOperationInfoMessage } from '$lib/mutation-errors';
+	import { fromStore } from 'svelte/store';
+	import { Pencil } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
+
+	type PageData = RoutePageData & {
+		EntityEditorOptions: EntityEditorOptionsStore;
+	};
+
+	const itemEditorConfig: DatabaseEntityEditorConfig = {
+		entityLabel: 'Item',
+		showArmorAcBonus: true,
+		showEquipmentBriefDescription: true,
+		showWeaponAttackBonus: true,
+		primaryRelations: [{ key: 'artifacts', title: 'Artifacts' }]
+	};
 
 	let { data }: { data: PageData } = $props();
 	let ItemDetail = $derived(data.ItemDetail);
@@ -20,6 +55,38 @@
 	let Me = $derived(data.Me);
 	let me = $derived($Me?.data?.me);
 	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
+	let EntityEditorOptionsResult = $derived.by(() =>
+		fromStore(data.EntityEditorOptions).current
+	);
+	let relationOptions = $derived.by(() =>
+		buildEntityEditorRelationOptions(EntityEditorOptionsResult?.data ?? undefined)
+	);
+	let lockOwnerName = $derived.by(() =>
+		item && item.__typename === 'Item' && item.lockUser ? getLockUserDisplayName(item.lockUser) : null
+	);
+	let editableItem = $derived.by<DatabaseEntityDraft | null>(() => {
+		if (!item || item.__typename !== 'Item') {
+			return null;
+		}
+
+		return {
+			...DEFAULT_DATABASE_ENTITY_DRAFT,
+			id: item.id,
+			name: item.name ?? '',
+			description: item.description ?? '',
+			markdownNotes: item.markdownNotes ?? '',
+			armorAcBonus: item.armor?.acBonus?.toString() ?? '',
+			equipmentBriefDescription: item.equipment?.briefDescription ?? '',
+			weaponAttackBonus: item.weapon?.attackBonus?.toString() ?? '',
+			artifacts: mapNamedRelationOptions('artifacts', item.artifacts),
+			relatedArtifacts: mapNamedRelationOptions('artifacts', item.relatedArtifacts),
+			relatedAssociations: mapNamedRelationOptions('associations', item.relatedAssociations),
+			relatedCharacters: mapNamedRelationOptions('characters', item.relatedCharacters),
+			relatedItems: mapNamedRelationOptions('items', item.relatedItems),
+			relatedPlaces: mapNamedRelationOptions('places', item.relatedPlaces),
+			relatedRaces: mapNamedRelationOptions('races', item.relatedRaces)
+		};
+	});
 	let relationGroups = $derived.by(() => {
 		if (!item || item.__typename !== 'Item') {
 			return [];
@@ -52,13 +119,101 @@
 		return DOMPurify.sanitize(item.markdownNotes);
 	});
 
-	const updateStore = new UpdateItemImagesStore();
+	const updateImagesStore = new UpdateItemImagesStore();
+	const lockStore = new LockItemEditorStore();
+	const unlockStore = new UnlockItemEditorStore();
+	const updateEditorStore = new UpdateItemEditorStore();
 
 	async function saveImages(newIds: string[]) {
-		await updateStore.mutate({
+		await updateImagesStore.mutate({
 			id: page.params.id ?? '',
 			imageIds: newIds
 		});
+	}
+
+	async function acquireLock() {
+		if (!item || item.__typename !== 'Item') {
+			return;
+		}
+
+		const response = await lockStore.mutate({ id: item.id });
+		const responseErrorMessage = extractMutationErrorMessage(null, response.errors);
+
+		if (responseErrorMessage) {
+			toast.error(responseErrorMessage);
+			return;
+		}
+
+		const payload = response.data?.lock;
+
+		if (!payload) {
+			throw new Error('No item lock payload returned.');
+		}
+
+		toast.success('Item lock acquired.');
+	}
+
+	async function discardChanges() {
+		if (!item || item.__typename !== 'Item') {
+			return;
+		}
+
+		const response = await unlockStore.mutate({ id: item.id });
+		const responseErrorMessage = extractMutationErrorMessage(null, response.errors);
+
+		if (responseErrorMessage) {
+			throw new Error(responseErrorMessage);
+		}
+
+		const payload = response.data?.unlock;
+
+		if (!payload) {
+			throw new Error('No item unlock payload returned.');
+		}
+
+		toast.success('Item changes discarded.');
+		return payload;
+	}
+
+	async function saveChanges(draft: DatabaseEntityDraft) {
+		const armorAcBonus = normalizeTextValue(draft.armorAcBonus, true);
+		const weaponAttackBonus = normalizeTextValue(draft.weaponAttackBonus, true);
+
+		const response = await updateEditorStore.mutate({
+			id: draft.id,
+			name: normalizeTextValue(draft.name, true),
+			description: normalizeTextValue(draft.description),
+			markdownNotes: normalizeTextValue(draft.markdownNotes),
+			artifacts: buildNodeInputList(draft.artifacts),
+			armor: { acBonus: armorAcBonus ? Number(armorAcBonus) : null },
+			equipment: { briefDescription: normalizeTextValue(draft.equipmentBriefDescription) },
+			weapon: { attackBonus: weaponAttackBonus ? Number(weaponAttackBonus) : null },
+			relatedArtifacts: buildNodeInputList(draft.relatedArtifacts),
+			relatedAssociations: buildNodeInputList(draft.relatedAssociations),
+			relatedCharacters: buildNodeInputList(draft.relatedCharacters),
+			relatedItems: buildNodeInputList(draft.relatedItems),
+			relatedPlaces: buildNodeInputList(draft.relatedPlaces),
+			relatedRaces: buildNodeInputList(draft.relatedRaces)
+		});
+		const responseErrorMessage = extractMutationErrorMessage(null, response.errors);
+
+		if (responseErrorMessage) {
+			throw new Error(responseErrorMessage);
+		}
+
+		const payload = response.data?.updateItem;
+
+		if (!payload) {
+			throw new Error('No item update payload returned.');
+		}
+
+		const operationInfoMessage = getOperationInfoMessage(payload, 'Failed to save item changes.');
+
+		if (!operationInfoMessage) {
+			toast.success('Item changes saved.');
+		}
+
+		return payload;
 	}
 </script>
 
@@ -68,7 +223,29 @@
 			<div class="space-y-2 sm:space-y-2.5">
 				<h1 class="db-detail-title">{item.name}</h1>
 			</div>
-			<a href={resolve('/database/items')} class="db-back-link"> ← Back to Items </a>
+			<div class="flex flex-col items-start gap-3 sm:items-end">
+				<a href={resolve('/database/items')} class="db-back-link"> ← Back to Items </a>
+				{#if isAdmin}
+					<div class="flex flex-wrap items-center gap-3">
+						{#if item.lockUser && !item.lockedBySelf && lockOwnerName}
+							<div class="rounded-sm border border-slate-800 bg-slate-950/80 px-3 py-2 font-mono text-sm text-slate-300">
+								Locked by {lockOwnerName}
+							</div>
+						{/if}
+						{#if !item.lockedBySelf}
+							<button
+								type="button"
+								onclick={acquireLock}
+								class="text-industrial-amber inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-slate-700 bg-slate-950 transition-colors hover:border-industrial-amber hover:text-white"
+								aria-label="Edit item"
+								title="Edit item"
+							>
+								<Pencil class="h-4 w-4" aria-hidden="true" />
+							</button>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		<div class="db-detail-grid">
@@ -81,6 +258,15 @@
 			</div>
 
 			<div class="db-detail-main order-2 lg:order-1">
+				{#if isAdmin && item.lockedBySelf && editableItem}
+					<DatabaseEntityEditor
+						entity={editableItem}
+						config={itemEditorConfig}
+						relationOptions={relationOptions}
+						onSave={saveChanges}
+						onDiscard={discardChanges}
+					/>
+				{:else}
 				<div class={detailPanelClass}>
 					<p class="text-sm leading-relaxed whitespace-pre-wrap text-zinc-300 sm:text-base">
 						{item.description || 'No description provided.'}
@@ -103,6 +289,7 @@
 				<div class={detailPanelClass + ' lg:hidden'}>
 					<EntityLogManager entityId={page.params.id ?? ''} logs={logEntries} canEdit={isAdmin} />
 				</div>
+				{/if}
 			</div>
 		</div>
 	</div>

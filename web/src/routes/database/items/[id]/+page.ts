@@ -1,9 +1,10 @@
-import { load_ItemDetail } from '$houdini';
+import { load_EntityEditorOptions, load_ItemDetail } from '$houdini';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async (event) => {
 	const { id } = event.params;
 	return {
-		...(await load_ItemDetail({ event, variables: { id } }))
+		...(await load_ItemDetail({ event, variables: { id } })),
+		...(await load_EntityEditorOptions({ event }))
 	};
 };

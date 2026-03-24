@@ -2,11 +2,30 @@
 	import DOMPurify from 'isomorphic-dompurify';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import type { PageData } from './$houdini';
-	import { UpdateAssociationImagesStore } from '$houdini';
+	import type { PageData as RoutePageData } from './$houdini';
+	import {
+		type EntityEditorOptionsStore,
+		LockAssociationEditorStore,
+		UnlockAssociationEditorStore,
+		UpdateAssociationEditorStore,
+		UpdateAssociationImagesStore
+	} from '$houdini';
 	import RelationGroupList from '$lib/components/database/RelationGroupList.svelte';
+	import DatabaseEntityEditor from '$lib/components/database/DatabaseEntityEditor.svelte';
+	import {
+		DEFAULT_DATABASE_ENTITY_DRAFT,
+		type DatabaseEntityDraft,
+		type DatabaseEntityEditorConfig
+	} from '$lib/components/database/database-entity-editor-types';
 	import AdminImageManager from '$lib/components/images/AdminImageManager.svelte';
 	import EntityLogManager from '$lib/components/logs/EntityLogManager.svelte';
+	import {
+		buildEntityEditorRelationOptions,
+		buildNodeInputList,
+		getLockUserDisplayName,
+		mapNamedRelationOptions,
+		normalizeTextValue
+		} from '$lib/database-entity-edit';
 	import {
 		buildRelationGroups,
 		detailPanelClass,
@@ -15,6 +34,19 @@
 		getLogNodes,
 		getNamedNodes
 	} from '$lib/database-detail';
+	import { extractMutationErrorMessage, getOperationInfoMessage } from '$lib/mutation-errors';
+	import { fromStore } from 'svelte/store';
+	import { Pencil } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
+
+	type PageData = RoutePageData & {
+		EntityEditorOptions: EntityEditorOptionsStore;
+	};
+
+	const associationEditorConfig: DatabaseEntityEditorConfig = {
+		entityLabel: 'Association',
+		primaryRelations: [{ key: 'characters', title: 'Members' }]
+	};
 
 	let { data }: { data: PageData } = $props();
 	let AssociationDetail = $derived(data.AssociationDetail);
@@ -22,6 +54,35 @@
 	let Me = $derived(data.Me);
 	let me = $derived($Me?.data?.me);
 	let isAdmin = $derived(me?.isStaff || me?.isSuperuser);
+	let EntityEditorOptionsResult = $derived.by(() => fromStore(data.EntityEditorOptions).current);
+	let relationOptions = $derived.by(() =>
+		buildEntityEditorRelationOptions(EntityEditorOptionsResult?.data ?? undefined)
+	);
+	let lockOwnerName = $derived.by(() =>
+		association && association.__typename === 'Association' && association.lockUser
+			? getLockUserDisplayName(association.lockUser)
+			: null
+	);
+		let editableAssociation = $derived.by<DatabaseEntityDraft | null>(() => {
+			if (!association || association.__typename !== 'Association') {
+				return null;
+			}
+
+			return {
+				...DEFAULT_DATABASE_ENTITY_DRAFT,
+				id: association.id,
+				name: association.name ?? '',
+				description: association.description ?? '',
+				markdownNotes: association.markdownNotes ?? '',
+				characters: mapNamedRelationOptions('characters', association.characters),
+				relatedArtifacts: mapNamedRelationOptions('artifacts', association.relatedArtifacts),
+				relatedAssociations: mapNamedRelationOptions('associations', association.relatedAssociations),
+				relatedCharacters: mapNamedRelationOptions('characters', association.relatedCharacters),
+				relatedItems: mapNamedRelationOptions('items', association.relatedItems),
+				relatedPlaces: mapNamedRelationOptions('places', association.relatedPlaces),
+				relatedRaces: mapNamedRelationOptions('races', association.relatedRaces)
+			};
+		});
 	let memberNodes = $derived.by(() => {
 		if (!association || association.__typename !== 'Association') {
 			return [];
@@ -61,14 +122,96 @@
 		return DOMPurify.sanitize(association.markdownNotes);
 	});
 
-	const updateStore = new UpdateAssociationImagesStore();
+	const updateImagesStore = new UpdateAssociationImagesStore();
+	const lockStore = new LockAssociationEditorStore();
+	const unlockStore = new UnlockAssociationEditorStore();
+	const updateEditorStore = new UpdateAssociationEditorStore();
 
 	async function saveImages(newIds: string[]) {
-		await updateStore.mutate({
+	await updateImagesStore.mutate({
 			id: page.params.id ?? '',
 			imageIds: newIds
 		});
 	}
+
+async function acquireLock() {
+	if (!association || association.__typename !== 'Association') {
+		return;
+	}
+
+	const response = await lockStore.mutate({ id: association.id });
+	const responseErrorMessage = extractMutationErrorMessage(null, response.errors);
+
+	if (responseErrorMessage) {
+		toast.error(responseErrorMessage);
+		return;
+	}
+
+	const payload = response.data?.lock;
+
+	if (!payload) {
+		throw new Error('No association lock payload returned.');
+	}
+
+	toast.success('Association lock acquired.');
+}
+
+async function discardChanges() {
+	if (!association || association.__typename !== 'Association') {
+		return;
+	}
+
+	const response = await unlockStore.mutate({ id: association.id });
+	const responseErrorMessage = extractMutationErrorMessage(null, response.errors);
+
+	if (responseErrorMessage) {
+		throw new Error(responseErrorMessage);
+	}
+
+	const payload = response.data?.unlock;
+
+	if (!payload) {
+		throw new Error('No association unlock payload returned.');
+	}
+
+	toast.success('Association changes discarded.');
+	return payload;
+}
+
+async function saveChanges(draft: DatabaseEntityDraft) {
+	const response = await updateEditorStore.mutate({
+		id: draft.id,
+		name: normalizeTextValue(draft.name, true),
+		description: normalizeTextValue(draft.description),
+		markdownNotes: normalizeTextValue(draft.markdownNotes),
+		characters: buildNodeInputList(draft.characters),
+		relatedArtifacts: buildNodeInputList(draft.relatedArtifacts),
+		relatedAssociations: buildNodeInputList(draft.relatedAssociations),
+		relatedCharacters: buildNodeInputList(draft.relatedCharacters),
+		relatedItems: buildNodeInputList(draft.relatedItems),
+		relatedPlaces: buildNodeInputList(draft.relatedPlaces),
+		relatedRaces: buildNodeInputList(draft.relatedRaces)
+	});
+	const responseErrorMessage = extractMutationErrorMessage(null, response.errors);
+
+	if (responseErrorMessage) {
+		throw new Error(responseErrorMessage);
+	}
+
+	const payload = response.data?.updateAssociation;
+
+	if (!payload) {
+		throw new Error('No association update payload returned.');
+	}
+
+	const operationInfoMessage = getOperationInfoMessage(payload, 'Failed to save association changes.');
+
+	if (!operationInfoMessage) {
+		toast.success('Association changes saved.');
+	}
+
+	return payload;
+}
 </script>
 
 {#if association && association.__typename === 'Association'}
@@ -77,7 +220,29 @@
 			<div class="space-y-2 sm:space-y-2.5">
 				<h1 class="db-detail-title">{association.name}</h1>
 			</div>
-			<a href={resolve('/database/associations')} class="db-back-link"> ← Back to Associations </a>
+			<div class="flex flex-col items-start gap-3 sm:items-end">
+				<a href={resolve('/database/associations')} class="db-back-link"> ← Back to Associations </a>
+				{#if isAdmin}
+					<div class="flex flex-wrap items-center gap-3">
+						{#if association.lockUser && !association.lockedBySelf && lockOwnerName}
+							<div class="rounded-sm border border-slate-800 bg-slate-950/80 px-3 py-2 font-mono text-sm text-slate-300">
+								Locked by {lockOwnerName}
+							</div>
+						{/if}
+						{#if !association.lockedBySelf}
+							<button
+								type="button"
+								onclick={acquireLock}
+								class="text-industrial-amber inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-slate-700 bg-slate-950 transition-colors hover:border-industrial-amber hover:text-white"
+								aria-label="Edit association"
+								title="Edit association"
+							>
+								<Pencil class="h-4 w-4" aria-hidden="true" />
+							</button>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		<div class="db-detail-grid">
@@ -94,6 +259,15 @@
 			</div>
 
 			<div class="db-detail-main order-2 lg:order-1">
+				{#if isAdmin && association.lockedBySelf && editableAssociation}
+					<DatabaseEntityEditor
+						entity={editableAssociation}
+						config={associationEditorConfig}
+						relationOptions={relationOptions}
+						onSave={saveChanges}
+						onDiscard={discardChanges}
+					/>
+				{:else}
 				<div class={detailPanelClass}>
 					<p class="text-sm leading-relaxed whitespace-pre-wrap text-zinc-300 sm:text-base">
 						{association.description || 'No description provided.'}
@@ -135,6 +309,7 @@
 				<div class={detailPanelClass + ' lg:hidden'}>
 					<EntityLogManager entityId={page.params.id ?? ''} logs={logEntries} canEdit={isAdmin} />
 				</div>
+				{/if}
 			</div>
 		</div>
 	</div>

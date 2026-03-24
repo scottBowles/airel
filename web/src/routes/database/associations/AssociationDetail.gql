@@ -6,6 +6,13 @@ query AssociationDetail($id: ID!) {
 			description
 			markdownNotes
 			imageIds
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
 			characters {
 				edges {
 					node {

@@ -5,7 +5,15 @@ query CharacterDetail($id: ID!) {
 			name
 			description
 			markdownNotes
+			size
 			imageIds
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
 			race {
 				id
 				name

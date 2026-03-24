@@ -1,9 +1,15 @@
-import { load_LogDetail } from '$houdini';
+import { load_LogDetail, load_LogEditorOptions } from '$houdini';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async (event) => {
 	const { id } = event.params;
+	const [logDetail, logEditorOptions] = await Promise.all([
+		load_LogDetail({ event, variables: { id } }),
+		load_LogEditorOptions({ event })
+	]);
+
 	return {
-		...(await load_LogDetail({ event, variables: { id } }))
+		...logDetail,
+		...logEditorOptions
 	};
 };

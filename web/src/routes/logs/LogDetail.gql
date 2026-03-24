@@ -5,9 +5,16 @@ query LogDetail($id: ID!) {
 			title
 			brief
 			synopsis
-			summary
 			gameDate
 			url
+			lockedBySelf
+			lockTime
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
 
 			artifacts {
 				edges {

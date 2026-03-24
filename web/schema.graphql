@@ -199,13 +199,6 @@ type Artifact implements Entity & Lockable & Node {
   updated: DateTime!
 }
 
-input ArtifactAddImageInput {
-  id: ID!
-  imageId: String!
-}
-
-union ArtifactAddImagePayload = Artifact | OperationInfo
-
 """A connection to a list of items."""
 type ArtifactConnection {
   """Contains the nodes in this connection"""
@@ -266,18 +259,6 @@ input ArtifactInputPartial {
   relatedRaces: NodeInputListInput
   thumbnailId: String
 }
-
-input ArtifactLockInput {
-  id: ID!
-}
-
-union ArtifactLockPayload = Artifact | OperationInfo
-
-input ArtifactReleaseLockInput {
-  id: ID!
-}
-
-union ArtifactReleaseLockPayload = Artifact | OperationInfo
 
 """
 Association(id, created, updated, name, description, slug, image_ids, thumbnail_id, markdown_notes, lock_user, lock_time)
@@ -416,13 +397,6 @@ type Association implements Entity & Lockable & Node {
   updated: DateTime!
 }
 
-input AssociationAddImageInput {
-  id: ID!
-  imageId: String!
-}
-
-union AssociationAddImagePayload = Association | OperationInfo
-
 """A connection to a list of items."""
 type AssociationConnection {
   """Contains the nodes in this connection"""
@@ -481,18 +455,6 @@ input AssociationInputPartial {
   relatedRaces: NodeInputListInput
   thumbnailId: String
 }
-
-input AssociationLockInput {
-  id: ID!
-}
-
-union AssociationLockPayload = Association | OperationInfo
-
-input AssociationReleaseLockInput {
-  id: ID!
-}
-
-union AssociationReleaseLockPayload = Association | OperationInfo
 
 """
 Character(id, created, updated, slug, image_ids, thumbnail_id, markdown_notes, lock_user, lock_time, name, race, description, size)
@@ -659,13 +621,6 @@ type Character implements Entity & Lockable & Node {
   updated: DateTime!
 }
 
-input CharacterAddImageInput {
-  id: ID!
-  imageId: String!
-}
-
-union CharacterAddImagePayload = Character | OperationInfo
-
 """A connection to a list of items."""
 type CharacterConnection {
   """Contains the nodes in this connection"""
@@ -732,18 +687,6 @@ input CharacterInputPartial {
   size: String
   thumbnailId: String
 }
-
-input CharacterLockInput {
-  id: ID!
-}
-
-union CharacterLockPayload = Character | OperationInfo
-
-input CharacterReleaseLockInput {
-  id: ID!
-}
-
-union CharacterReleaseLockPayload = Character | OperationInfo
 
 """Individual messages within a chat session"""
 type ChatMessageType implements Node {
@@ -908,20 +851,6 @@ union CreateRacePayload = OperationInfo | Race
 
 """Date with time (isoformat)"""
 scalar DateTime
-
-union DeleteArtifactPayload = Artifact | OperationInfo
-
-union DeleteAssociationPayload = Association | OperationInfo
-
-union DeleteCharacterPayload = Character | OperationInfo
-
-union DeleteGameLogPayload = GameLog | OperationInfo
-
-union DeleteItemPayload = Item | OperationInfo
-
-union DeletePlacePayload = OperationInfo | Place
-
-union DeleteRacePayload = OperationInfo | Race
 
 interface Entity implements Lockable {
   aliases(
@@ -1217,7 +1146,6 @@ type GameLog implements Lockable & Node {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): RaceConnection!
-  summary: String
   synopsis: String
   title: String
   url: String!
@@ -1284,18 +1212,6 @@ input GameLogInputPartial {
 input GameLogOrder {
   gameDate: Ordering
 }
-
-input GamelogLockInput {
-  id: ID!
-}
-
-union GamelogLockPayload = GameLog | OperationInfo
-
-input GamelogReleaseLockInput {
-  id: ID!
-}
-
-union GamelogReleaseLockPayload = GameLog | OperationInfo
 
 """
 GameLog(id, lock_user, lock_time, url, title, google_id, google_created_time, game_date, brief, synopsis, summary, full_text, full_text_search_vector, audio_session_notes, last_game_log, generated_log_text, session_number)
@@ -1447,13 +1363,6 @@ type Item implements Entity & Lockable & Node {
   weapon: WeaponTraits
 }
 
-input ItemAddImageInput {
-  id: ID!
-  imageId: String!
-}
-
-union ItemAddImagePayload = Item | OperationInfo
-
 """A connection to a list of items."""
 type ItemConnection {
   """Contains the nodes in this connection"""
@@ -1519,18 +1428,6 @@ input ItemInputPartial {
   weapon: WeaponTraitsInput
 }
 
-input ItemLockInput {
-  id: ID!
-}
-
-union ItemLockPayload = Item | OperationInfo
-
-input ItemReleaseLockInput {
-  id: ID!
-}
-
-union ItemReleaseLockPayload = Item | OperationInfo
-
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
 """
@@ -1549,42 +1446,6 @@ type Mutation {
     input: AddAiLogSuggestionInput!
   ): AddAiLogSuggestionPayload!
   addEntityLog(input: AddEntityLogInput!): Node!
-  artifactAddImage(
-    """Input data for `artifactAddImage` mutation"""
-    input: ArtifactAddImageInput!
-  ): ArtifactAddImagePayload!
-  artifactLock(
-    """Input data for `artifactLock` mutation"""
-    input: ArtifactLockInput!
-  ): ArtifactLockPayload!
-  artifactReleaseLock(
-    """Input data for `artifactReleaseLock` mutation"""
-    input: ArtifactReleaseLockInput!
-  ): ArtifactReleaseLockPayload!
-  associationAddImage(
-    """Input data for `associationAddImage` mutation"""
-    input: AssociationAddImageInput!
-  ): AssociationAddImagePayload!
-  associationLock(
-    """Input data for `associationLock` mutation"""
-    input: AssociationLockInput!
-  ): AssociationLockPayload!
-  associationReleaseLock(
-    """Input data for `associationReleaseLock` mutation"""
-    input: AssociationReleaseLockInput!
-  ): AssociationReleaseLockPayload!
-  characterAddImage(
-    """Input data for `characterAddImage` mutation"""
-    input: CharacterAddImageInput!
-  ): CharacterAddImagePayload!
-  characterLock(
-    """Input data for `characterLock` mutation"""
-    input: CharacterLockInput!
-  ): CharacterLockPayload!
-  characterReleaseLock(
-    """Input data for `characterReleaseLock` mutation"""
-    input: CharacterReleaseLockInput!
-  ): CharacterReleaseLockPayload!
   cleanupOrphanedChunks: ProcessContentPayload!
   createArtifact(input: ArtifactInput!): CreateArtifactPayload!
   createAssociation(input: AssociationInput!): CreateAssociationPayload!
@@ -1592,64 +1453,13 @@ type Mutation {
   createItem(input: ItemInput!): CreateItemPayload!
   createPlace(input: PlaceInput!): CreatePlacePayload!
   createRace(input: RaceInput!): CreateRacePayload!
-  deleteArtifact(input: NodeInput!): DeleteArtifactPayload!
-  deleteAssociation(input: NodeInput!): DeleteAssociationPayload!
-  deleteCharacter(input: NodeInput!): DeleteCharacterPayload!
-  deleteGameLog(input: NodeInput!): DeleteGameLogPayload!
-  deleteItem(input: NodeInput!): DeleteItemPayload!
-  deletePlace(input: NodeInput!): DeletePlacePayload!
-  deleteRace(input: NodeInput!): DeleteRacePayload!
   entityAddAlias(input: EntityAddAliasInput!): Node!
   entityAddImage(input: EntityAddImageInput!): Node!
-  gamelogLock(
-    """Input data for `gamelogLock` mutation"""
-    input: GamelogLockInput!
-  ): GamelogLockPayload!
-  gamelogReleaseLock(
-    """Input data for `gamelogReleaseLock` mutation"""
-    input: GamelogReleaseLockInput!
-  ): GamelogReleaseLockPayload!
   getOrCreateGameLog(input: GetOrCreateGameLogInput!): GetOrCreateGameLogPayload!
   googleLogin(googleToken: String!): ObtainJSONWebTokenType!
-  itemAddImage(
-    """Input data for `itemAddImage` mutation"""
-    input: ItemAddImageInput!
-  ): ItemAddImagePayload!
-  itemLock(
-    """Input data for `itemLock` mutation"""
-    input: ItemLockInput!
-  ): ItemLockPayload!
-  itemReleaseLock(
-    """Input data for `itemReleaseLock` mutation"""
-    input: ItemReleaseLockInput!
-  ): ItemReleaseLockPayload!
   lock(input: NodeInput!): Lockable!
-  placeAddImage(
-    """Input data for `placeAddImage` mutation"""
-    input: PlaceAddImageInput!
-  ): PlaceAddImagePayload!
-  placeLock(
-    """Input data for `placeLock` mutation"""
-    input: PlaceLockInput!
-  ): PlaceLockPayload!
-  placeReleaseLock(
-    """Input data for `placeReleaseLock` mutation"""
-    input: PlaceReleaseLockInput!
-  ): PlaceReleaseLockPayload!
   processAllContent(input: ProcessAllContentInput!): ProcessAllContentPayload!
   processContent(input: ProcessContentInput!): ProcessContentPayload!
-  raceAddImage(
-    """Input data for `raceAddImage` mutation"""
-    input: RaceAddImageInput!
-  ): RaceAddImagePayload!
-  raceLock(
-    """Input data for `raceLock` mutation"""
-    input: RaceLockInput!
-  ): RaceLockPayload!
-  raceReleaseLock(
-    """Input data for `raceReleaseLock` mutation"""
-    input: RaceReleaseLockInput!
-  ): RaceReleaseLockPayload!
 
   "### refreshToken to generate a new login token:\n\n    *Use this only if `JWT_LONG_RUNNING_REFRESH_TOKEN` is True*\n\n    using the refresh-token you already got during authorization, and\n    obtain a brand-new token (and possibly a new refresh token if you\n    revoked the previous). This is an alternative to log in when your\n    token expired.\n    "
   refreshToken(input: RefreshTokenInput!): ObtainJSONWebTokenType!
@@ -1900,13 +1710,6 @@ type Place implements Entity & Lockable & Node {
   updated: DateTime!
 }
 
-input PlaceAddImageInput {
-  id: ID!
-  imageId: String!
-}
-
-union PlaceAddImagePayload = OperationInfo | Place
-
 """A connection to a list of items."""
 type PlaceConnection {
   """Contains the nodes in this connection"""
@@ -1969,18 +1772,6 @@ input PlaceInputPartial {
   relatedRaces: NodeInputListInput
   thumbnailId: String
 }
-
-input PlaceLockInput {
-  id: ID!
-}
-
-union PlaceLockPayload = OperationInfo | Place
-
-input PlaceReleaseLockInput {
-  id: ID!
-}
-
-union PlaceReleaseLockPayload = OperationInfo | Place
 
 enum PlaceType {
   DISTRICT
@@ -2131,7 +1922,6 @@ type Query {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): ChatSessionTypeConnection!
-  consolidatedAiLogSuggestions(id: ID!): CombinedGameLogAiSummary!
   contentChunks(
     """Returns the items in the list that come after the specified cursor."""
     after: String = null
@@ -2221,19 +2011,6 @@ type Query {
     last: Int = null
   ): RaceConnection!
   searchContent(contentTypes: [String!] = null, limit: Int = 10, query: String!, similarityThreshold: Float = null): [ContentChunkType!]!
-  users(
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-  ): UserConnection!
 }
 
 """Cache expensive RAG queries to reduce API costs"""
@@ -2416,13 +2193,6 @@ type Race implements Entity & Lockable & Node {
   updated: DateTime!
 }
 
-input RaceAddImageInput {
-  id: ID!
-  imageId: String!
-}
-
-union RaceAddImagePayload = OperationInfo | Race
-
 """A connection to a list of items."""
 type RaceConnection {
   """Contains the nodes in this connection"""
@@ -2481,18 +2251,6 @@ input RaceInputPartial {
   relatedRaces: NodeInputListInput
   thumbnailId: String
 }
-
-input RaceLockInput {
-  id: ID!
-}
-
-union RaceLockPayload = OperationInfo | Race
-
-input RaceReleaseLockInput {
-  id: ID!
-}
-
-union RaceReleaseLockPayload = OperationInfo | Race
 
 """
 If `revoke_refresh_token` is true, revokes to refresh token an creates a new one.
@@ -2602,27 +2360,6 @@ type User implements Node {
 
   """Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."""
   username: String!
-}
-
-"""A connection to a list of items."""
-type UserConnection {
-  """Contains the nodes in this connection"""
-  edges: [UserEdge!]!
-
-  """Pagination data for this connection"""
-  pageInfo: PageInfo!
-
-  """Total quantity of existing nodes."""
-  totalCount: Int
-}
-
-"""An edge in a connection."""
-type UserEdge {
-  """A cursor for use in pagination"""
-  cursor: String!
-
-  """The item at the end of the edge"""
-  node: User!
 }
 
 """A helper model that handles user account stuff."""

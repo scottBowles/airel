@@ -1,0 +1,114 @@
+mutation UpdateLog(
+	$id: ID!
+	$title: String
+	$brief: String
+	$synopsis: String
+	$gameDate: DateTime
+	$artifacts: [NodeInput!]
+	$associations: [NodeInput!]
+	$characters: [NodeInput!]
+	$items: [NodeInput!]
+	$places: [NodeInput!]
+	$placesSetIn: [NodeInput!]
+	$races: [NodeInput!]
+) {
+	updateGamelog(
+		input: {
+			id: $id
+			title: $title
+			brief: $brief
+			synopsis: $synopsis
+			gameDate: $gameDate
+			artifacts: { set: $artifacts }
+			associations: { set: $associations }
+			characters: { set: $characters }
+			items: { set: $items }
+			places: { set: $places }
+			placesSetIn: { set: $placesSetIn }
+			races: { set: $races }
+		}
+	) {
+		__typename
+		... on GameLog {
+			id
+			title
+			brief
+			synopsis
+			gameDate
+			url
+			lockedBySelf
+			lockTime
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
+
+			artifacts {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			associations {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			characters {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			items {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			places {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			placesSetIn {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			races {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+		}
+		... on OperationInfo {
+			messages {
+				code
+				field
+				kind
+				message
+			}
+		}
+	}
+}

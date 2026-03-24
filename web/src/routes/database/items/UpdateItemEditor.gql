@@ -1,0 +1,133 @@
+mutation UpdateItemEditor(
+	$id: ID!
+	$name: String
+	$description: String
+	$markdownNotes: String
+	$artifacts: [NodeInput!]
+	$relatedArtifacts: [NodeInput!]
+	$relatedAssociations: [NodeInput!]
+	$relatedCharacters: [NodeInput!]
+	$relatedItems: [NodeInput!]
+	$relatedPlaces: [NodeInput!]
+	$relatedRaces: [NodeInput!]
+	$armor: ArmorTraitsInput
+	$equipment: EquipmentTraitsInput
+	$weapon: WeaponTraitsInput
+) {
+	updateItem(
+		input: {
+			id: $id
+			name: $name
+			description: $description
+			markdownNotes: $markdownNotes
+			artifacts: { set: $artifacts }
+			relatedArtifacts: { set: $relatedArtifacts }
+			relatedAssociations: { set: $relatedAssociations }
+			relatedCharacters: { set: $relatedCharacters }
+			relatedItems: { set: $relatedItems }
+			relatedPlaces: { set: $relatedPlaces }
+			relatedRaces: { set: $relatedRaces }
+			armor: $armor
+			equipment: $equipment
+			weapon: $weapon
+		}
+	) {
+		__typename
+		... on Item {
+			id
+			name
+			description
+			markdownNotes
+			imageIds
+			lockedBySelf
+			lockUser {
+				id
+				username
+				firstName
+				lastName
+			}
+			artifacts {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			armor {
+				acBonus
+			}
+			equipment {
+				briefDescription
+			}
+			weapon {
+				attackBonus
+			}
+			relatedArtifacts {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedAssociations {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedCharacters {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedItems {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedPlaces {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedRaces {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			logs(order: { gameDate: DESC }) {
+				edges {
+					node {
+						id
+						title
+						url
+					}
+				}
+			}
+		}
+		... on OperationInfo {
+			messages {
+				code
+				field
+				kind
+				message
+			}
+		}
+	}
+}
