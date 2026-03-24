@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { cn } from '$lib/utils';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import {
 		Home,
 		BookOpen,
@@ -15,9 +16,18 @@
 		user,
 		onsearch,
 	}: {
-		user: { username: string; isStaff?: boolean } | null | undefined;
+		user: { username: string; isStaff?: boolean; firstName?: string | null; lastName?: string | null } | null | undefined;
 		onsearch: () => void;
 	} = $props();
+
+	let showLogoutConfirm = $state(false);
+
+	let initials = $derived.by(() => {
+		if (!user) return '';
+		const first = user.firstName?.charAt(0) ?? '';
+		const last = user.lastName?.charAt(0) ?? '';
+		return (first + last) || user.username.charAt(0);
+	});
 
 	const navItems = [
 		{ href: '/', label: 'BRIDGE', icon: Home, code: 'SYS-00' },
@@ -44,11 +54,11 @@
 	</a>
 	{#if user}
 		<button
-			onclick={logout}
-			class="flex h-7 w-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 text-[10px] font-bold text-accent-amber uppercase"
+			onclick={() => showLogoutConfirm = true}
+			class="flex h-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 px-1.5 text-[10px] font-bold text-accent-amber uppercase"
 			title="Log out ({user.username})"
 		>
-			{user.username.charAt(0)}
+			{initials}
 		</button>
 	{:else}
 		<a
@@ -168,8 +178,8 @@
 	<div class="border-t border-border-subtle px-3 py-2.5">
 		{#if user}
 			<div class="flex items-center gap-2.5">
-				<div class="flex h-7 w-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 text-[10px] font-bold text-accent-amber uppercase">
-					{user.username.charAt(0)}
+				<div class="flex h-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 px-1.5 text-[10px] font-bold text-accent-amber uppercase">
+					{initials}
 				</div>
 				<div class="min-w-0 flex-1">
 					<p class="truncate text-xs text-text-primary uppercase tracking-wider">{user.username}</p>
@@ -178,7 +188,7 @@
 					</p>
 				</div>
 				<button
-					onclick={logout}
+					onclick={() => showLogoutConfirm = true}
 					class="text-text-muted transition-colors hover:text-accent-red"
 					title="Log out"
 				>
@@ -196,3 +206,12 @@
 		{/if}
 	</div>
 </nav>
+
+<ConfirmDialog
+	open={showLogoutConfirm}
+	title="Log Out"
+	message="Are you sure you want to log out?"
+	confirmLabel="Log Out"
+	onconfirm={logout}
+	oncancel={() => showLogoutConfirm = false}
+/>
