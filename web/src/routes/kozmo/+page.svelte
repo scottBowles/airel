@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import { MessageSquare, Plus, Clock } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -13,7 +13,7 @@
 
 	let startingChat = $state(false);
 
-	const startChatMutation = mutation(/* GraphQL */ `
+	const startChatMutation = graphql(`
 		mutation StartNewChatSession($input: StartChatSessionInput!) {
 			startChatSession(input: $input) {
 				id

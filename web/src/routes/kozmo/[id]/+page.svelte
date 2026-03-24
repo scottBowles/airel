@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { fromStore } from 'svelte/store';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import {
 		ArrowLeft,
@@ -30,7 +30,7 @@
 		}
 	});
 
-	const sendMessageMutation = mutation(/* GraphQL */ `
+	const sendMessageMutation = graphql(`
 		mutation SendChatMessage($input: SendChatMessageInput!) {
 			sendChatMessage(input: $input) {
 				message {

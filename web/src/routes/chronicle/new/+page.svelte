@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
@@ -9,7 +9,7 @@
 	let url = $state('');
 	let loading = $state(false);
 
-	const getOrCreateGameLog = mutation(/* GraphQL */ `
+	const getOrCreateGameLog = graphql(`
 		mutation CreateNewGameLog($input: GetOrCreateGameLogInput!) {
 			getOrCreateGameLog(input: $input) {
 				... on GameLog {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
+	import { toast } from 'svelte-sonner';
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import type { PageData } from './$houdini';
@@ -9,14 +10,26 @@
 	let store = $derived(fromStore(data.AssociationDetail).current);
 	let entity = $derived(store?.data?.node?.__typename === 'Association' ? store.data.node : null);
 
-	const lockMutation = mutation(/* GraphQL */ `
+	const lockMutation = graphql(`
 		mutation LockAssociation($id: ID!) {
 			lock(input: { id: $id }) { id lockedBySelf lockUser { id username } lockTime }
 		}
 	`);
-	const unlockMutation = mutation(/* GraphQL */ `
+	const unlockMutation = graphql(`
 		mutation UnlockAssociation($id: ID!) {
 			unlock(input: { id: $id }) { id lockedBySelf lockUser { id username } lockTime }
+		}
+	`);
+	const updateMutation = graphql(`
+		mutation UpdateAssociationDetail($input: AssociationInputPartial!) {
+			updateAssociation(input: $input) {
+				... on Association {
+					id name description markdownNotes lockedBySelf
+				}
+				... on OperationInfo {
+					messages { field kind message }
+				}
+			}
 		}
 	`);
 
@@ -25,6 +38,24 @@
 	}
 	async function handleUnlock() {
 		if (entity) await unlockMutation.mutate({ id: entity.id });
+	}
+
+	async function handleSave(fields: { name: string; description: string; markdownNotes: string }) {
+		if (!entity) return false;
+		const result = await updateMutation.mutate({
+			input: {
+				id: entity.id,
+				name: fields.name,
+				description: fields.description,
+				markdownNotes: fields.markdownNotes,
+			},
+		});
+		if (result.data?.updateAssociation?.__typename === 'Association') {
+			toast.success('Association updated');
+			return true;
+		}
+		toast.error('Failed to update association');
+		return false;
 	}
 </script>
 
@@ -46,6 +77,7 @@
 		lockUser={entity.lockUser}
 		onlock={handleLock}
 		onunlock={handleUnlock}
+		onsave={handleSave}
 		relatedCharacters={entity.relatedCharacters}
 		relatedPlaces={entity.relatedPlaces}
 		relatedAssociations={entity.relatedAssociations}

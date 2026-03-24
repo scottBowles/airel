@@ -12,6 +12,8 @@
 		Dna,
 		BookOpen,
 		ImageIcon,
+		Save,
+		X,
 	} from 'lucide-svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
@@ -39,7 +41,10 @@
 		lockUser,
 		onlock,
 		onunlock,
+		onsave,
+		onstartediting,
 		extraInfo,
+		editExtraInfo,
 		relatedCharacters,
 		relatedPlaces,
 		relatedAssociations,
@@ -61,7 +66,10 @@
 		lockUser?: { username: string } | null;
 		onlock: () => void;
 		onunlock: () => void;
+		onsave?: (fields: { name: string; description: string; markdownNotes: string }) => Promise<boolean>;
+		onstartediting?: () => void;
 		extraInfo?: import('svelte').Snippet;
+		editExtraInfo?: import('svelte').Snippet;
 		relatedCharacters?: RelatedConnection;
 		relatedPlaces?: RelatedConnection;
 		relatedAssociations?: RelatedConnection;
@@ -71,6 +79,37 @@
 		logs?: LogConnection;
 		headerActions?: import('svelte').Snippet;
 	} = $props();
+
+	let editing = $derived(lockedBySelf);
+	let saving = $state(false);
+	let editName = $state('');
+	let editDescription = $state('');
+	let editMarkdownNotes = $state('');
+
+	$effect(() => {
+		if (lockedBySelf) {
+			editName = name;
+			editDescription = description ?? '';
+			editMarkdownNotes = markdownNotes ?? '';
+			onstartediting?.();
+		}
+	});
+
+	function discardEdits() {
+		onunlock();
+	}
+
+	async function saveEdits() {
+		if (!onsave) return;
+		saving = true;
+		const ok = await onsave({
+			name: editName,
+			description: editDescription,
+			markdownNotes: editMarkdownNotes,
+		});
+		saving = false;
+		if (ok) onunlock();
+	}
 
 	const relatedSections = $derived(
 		[
@@ -113,14 +152,38 @@
 					/>
 				{/if}
 				<div>
-					<h1 class="title-display text-lg text-accent-amber text-glow-amber sm:text-xl">{name}</h1>
-					{#if description}
+					{#if editing}
+						<input
+							bind:value={editName}
+							class="w-full border border-border-dim bg-bg-inset px-2 py-1 font-[family-name:var(--font-display)] text-lg text-accent-amber outline-none focus:border-accent-amber"
+						/>
+					{:else}
+						<h1 class="title-display text-lg text-accent-amber text-glow-amber sm:text-xl">{name}</h1>
+					{/if}
+					{#if editing}
+						<textarea
+							bind:value={editDescription}
+							rows="2"
+							placeholder="Description..."
+							class="mt-1.5 w-full border border-border-dim bg-bg-inset px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent-amber"
+						></textarea>
+					{:else if description}
 						<p class="mt-1.5 max-w-2xl text-xs text-text-secondary leading-relaxed">{description}</p>
 					{/if}
 				</div>
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				<LockIndicator {locked} {lockedBySelf} {lockUser} {onlock} {onunlock} />
+				{#if editing}
+					<Button size="sm" onclick={saveEdits} disabled={saving}>
+						<Save class="mr-1 h-3 w-3" />
+						{saving ? 'Saving...' : 'Commit'}
+					</Button>
+					<Button size="sm" variant="ghost" onclick={discardEdits} disabled={saving}>
+						<X class="mr-1 h-3 w-3" />
+						Discard
+					</Button>
+				{/if}
 				{#if headerActions}
 					{@render headerActions()}
 				{/if}
@@ -131,11 +194,23 @@
 	<div class="grid gap-3 lg:grid-cols-[1fr_260px]">
 		<!-- Main content -->
 		<div class="stack-space">
-			{#if extraInfo}
+			{#if editing && editExtraInfo}
+				{@render editExtraInfo()}
+			{:else if extraInfo}
 				{@render extraInfo()}
 			{/if}
 
-			{#if markdownNotes}
+			{#if editing}
+				<Panel>
+					<h2 class="title-section mb-2">Notes</h2>
+					<textarea
+						bind:value={editMarkdownNotes}
+						rows="12"
+						placeholder="Notes (markdown)..."
+						class="w-full border border-border-dim bg-bg-inset px-2 py-1 text-xs text-text-secondary leading-relaxed outline-none focus:border-accent-amber"
+					></textarea>
+				</Panel>
+			{:else if markdownNotes}
 				<Panel>
 					<h2 class="title-section mb-2">Notes</h2>
 					<div class="whitespace-pre-wrap text-xs text-text-secondary leading-relaxed">

@@ -13,11 +13,10 @@
 		Swords,
 		Gem,
 		Dna,
-		Edit,
 		Save,
 		X,
 	} from 'lucide-svelte';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
@@ -27,12 +26,11 @@
 	let store = $derived(fromStore(data.GameLogDetail).current);
 	let log = $derived(store?.data?.node?.__typename === 'GameLog' ? store.data.node : null);
 
-	let editing = $state(false);
 	let editTitle = $state('');
 	let editBrief = $state('');
 	let editSynopsis = $state('');
 
-	const lockMutation = mutation(/* GraphQL */ `
+	const lockMutation = graphql(`
 		mutation LockGameLog($id: ID!) {
 			lock(input: { id: $id }) {
 				id
@@ -43,7 +41,7 @@
 		}
 	`);
 
-	const unlockMutation = mutation(/* GraphQL */ `
+	const unlockMutation = graphql(`
 		mutation UnlockGameLog($id: ID!) {
 			unlock(input: { id: $id }) {
 				id
@@ -54,7 +52,7 @@
 		}
 	`);
 
-	const updateMutation = mutation(/* GraphQL */ `
+	const updateMutation = graphql(`
 		mutation UpdateGameLogDetail($input: GameLogInputPartial!) {
 			updateGamelog(input: $input) {
 				... on GameLog {
@@ -81,16 +79,18 @@
 		await unlockMutation.mutate({ id: log.id });
 	}
 
-	function startEditing() {
-		if (!log) return;
-		editTitle = log.title ?? '';
-		editBrief = log.brief ?? '';
-		editSynopsis = log.synopsis ?? '';
-		editing = true;
-	}
+	$effect(() => {
+		if (log?.lockedBySelf) {
+			editTitle = log.title ?? '';
+			editBrief = log.brief ?? '';
+			editSynopsis = log.synopsis ?? '';
+		}
+	});
 
-	function cancelEditing() {
-		editing = false;
+	let editing = $derived(!!log?.lockedBySelf);
+
+	function discardEdits() {
+		handleUnlock();
 	}
 
 	async function saveEdits() {
@@ -104,7 +104,7 @@
 			},
 		});
 		if (result.data?.updateGamelog?.__typename === 'GameLog') {
-			editing = false;
+			await handleUnlock();
 			toast.success('Log updated');
 		} else {
 			toast.error('Failed to update log');
@@ -178,20 +178,14 @@
 						onlock={handleLock}
 						onunlock={handleUnlock}
 					/>
-					{#if log.lockedBySelf && !editing}
-						<Button variant="primary" size="sm" onclick={startEditing}>
-							<Edit class="h-3 w-3" />
-							Edit
-						</Button>
-					{/if}
 					{#if editing}
 						<Button variant="primary" size="sm" onclick={saveEdits}>
 							<Save class="h-3 w-3" />
-							Save
+							Commit
 						</Button>
-						<Button variant="ghost" size="sm" onclick={cancelEditing}>
+						<Button variant="ghost" size="sm" onclick={discardEdits}>
 							<X class="h-3 w-3" />
-							Cancel
+							Discard
 						</Button>
 					{/if}
 				</div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
+	import { toast } from 'svelte-sonner';
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import type { PageData } from './$houdini';
@@ -9,14 +10,28 @@
 	let store = $derived(fromStore(data.CharacterDetail).current);
 	let entity = $derived(store?.data?.node?.__typename === 'Character' ? store.data.node : null);
 
-	const lockMutation = mutation(/* GraphQL */ `
+	let editSize = $state('');
+
+	const lockMutation = graphql(`
 		mutation LockCharacter($id: ID!) {
 			lock(input: { id: $id }) { id lockedBySelf lockUser { id username } lockTime }
 		}
 	`);
-	const unlockMutation = mutation(/* GraphQL */ `
+	const unlockMutation = graphql(`
 		mutation UnlockCharacter($id: ID!) {
 			unlock(input: { id: $id }) { id lockedBySelf lockUser { id username } lockTime }
+		}
+	`);
+	const updateMutation = graphql(`
+		mutation UpdateCharacterDetail($input: CharacterInputPartial!) {
+			updateCharacter(input: $input) {
+				... on Character {
+					id name description markdownNotes size lockedBySelf
+				}
+				... on OperationInfo {
+					messages { field kind message }
+				}
+			}
 		}
 	`);
 
@@ -25,6 +40,25 @@
 	}
 	async function handleUnlock() {
 		if (entity) await unlockMutation.mutate({ id: entity.id });
+	}
+
+	async function handleSave(fields: { name: string; description: string; markdownNotes: string }) {
+		if (!entity) return false;
+		const result = await updateMutation.mutate({
+			input: {
+				id: entity.id,
+				name: fields.name,
+				description: fields.description,
+				markdownNotes: fields.markdownNotes,
+				size: editSize,
+			},
+		});
+		if (result.data?.updateCharacter?.__typename === 'Character') {
+			toast.success('Character updated');
+			return true;
+		}
+		toast.error('Failed to update character');
+		return false;
 	}
 </script>
 
@@ -46,6 +80,8 @@
 		lockUser={entity.lockUser}
 		onlock={handleLock}
 		onunlock={handleUnlock}
+		onsave={handleSave}
+		onstartediting={() => { editSize = entity?.size ?? ''; }}
 		relatedCharacters={entity.relatedCharacters}
 		relatedPlaces={entity.relatedPlaces}
 		relatedAssociations={entity.relatedAssociations}
@@ -103,6 +139,22 @@
 					</div>
 				</Panel>
 			{/if}
+		{/snippet}
+
+		{#snippet editExtraInfo()}
+			<Panel>
+				<h2 class="title-section mb-2">Character Details</h2>
+				<div class="space-y-3">
+					<div>
+						<label class="machine-text mb-1 block text-[10px] text-text-muted uppercase">Size</label>
+						<input
+							bind:value={editSize}
+							placeholder="e.g. Medium, Small..."
+							class="w-full border border-border-dim bg-bg-inset px-2 py-1 text-xs text-text-primary outline-none focus:border-accent-amber"
+						/>
+					</div>
+				</div>
+			</Panel>
 		{/snippet}
 	</EntityDetail>
 {:else}

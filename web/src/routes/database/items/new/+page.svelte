@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
@@ -11,7 +11,7 @@
 	let markdownNotes = $state('');
 	let loading = $state(false);
 
-	const createMutation = mutation(/* GraphQL */ `
+	const createMutation = graphql(`
 		mutation CreateItem($input: ItemInput!) {
 			createItem(input: $input) {
 				... on Item { id name }

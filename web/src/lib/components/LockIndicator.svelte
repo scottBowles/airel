@@ -24,24 +24,23 @@
 		<span class="machine-text flex items-center gap-1.5 text-accent-red text-[10px]">
 			<span class="status-dot text-accent-red"></span>
 			<Lock class="h-3 w-3" />
-			LOCKED: {lockUser?.username ?? 'UNKNOWN'}
+			LOCKED BY {lockUser?.username ?? 'UNKNOWN'}
 		</span>
 	{:else if lockedBySelf}
-		<button
-			onclick={onunlock}
-			class="machine-text flex items-center gap-1.5 text-accent-green text-[10px] transition-colors hover:text-accent-amber"
+		<span
+			class="machine-text flex items-center gap-1.5 text-accent-green text-[10px]"
 		>
 			<span class="status-dot text-accent-green animate-pulse-glow"></span>
 			<Unlock class="h-3 w-3" />
-			EDITING — RELEASE LOCK
-		</button>
+			EDITING
+		</span>
 	{:else}
 		<button
 			onclick={onlock}
-			class="machine-text flex items-center gap-1.5 text-text-muted text-[10px] transition-colors hover:text-accent-amber"
+			class="machine-text flex items-center gap-1.5 text-text-muted text-[10px] transition-colors hover:text-accent-amber cursor-pointer"
 		>
 			<Lock class="h-3 w-3" />
-			ACQUIRE LOCK
+			UPDATE RECORD
 		</button>
 	{/if}
 </div>

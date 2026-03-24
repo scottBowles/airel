@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { mutation } from '$houdini';
+	import { graphql } from '$houdini';
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
@@ -14,7 +14,7 @@
 
 	const placeTypes = ['DISTRICT', 'LOCATION', 'MOON', 'PLANET', 'REGION', 'STAR', 'TOWN'];
 
-	const createMutation = mutation(/* GraphQL */ `
+	const createMutation = graphql(`
 		mutation CreatePlace($input: PlaceInput!) {
 			createPlace(input: $input) {
 				... on Place { id name }
