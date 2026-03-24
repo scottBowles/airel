@@ -127,7 +127,7 @@
 </script>
 
 <div
-	class="relative flex min-h-dvh w-full items-start justify-center overflow-hidden bg-void py-4 sm:items-center sm:py-6"
+	class="relative flex flex-1 w-full items-start justify-center overflow-hidden bg-void py-4 sm:items-center sm:py-6"
 >
 	<!-- Amber glow from top -->
 	<div

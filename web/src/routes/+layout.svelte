@@ -18,11 +18,11 @@
 <Toaster theme="dark" position="top-right" richColors />
 <CommandPalette bind:open={searchOpen} />
 
-<div class="flex min-h-dvh">
+<div class="flex h-dvh">
 	<Sidebar {user} onsearch={() => (searchOpen = true)} />
 
 	<!-- Main content area -->
-	<main class="flex min-h-dvh flex-1 flex-col pt-9 pb-14 lg:pl-56 lg:pt-0 lg:pb-0">
+	<main class="flex h-dvh flex-1 flex-col overflow-y-auto pt-9 pb-14 lg:pl-56 lg:pt-0 lg:pb-0">
 		{@render children()}
 	</main>
 </div>
