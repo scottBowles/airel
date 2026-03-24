@@ -177,10 +177,10 @@
 							<div class="min-w-0 flex-1">
 								<div class="truncate uppercase tracking-wider">{hit.name}</div>
 								{#if hit.description}
-									<div class="truncate text-[10px] text-text-muted normal-case tracking-normal">{hit.description}</div>
+									<div class="truncate text-xs text-text-secondary normal-case tracking-normal">{hit.description}</div>
 								{/if}
 							</div>
-							<span class="machine-text shrink-0 text-[9px] text-text-muted/60">{hit.type}</span>
+							<span class="machine-text shrink-0 text-[9px] text-text-muted">{hit.type}</span>
 						</button>
 					{/each}
 				{:else if query && !searching}
@@ -189,7 +189,7 @@
 					</div>
 				{:else if !query}
 					<div class="px-3 py-6 text-center">
-						<p class="machine-text text-text-muted/60">AWAITING INPUT...</p>
+						<p class="machine-text text-text-muted">AWAITING INPUT...</p>
 					</div>
 				{:else}
 					<div class="px-3 py-6 text-center">
@@ -200,15 +200,15 @@
 
 			<!-- Footer -->
 			<div class="flex items-center gap-4 border-t border-border-dim px-3 py-1.5">
-				<span class="machine-text text-[9px] text-text-muted/60">
+				<span class="machine-text text-[9px] text-text-muted">
 					<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">↑↓</kbd>
 					NAV
 				</span>
-				<span class="machine-text text-[9px] text-text-muted/60">
+				<span class="machine-text text-[9px] text-text-muted">
 					<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">↵</kbd>
 					SELECT
 				</span>
-				<span class="machine-text text-[9px] text-text-muted/60">
+				<span class="machine-text text-[9px] text-text-muted">
 					<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">ESC</kbd>
 					CLOSE
 				</span>

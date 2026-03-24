@@ -120,7 +120,7 @@
 				<div class="group flex items-center justify-between">
 					<a
 						href="/chronicle/{edge.node.id}"
-						class="flex flex-1 items-center gap-2 px-2 py-1 text-[11px] text-text-secondary transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
+						class="flex flex-1 items-center gap-2 px-2 py-1 text-xs text-text-secondary transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
 					>
 						<Calendar class="h-3 w-3 shrink-0 text-accent-amber/30" />
 						<span class="truncate uppercase tracking-wider">
@@ -160,7 +160,7 @@
 				bind:value={logUrl}
 				onkeydown={handleInputKeydown}
 				placeholder="Google Docs URL..."
-				class="flex-1 border border-border-dim bg-bg-inset px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted/50 focus:border-accent-amber"
+				class="flex-1 border border-border-dim bg-bg-inset px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-faint focus:border-accent-amber"
 			/>
 			<Button size="sm" onclick={addLog} disabled={adding || !logUrl.trim()}>
 				<Plus class="mr-1 h-3 w-3" />

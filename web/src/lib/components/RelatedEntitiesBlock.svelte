@@ -28,7 +28,7 @@
 			{#each section.data?.edges ?? [] as edge}
 				<a
 					href="{section.route}/{edge.node.id}"
-					class="block px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
+					class="block px-2 py-1 text-xs text-text-secondary uppercase tracking-wider transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
 				>
 					{edge.node.name}
 				</a>

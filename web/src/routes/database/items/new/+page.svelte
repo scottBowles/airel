@@ -47,7 +47,7 @@
 	</a>
 
 	<div class="border border-border-dim bg-hull px-3 py-3">
-		<span class="machine-text text-[9px] text-text-muted/60 block mb-1">ITM // NEW ENTRY</span>
+		<span class="machine-text text-[9px] text-text-muted block mb-1">ITM // NEW ENTRY</span>
 		<h1 class="title-display text-lg text-accent-amber text-glow-amber">NEW ITEM</h1>
 	</div>
 
@@ -55,15 +55,15 @@
 		<form onsubmit={handleSubmit} class="stack-space">
 			<div>
 				<label for="name" class="title-section mb-2 block">Name *</label>
-				<input id="name" bind:value={name} class="w-full bg-void border border-border-dim px-2.5 py-2 text-text-primary placeholder:text-text-muted/50 focus:border-accent-amber focus:outline-none" placeholder="Item name" />
+				<input id="name" bind:value={name} class="w-full bg-void border border-border-dim px-2.5 py-2 text-text-primary placeholder:text-text-faint focus:border-accent-amber focus:outline-none" placeholder="Item name" />
 			</div>
 			<div>
 				<label for="desc" class="title-section mb-2 block">Description</label>
-				<textarea id="desc" bind:value={description} rows="3" class="w-full resize-y bg-void border border-border-dim px-2.5 py-2 text-text-primary placeholder:text-text-muted/50 focus:border-accent-amber focus:outline-none" placeholder="Brief description"></textarea>
+				<textarea id="desc" bind:value={description} rows="3" class="w-full resize-y bg-void border border-border-dim px-2.5 py-2 text-text-primary placeholder:text-text-faint focus:border-accent-amber focus:outline-none" placeholder="Brief description"></textarea>
 			</div>
 			<div>
 				<label for="notes" class="title-section mb-2 block">Notes</label>
-				<textarea id="notes" bind:value={markdownNotes} rows="6" class="w-full resize-y bg-void border border-border-dim px-2.5 py-2 font-mono text-sm text-text-primary placeholder:text-text-muted/50 focus:border-accent-amber focus:outline-none" placeholder="Detailed notes..."></textarea>
+				<textarea id="notes" bind:value={markdownNotes} rows="6" class="w-full resize-y bg-void border border-border-dim px-2.5 py-2 font-mono text-sm text-text-primary placeholder:text-text-faint focus:border-accent-amber focus:outline-none" placeholder="Detailed notes..."></textarea>
 			</div>
 			<Button type="submit" variant="primary" disabled={loading}>
 				<Plus class="h-3 w-3" />

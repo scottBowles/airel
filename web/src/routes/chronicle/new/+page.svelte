@@ -63,7 +63,7 @@
 	</a>
 
 	<div class="border border-border-dim bg-hull px-3 py-3">
-		<span class="machine-text text-[9px] text-text-muted/60 block mb-1">NEW ENTRY</span>
+		<span class="machine-text text-[9px] text-text-muted block mb-1">NEW ENTRY</span>
 		<h1 class="title-display text-lg text-accent-amber text-glow-amber">ADD SESSION LOG</h1>
 		<p class="machine-text text-[10px] text-text-muted mt-1">
 			Import a session log from Google Docs

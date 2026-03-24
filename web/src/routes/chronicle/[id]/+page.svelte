@@ -173,7 +173,7 @@
 		<!-- Header panel -->
 		<div class="border border-border-dim bg-hull">
 			<div class="border-b border-border-dim px-3 py-1.5 flex items-center justify-between">
-				<span class="machine-text text-[9px] text-text-muted/60">LOG ENTRY</span>
+				<span class="machine-text text-[9px] text-text-muted">LOG ENTRY</span>
 				<div class="flex items-center gap-3">
 					<span class="machine-text text-[10px] text-accent-amber flex items-center gap-1.5">
 						<Calendar class="h-3 w-3" />

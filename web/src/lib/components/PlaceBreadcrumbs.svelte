@@ -34,7 +34,7 @@
 			>
 				{ancestor.name}
 			</a>
-			<ChevronRight class="h-2.5 w-2.5 text-text-muted/40" />
+			<ChevronRight class="h-2.5 w-2.5 text-text-faint" />
 		{/each}
 		<span class="machine-text text-accent-amber">{place.name}</span>
 	</nav>

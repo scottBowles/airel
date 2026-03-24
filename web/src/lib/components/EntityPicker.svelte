@@ -98,7 +98,7 @@
 			onblur={handleBlur}
 			onkeydown={handleKeydown}
 			placeholder={placeholder ?? `Search ${entityType.toLowerCase()}s...`}
-			class="w-full bg-transparent px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted/50"
+			class="w-full bg-transparent px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-faint"
 			role="combobox"
 			aria-expanded={showDropdown && results.length > 0}
 			aria-activedescendant={activeIndex >= 0 ? `ep-option-${activeIndex}` : undefined}

@@ -144,7 +144,7 @@
 		class="relative mx-auto flex w-full max-w-md flex-col gap-4 border border-border-dim bg-hull/90 px-6 py-5 text-center shadow-panel backdrop-blur-sm"
 	>
 		<div class="flex items-center justify-between border-b border-border-dim pb-2">
-			<span class="machine-text text-[9px] text-text-muted/50">KSS-7742 // TERMINAL ACCESS</span>
+			<span class="machine-text text-[9px] text-text-faint">KSS-7742 // TERMINAL ACCESS</span>
 			<span class="machine-text text-[9px] text-accent-amber/40">SEC-GATE</span>
 		</div>
 
@@ -163,7 +163,7 @@
 			</div>
 		</div>
 
-		<p class="machine-text text-[9px] tracking-[0.2em] text-text-muted/40 uppercase">
+		<p class="machine-text text-[9px] tracking-[0.2em] text-text-faint uppercase">
 			Authorized Personnel Only
 		</p>
 	</section>

@@ -25,9 +25,9 @@
 		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
 			<div class="flex items-center gap-2">
 				<MapPin class="h-3 w-3 text-accent-amber/40" />
-				<span class="machine-text text-[9px] text-text-muted/60">LOC // PLACES</span>
+				<span class="machine-text text-[9px] text-text-muted">LOC // PLACES</span>
 			</div>
-			<span class="machine-text text-[9px] text-text-muted/40">{entities.length} RECORDS</span>
+			<span class="machine-text text-[9px] text-text-muted">{entities.length} RECORDS</span>
 		</div>
 		<div class="flex items-center justify-between px-3 py-3">
 			<h1 class="title-display text-lg text-accent-amber text-glow-amber">PLACES</h1>

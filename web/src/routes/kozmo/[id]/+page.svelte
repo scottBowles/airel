@@ -130,7 +130,7 @@
 					<p class="machine-text text-xs text-accent-green/50 uppercase tracking-wider">
 						Kozmo Ready
 					</p>
-					<p class="machine-text mt-2 max-w-sm text-[10px] text-text-muted">
+					<p class="machine-text mt-2 max-w-sm text-xs text-text-secondary">
 						Ask me about past missions, crew members, places we've visited, or anything from the ship's archives.
 					</p>
 				</div>
@@ -156,7 +156,7 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
-							<div class="whitespace-pre-wrap text-xs text-text-secondary">
+							<div class="whitespace-pre-wrap text-xs text-text-secondary leading-relaxed">
 								{msg.response}
 							</div>
 						</div>
@@ -189,7 +189,7 @@
 				onkeydown={handleKeydown}
 				placeholder="Ask Kozmo anything..."
 				rows="1"
-				class="flex-1 resize-none border border-border-dim bg-void px-3 py-2 text-xs text-text-primary placeholder:text-text-muted/50 focus:border-accent-green focus:outline-none"
+				class="flex-1 resize-none border border-border-dim bg-void px-3 py-2 text-xs text-text-primary placeholder:text-text-faint focus:border-accent-green focus:outline-none"
 			></textarea>
 			<button
 				onclick={sendMessage}

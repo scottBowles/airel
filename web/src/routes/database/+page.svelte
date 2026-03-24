@@ -21,9 +21,9 @@
 		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
 			<div class="flex items-center gap-2">
 				<span class="status-dot text-accent-green"></span>
-				<span class="machine-text text-[9px] text-text-muted/60">DAT-02 // DATABASE</span>
+				<span class="machine-text text-[9px] text-text-muted">DAT-02 // DATABASE</span>
 			</div>
-			<span class="machine-text text-[9px] text-text-muted/40">{categories.length} SUBSYSTEMS</span>
+			<span class="machine-text text-[9px] text-text-muted">{categories.length} SUBSYSTEMS</span>
 		</div>
 		<div class="px-3 py-3">
 			<h1 class="title-display text-lg text-accent-amber text-glow-amber">DATABASE</h1>
@@ -38,15 +38,15 @@
 				class="group relative flex flex-col gap-2 bg-panel px-3 py-3 transition-all hover:bg-panel-hover"
 			>
 				<div class="flex items-center justify-between">
-					<span class="machine-text text-[9px] text-text-muted/40">{cat.code}</span>
+					<span class="machine-text text-[9px] text-text-faint">{cat.code}</span>
 					<cat.icon class="h-3.5 w-3.5 text-accent-amber/30 group-hover:text-accent-amber transition-colors" />
 				</div>
 				<h2 class="text-xs font-bold text-text-primary uppercase tracking-widest group-hover:text-accent-amber transition-colors">
 					{cat.label}
 				</h2>
-				<p class="text-[11px] text-text-muted leading-relaxed">{cat.description}</p>
+				<p class="text-xs text-text-secondary leading-relaxed">{cat.description}</p>
 				<div class="border-t border-border-dim pt-1.5 mt-auto">
-					<span class="machine-text text-[9px] text-text-muted/40 group-hover:text-accent-amber transition-colors">ACCESS &gt;</span>
+					<span class="machine-text text-[9px] text-text-muted group-hover:text-accent-amber transition-colors">ACCESS &gt;</span>
 				</div>
 				<div class="absolute bottom-0 left-0 h-px w-0 bg-accent-amber transition-all duration-300 group-hover:w-full"></div>
 			</a>

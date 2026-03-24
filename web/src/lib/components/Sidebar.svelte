@@ -110,7 +110,7 @@
 
 	<!-- Nav links -->
 	<div class="flex-1 overflow-y-auto px-2 py-2">
-		<p class="machine-text px-2 py-1 text-[9px] text-text-muted/60">NAVIGATION</p>
+		<p class="machine-text px-2 py-1 text-[9px] text-text-muted">NAVIGATION</p>
 		<div class="space-y-px mt-1">
 			{#each navItems as item}
 				{@const active = isActive(item.href)}
@@ -126,7 +126,7 @@
 				>
 					<item.icon class={cn('h-3.5 w-3.5', active ? 'text-accent-amber' : 'text-text-muted group-hover:text-accent-amber/60')} />
 					<span class="flex-1">{item.label}</span>
-					<span class={cn('text-[9px] tracking-normal', active ? 'text-accent-amber/40' : 'text-text-muted/40')}>{item.code}</span>
+					<span class={cn('text-[9px] tracking-normal', active ? 'text-accent-amber/40' : 'text-text-faint')}>{item.code}</span>
 				</a>
 			{/each}
 		</div>
@@ -135,7 +135,7 @@
 	<!-- System status -->
 	<div class="border-t border-border-dim px-3 py-2">
 		<div class="flex items-center justify-between px-1 mb-2">
-			<span class="machine-text text-[9px] text-text-muted/60">SYS STATUS</span>
+			<span class="machine-text text-[9px] text-text-muted">SYS STATUS</span>
 			<span class="machine-text text-[9px] text-accent-green">NOMINAL</span>
 		</div>
 		<div class="flex gap-1">

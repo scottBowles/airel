@@ -36,7 +36,7 @@
 						class="aspect-[5/3] w-full"
 					/>
 					<div class="absolute inset-0 bg-gradient-to-t from-panel via-transparent to-transparent"></div>
-					<span class="absolute left-2 top-2 machine-text text-[9px] text-text-muted/60">
+					<span class="absolute left-2 top-2 machine-text text-[9px] text-text-muted">
 						REC-{String(i + 1).padStart(3, '0')}
 					</span>
 				</div>
@@ -47,7 +47,7 @@
 						{entity.name}
 					</h3>
 					{#if entity.description}
-						<p class="line-clamp-2 text-[11px] text-text-muted leading-relaxed">
+						<p class="line-clamp-2 text-xs text-text-secondary leading-relaxed">
 							{entity.description}
 						</p>
 					{/if}

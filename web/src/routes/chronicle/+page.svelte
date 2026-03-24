@@ -71,9 +71,9 @@
 		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
 			<div class="flex items-center gap-2">
 				<span class="status-dot text-accent-green"></span>
-				<span class="machine-text text-[9px] text-text-muted/60">LOG-01 // CHRONICLE</span>
+				<span class="machine-text text-[9px] text-text-muted">LOG-01 // CHRONICLE</span>
 			</div>
-			<span class="machine-text text-[9px] text-text-muted/40">{logs.length} RECORDS</span>
+			<span class="machine-text text-[9px] text-text-muted">{logs.length} RECORDS</span>
 		</div>
 		<div class="flex items-center justify-between px-3 py-3">
 			<div>
@@ -130,14 +130,14 @@
 							{log.title ?? 'UNTITLED LOG'}
 						</h2>
 						{#if log.brief}
-							<p class="mt-1 line-clamp-2 text-[11px] text-text-muted leading-relaxed">
+							<p class="mt-1 line-clamp-2 text-xs text-text-secondary leading-relaxed">
 								{log.brief}
 							</p>
 						{/if}
 					</div>
 
 					<!-- Record number -->
-					<span class="hidden machine-text text-[9px] text-text-muted/30 sm:block">
+					<span class="hidden machine-text text-[9px] text-text-faint sm:block">
 						#{String(i + 1).padStart(3, '0')}
 					</span>
 				</a>
@@ -148,7 +148,7 @@
 						href={log.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="flex items-center border-l border-border-dim bg-panel px-2.5 text-text-muted/40 transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
+						class="flex items-center border-l border-border-dim bg-panel px-2.5 text-text-muted transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
 						title="Open Google Doc"
 					>
 						<ExternalLink class="h-3.5 w-3.5" />
@@ -158,7 +158,7 @@
 		{:else}
 			<div class="border border-border-dim bg-panel px-4 py-8 text-center">
 				<p class="machine-text text-text-muted">NO LOGS RECORDED</p>
-				<p class="machine-text text-[10px] text-text-muted/50 mt-1">IMPORT A SESSION TO BEGIN</p>
+				<p class="machine-text text-[10px] text-text-faint mt-1">IMPORT A SESSION TO BEGIN</p>
 			</div>
 		{/each}
 	</div>

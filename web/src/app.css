@@ -33,8 +33,9 @@
 
 	/* Text — terminal phosphor tones */
 	--color-text-primary: #d4c5a0;
-	--color-text-secondary: #8a7e60;
-	--color-text-muted: #5c553e;
+	--color-text-secondary: #b0a688;
+	--color-text-muted: #8a7e60;
+	--color-text-faint: #6b634a;
 	--color-text-accent: #ffb000;
 
 	/* ── Typography ── */
@@ -291,7 +292,7 @@ body::before {
 @utility title-section {
 	font-family: var(--font-mono);
 	font-weight: 400;
-	font-size: 0.7rem;
+	font-size: 0.75rem;
 	letter-spacing: 0.2em;
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -307,7 +308,7 @@ body::before {
 
 @utility machine-text {
 	font-family: var(--font-mono);
-	font-size: 0.7rem;
+	font-size: 0.75rem;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
 }
@@ -487,6 +488,6 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-	color: var(--color-text-muted) !important;
+	color: var(--color-text-faint) !important;
 	font-family: var(--font-mono) !important;
 }

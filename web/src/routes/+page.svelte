@@ -77,7 +77,7 @@
 					<span class="status-dot text-accent-green animate-pulse-glow"></span>
 					<span class="machine-text text-[10px] text-accent-green">ALL SYSTEMS OPERATIONAL</span>
 				</div>
-				<span class="machine-text text-[9px] text-text-muted/50">STARDATE 2847.3</span>
+				<span class="machine-text text-[9px] text-text-faint">STARDATE 2847.3</span>
 			</div>
 		</div>
 
@@ -104,7 +104,7 @@
 				>
 					<!-- Status line -->
 					<div class="flex items-center justify-between">
-						<span class="machine-text text-[9px] text-text-muted/50">{sys.code}</span>
+						<span class="machine-text text-[9px] text-text-faint">{sys.code}</span>
 						<span class="machine-text text-[9px] {sys.statusColor}">
 							<span class="status-dot {sys.statusColor} mr-1"></span>
 							{sys.status}
@@ -119,11 +119,11 @@
 						</h2>
 					</div>
 
-					<p class="text-[11px] text-text-muted leading-relaxed">{sys.description}</p>
+					<p class="text-xs text-text-secondary leading-relaxed">{sys.description}</p>
 
 					<!-- Access prompt -->
 					<div class="border-t border-border-dim pt-2 mt-auto">
-						<span class="machine-text text-[10px] text-text-muted/50 group-hover:text-accent-amber transition-colors">
+						<span class="machine-text text-[10px] text-text-muted group-hover:text-accent-amber transition-colors">
 							ACCESS &gt;
 						</span>
 					</div>
@@ -138,13 +138,13 @@
 		<div class="border border-border-dim bg-hull mb-4">
 			<div class="border-b border-border-dim px-3 py-1.5 flex items-center gap-2">
 				<Gauge class="h-3 w-3 text-accent-amber/40" />
-				<span class="machine-text text-[9px] text-text-muted/60">ENGINEERING // SHIP SPECIFICATIONS</span>
-				<span class="ml-auto machine-text text-[9px] text-text-muted/30">GRIFTR: Gallium Retrofit Isolating Free Turbine Rig</span>
+				<span class="machine-text text-[9px] text-text-muted">ENGINEERING // SHIP SPECIFICATIONS</span>
+				<span class="ml-auto machine-text text-[9px] text-text-faint">GRIFTR: Gallium Retrofit Isolating Free Turbine Rig</span>
 			</div>
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-px">
 				{#each shipSpecs as spec}
 					<div class="bg-panel px-3 py-2.5">
-						<p class="machine-text text-[9px] text-text-muted/50 mb-1">{spec.label}</p>
+						<p class="machine-text text-[9px] text-text-faint mb-1">{spec.label}</p>
 						<p class="text-sm font-bold tracking-wider text-accent-amber">{spec.value}</p>
 					</div>
 				{/each}
@@ -155,18 +155,18 @@
 		<div class="border border-border-dim bg-hull mb-4">
 			<div class="border-b border-border-dim px-3 py-1.5 flex items-center gap-2">
 				<Crosshair class="h-3 w-3 text-accent-red/40" />
-				<span class="machine-text text-[9px] text-text-muted/60">TACTICAL // ARMAMENT STATUS</span>
+				<span class="machine-text text-[9px] text-text-muted">TACTICAL // ARMAMENT STATUS</span>
 			</div>
 			<div class="divide-y divide-border-dim">
 				{#each armament as wep}
 					<div class="flex items-start gap-3 bg-panel px-3 py-2.5">
-						<span class="machine-text text-[9px] text-text-muted/40 w-12 shrink-0 pt-0.5">{wep.mount}</span>
+						<span class="machine-text text-[9px] text-text-faint w-12 shrink-0 pt-0.5">{wep.mount}</span>
 						<div class="min-w-0 flex-1">
 							<div class="flex items-baseline gap-2">
 								<span class="text-xs font-bold text-text-primary tracking-wider">{wep.name}</span>
 								<span class="machine-text text-[9px] text-accent-amber/50">{wep.type}</span>
 							</div>
-							<p class="machine-text text-[9px] text-text-muted/50 mt-0.5">{wep.note}</p>
+							<p class="machine-text text-[9px] text-text-faint mt-0.5">{wep.note}</p>
 						</div>
 						<span class="machine-text text-[9px] text-accent-green shrink-0">ONLINE</span>
 					</div>
@@ -178,13 +178,13 @@
 		<div class="border border-border-dim bg-hull">
 			<div class="border-b border-border-dim px-3 py-1.5 flex items-center gap-2">
 				<Activity class="h-3 w-3 text-accent-cyan/40" />
-				<span class="machine-text text-[9px] text-text-muted/60">SENSORS & AUTHORIZATION</span>
+				<span class="machine-text text-[9px] text-text-muted">SENSORS & AUTHORIZATION</span>
 			</div>
 			<div class="grid sm:grid-cols-3 gap-px">
 				{#each sensorSuite as sensor}
 					<div class="bg-panel px-3 py-2.5 flex items-center justify-between">
 						<div>
-							<p class="machine-text text-[9px] text-text-muted/50 mb-1">{sensor.label}</p>
+							<p class="machine-text text-[9px] text-text-faint mb-1">{sensor.label}</p>
 							<p class="text-xs font-bold tracking-wider text-text-primary">{sensor.value}</p>
 						</div>
 						<span class="machine-text text-[9px] text-accent-green">{sensor.status}</span>
@@ -196,14 +196,14 @@
 		<!-- Footer -->
 		<footer class="mt-6 flex items-center justify-between px-1">
 			<div class="flex items-center gap-3">
-				<Radio class="h-3 w-3 text-text-muted/30" />
-				<p class="machine-text text-[9px] text-text-muted/30">
+				<Radio class="h-3 w-3 text-text-faint" />
+				<p class="machine-text text-[9px] text-text-faint">
 					KOZMO INTEGRATION // ACTIVE
 				</p>
 			</div>
 			<div class="flex items-center gap-3">
-				<Cpu class="h-3 w-3 text-text-muted/30" />
-				<p class="machine-text text-[9px] text-text-muted/30">
+				<Cpu class="h-3 w-3 text-text-faint" />
+				<p class="machine-text text-[9px] text-text-faint">
 					CORE v3.7.1
 				</p>
 			</div>
