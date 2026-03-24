@@ -981,6 +981,11 @@ input EntityAddImageInput {
   imageId: String!
 }
 
+input EntitySetImageIdsInput {
+  id: ID!
+  imageIds: [String!]!
+}
+
 """EquipmentTraits(id, item, brief_description)"""
 type EquipmentTraits implements Node {
   briefDescription: String!
@@ -1455,6 +1460,7 @@ type Mutation {
   createRace(input: RaceInput!): CreateRacePayload!
   entityAddAlias(input: EntityAddAliasInput!): Node!
   entityAddImage(input: EntityAddImageInput!): Node!
+  entitySetImageIds(input: EntitySetImageIdsInput!): Node!
   getOrCreateGameLog(input: GetOrCreateGameLogInput!): GetOrCreateGameLogPayload!
   googleLogin(googleToken: String!): ObtainJSONWebTokenType!
   lock(input: NodeInput!): Lockable!
