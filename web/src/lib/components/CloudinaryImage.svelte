@@ -21,7 +21,6 @@
 	} = $props();
 
 	let src = $derived(imageId ? cloudinaryUrl(imageId, { width, height, crop }) : null);
-    $inspect(imageId, src);
 </script>
 
 {#if src}
