@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css';
 	import { fromStore } from 'svelte/store';
+	import { afterNavigate } from '$app/navigation';
+	import { graphql } from '$houdini';
 	import { Toaster } from 'svelte-sonner';
 	import { setUserContext } from '$lib/auth';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -11,6 +13,19 @@
 	let user = $derived(meResult?.data?.me);
 
 	setUserContext(() => user);
+
+	const recordPageView = graphql(`
+		mutation RecordPageView($path: String!) {
+			recordPageView(path: $path)
+		}
+	`);
+
+	afterNavigate((navigation) => {
+		const path = navigation.to?.url.pathname;
+		if (path) {
+			recordPageView.mutate({ path }).catch(() => {});
+		}
+	});
 
 	let searchOpen = $state(false);
 </script>

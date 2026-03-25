@@ -1466,6 +1466,7 @@ type Mutation {
   lock(input: NodeInput!): Lockable!
   processAllContent(input: ProcessAllContentInput!): ProcessAllContentPayload!
   processContent(input: ProcessContentInput!): ProcessContentPayload!
+  recordPageView(path: String!): Boolean!
 
   "### refreshToken to generate a new login token:\n\n    *Use this only if `JWT_LONG_RUNNING_REFRESH_TOKEN` is True*\n\n    using the refresh-token you already got during authorization, and\n    obtain a brand-new token (and possibly a new refresh token if you\n    revoked the previous). This is an alternative to log in when your\n    token expired.\n    "
   refreshToken(input: RefreshTokenInput!): ObtainJSONWebTokenType!
