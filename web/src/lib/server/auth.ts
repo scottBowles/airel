@@ -114,14 +114,12 @@ export async function refreshAuthToken(refreshToken: string) {
 }
 
 export function setAuthCookies(cookies: Cookies, accessToken: string, refreshToken: string) {
-	// Access token - reasonably short life, but we can set checking logic in client
-	// We'll set a standard time, e.g. 15 mins.
 	cookies.set('access_token', accessToken, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'strict',
 		secure: process.env.NODE_ENV === 'production',
-		maxAge: 60 * 15 // 15 minutes
+		maxAge: 60 * 5 // 5 minutes (matches JWT lifetime)
 	});
 
 	// Refresh token - longer life

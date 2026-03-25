@@ -9,10 +9,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	let token = accessToken;
 	let payload = accessToken ? decodeJwt(accessToken) : null;
 
-	// Check expiration
-	// payload.exp is usually in seconds. Date.now() is ms.
-	if (payload && payload.exp * 1000 < Date.now()) {
-		payload = null; // Expired
+	// Check expiration with 30s buffer to avoid using a token that's about to expire mid-request
+	if (payload && payload.exp * 1000 - Date.now() < 30 * 1000) {
+		payload = null;
 		token = undefined;
 	}
 

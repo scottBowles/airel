@@ -11,8 +11,8 @@ const authPlugin: ClientPlugin = () => {
 
 			if (browser && token) {
 				const payload = decodeJwt(token);
-				// 5 minutes buffer
-				if (payload?.exp && payload.exp * 1000 - Date.now() < 5 * 60 * 1000) {
+				// 30 second buffer before expiry
+				if (payload?.exp && payload.exp * 1000 - Date.now() < 30 * 1000) {
 					try {
 						const res = await fetch('/auth/refresh', { method: 'POST' });
 						if (res.ok) {
