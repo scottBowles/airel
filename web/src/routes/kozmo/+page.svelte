@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
-	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
-	import { toast } from 'svelte-sonner';
-	import { MessageSquare, Plus, Clock } from 'lucide-svelte';
+	import { MessageSquare, Plus, Clock, LogIn } from 'lucide-svelte';
+	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import type { PageData } from './$houdini';
 
@@ -11,35 +9,9 @@
 	let store = $derived(fromStore(data.ChatSessionList).current);
 	let sessions = $derived(store?.data?.chatSessions?.edges ?? []);
 
-	let startingChat = $state(false);
-
-	const startChatMutation = graphql(`
-		mutation StartNewChatSession($input: StartChatSessionInput!) {
-			startChatSession(input: $input) {
-				id
-				title
-			}
-		}
-	`);
-
-	async function startNewChat() {
-		startingChat = true;
-		try {
-			const result = await startChatMutation.mutate({
-				input: { title: 'New Conversation' },
-			});
-			const session = result.data?.startChatSession;
-			if (session) {
-				goto(`/kozmo/${session.id}`);
-			} else {
-				toast.error('Failed to start chat');
-			}
-		} catch {
-			toast.error('Failed to start chat');
-		} finally {
-			startingChat = false;
-		}
-	}
+	const getUser = getUserContext();
+	let user = $derived(getUser());
+	let isStaff = $derived(!!user?.isStaff);
 
 	function formatDate(date: Date | string | null) {
 		if (!date) return '';
@@ -73,58 +45,87 @@
 					Shipboard AI — conversational intelligence with full archive access
 				</p>
 			</div>
-			<Button variant="primary" onclick={startNewChat} disabled={startingChat}>
-				<Plus class="h-3 w-3" />
-				{startingChat ? 'STARTING...' : 'NEW CHAT'}
-			</Button>
+			{#if isStaff}
+				<Button variant="primary" href="/kozmo/new">
+					<Plus class="h-3 w-3" />
+					NEW CHAT
+				</Button>
+			{/if}
 		</div>
 	</div>
 
-	<!-- Chat splash -->
-	{#if sessions.length === 0}
+	{#if !user}
 		<div class="border border-border-dim bg-panel px-4 py-6 text-center">
-			<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-accent-green/20 bg-accent-green/5">
-				<MessageSquare class="h-5 w-5 text-accent-green" />
+			<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-accent-amber/20 bg-accent-amber/5">
+				<LogIn class="h-5 w-5 text-accent-amber" />
 			</div>
-			<p class="machine-text text-xs text-accent-green/60 uppercase tracking-wider">
-				No active sessions
+			<p class="machine-text text-xs text-accent-amber/60 uppercase tracking-wider">
+				Authentication Required
 			</p>
 			<p class="machine-text mt-2 text-[10px] text-text-muted max-w-md mx-auto">
-				I have access to all ship logs, crew profiles, and the complete entity database.
+				Log in with your crew credentials to access the Kozmo AI interface.
 			</p>
 			<div class="mt-4">
-				<Button variant="primary" onclick={startNewChat} disabled={startingChat}>
-					INITIALIZE SESSION
+				<Button variant="primary" href="/login">
+					<LogIn class="h-3 w-3" />
+					SYSTEM ACCESS
 				</Button>
 			</div>
 		</div>
-	{/if}
-
-	<!-- Past sessions -->
-	{#if sessions.length > 0}
-		<div>
-			<h2 class="title-section mb-3">Session Archive</h2>
-			<div class="stack-space">
-				{#each sessions as edge, i}
-					{@const session = edge.node}
-					<a
-						href="/kozmo/{session.id}"
-						class="group flex items-center gap-3 border border-border-dim bg-panel px-3 py-2.5 transition-all hover:border-accent-green/30 hover:bg-accent-green/5"
-					>
-						<span class="machine-text text-[9px] text-text-faint w-8 shrink-0">#{String(sessions.length - i).padStart(3, '0')}</span>
-						<MessageSquare class="h-3.5 w-3.5 shrink-0 text-accent-green/30 group-hover:text-accent-green" />
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-xs text-text-primary group-hover:text-accent-green transition-colors">
-								{session.title}
-							</p>
-						</div>
-						<p class="machine-text flex items-center gap-1 text-[10px] text-text-muted">
-							<Clock class="h-3 w-3" />
-							{formatDate(session.updatedAt)}
-						</p>
-					</a>
-				{/each}
-			</div>
+	{:else if !isStaff}
+		<div class="border border-border-dim bg-panel px-4 py-6 text-center">
+			<p class="machine-text text-xs text-accent-red/60 uppercase tracking-wider">
+				Insufficient Clearance
+			</p>
+			<p class="machine-text mt-2 text-[10px] text-text-muted max-w-md mx-auto">
+				Admin clearance is required to access the Kozmo AI interface.
+			</p>
 		</div>
+	{:else}
+		{#if sessions.length === 0}
+			<div class="border border-border-dim bg-panel px-4 py-6 text-center">
+				<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-accent-green/20 bg-accent-green/5">
+					<MessageSquare class="h-5 w-5 text-accent-green" />
+				</div>
+				<p class="machine-text text-xs text-accent-green/60 uppercase tracking-wider">
+					No active sessions
+				</p>
+				<p class="machine-text mt-2 text-[10px] text-text-muted max-w-md mx-auto">
+					I have access to all ship logs, crew profiles, and the complete entity database.
+				</p>
+				<div class="mt-4">
+					<Button variant="primary" href="/kozmo/new">
+						INITIALIZE SESSION
+					</Button>
+				</div>
+			</div>
+		{/if}
+
+		{#if sessions.length > 0}
+			<div>
+				<h2 class="title-section mb-3">Session Archive</h2>
+				<div class="stack-space">
+					{#each sessions as edge, i}
+						{@const session = edge.node}
+						<a
+							href="/kozmo/{session.id}"
+							class="group flex items-center gap-3 border border-border-dim bg-panel px-3 py-2.5 transition-all hover:border-accent-green/30 hover:bg-accent-green/5"
+						>
+							<span class="machine-text text-[9px] text-text-faint w-8 shrink-0">#{String(sessions.length - i).padStart(3, '0')}</span>
+							<MessageSquare class="h-3.5 w-3.5 shrink-0 text-accent-green/30 group-hover:text-accent-green" />
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-xs text-text-primary group-hover:text-accent-green transition-colors">
+									{session.title}
+								</p>
+							</div>
+							<p class="machine-text flex items-center gap-1 text-[10px] text-text-muted">
+								<Clock class="h-3 w-3" />
+								{formatDate(session.updatedAt)}
+							</p>
+						</a>
+					{/each}
+				</div>
+			</div>
+		{/if}
 	{/if}
 </div>

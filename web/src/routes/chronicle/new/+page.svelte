@@ -2,9 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { graphql } from '$houdini';
+	import { getUserContext } from '$lib/auth';
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+
+	const getUser = getUserContext();
+	let isStaff = $derived(!!getUser()?.isStaff);
 
 	let url = $state('');
 	let loading = $state(false);
@@ -53,6 +57,7 @@
 	<title>New Log — Chronicle — KSS Kontularien</title>
 </svelte:head>
 
+{#if isStaff}
 <div class="content-pad db-page">
 	<a
 		href="/chronicle"
@@ -89,3 +94,11 @@
 		</form>
 	</Panel>
 </div>
+{:else}
+<div class="content-pad db-page">
+	<div class="border border-border-dim bg-panel px-4 py-8 text-center">
+		<p class="machine-text text-xs text-accent-red/60 uppercase tracking-wider">404 — Not Found</p>
+		<p class="machine-text mt-2 text-[10px] text-text-muted">This page does not exist or you lack clearance.</p>
+	</div>
+</div>
+{/if}

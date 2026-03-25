@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { fromStore } from 'svelte/store';
+	import { goto } from '$app/navigation';
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
+	import { getUserContext } from '$lib/auth';
 	import {
 		ArrowLeft,
 		Send,
@@ -11,6 +13,13 @@
 		Loader2,
 	} from 'lucide-svelte';
 	import type { PageData } from './$houdini';
+
+	const getUser = getUserContext();
+	let isStaff = $derived(!!getUser()?.isStaff);
+
+	$effect(() => {
+		if (!isStaff) goto('/kozmo');
+	});
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.ChatSessionDetail).current);

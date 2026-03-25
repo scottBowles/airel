@@ -2,10 +2,14 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { graphql } from '$houdini';
+	import { getUserContext } from '$lib/auth';
 	import { ArrowLeft, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import EntityPicker from '$lib/components/EntityPicker.svelte';
+
+	const getUser = getUserContext();
+	let isStaff = $derived(!!getUser()?.isStaff);
 
 	let name = $state('');
 	let description = $state('');
@@ -53,6 +57,7 @@
 
 <svelte:head><title>New Place — Database — KSS Kontularien</title></svelte:head>
 
+{#if isStaff}
 <div class="content-pad db-page">
 	<a href="/database/places" class="inline-flex items-center gap-2 text-xs text-text-muted uppercase tracking-wider transition-colors hover:text-accent-amber">
 		<ArrowLeft class="h-3.5 w-3.5" /><span>Back to Places</span>
@@ -104,3 +109,11 @@
 		</form>
 	</Panel>
 </div>
+{:else}
+<div class="content-pad db-page">
+	<div class="border border-border-dim bg-panel px-4 py-8 text-center">
+		<p class="machine-text text-xs text-accent-red/60 uppercase tracking-wider">404 — Not Found</p>
+		<p class="machine-text mt-2 text-[10px] text-text-muted">This page does not exist or you lack clearance.</p>
+	</div>
+</div>
+{/if}
