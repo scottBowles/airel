@@ -120,7 +120,7 @@
 				<div class="group flex items-center justify-between">
 					<a
 						href="/chronicle/{edge.node.id}"
-						class="flex flex-1 items-center gap-2 px-2 py-1 text-xs text-text-secondary transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
+						class="flex min-w-0 flex-1 items-center gap-2 px-2 py-1 text-xs text-text-secondary transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
 					>
 						<Calendar class="h-3 w-3 shrink-0 text-accent-amber/30" />
 						<span class="truncate uppercase tracking-wider">
