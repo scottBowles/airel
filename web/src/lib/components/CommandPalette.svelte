@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, preloadData } from '$app/navigation';
 	import { page } from '$app/state';
 	import { env } from '$env/dynamic/public';
 	import { cn } from '$lib/utils';
@@ -87,12 +87,24 @@
 		debounceTimer = setTimeout(() => search(query), 200);
 	}
 
+	function prefetch(hit: (typeof results)[number]) {
+		preloadData(getRoute(hit));
+	}
+
 	function navigate(hit: (typeof results)[number]) {
 		open = false;
 		query = '';
 		results = [];
 		goto(getRoute(hit));
 	}
+
+	// Prefetch the currently selected result
+	$effect(() => {
+		const hit = results[selectedIndex];
+		if (hit) {
+			preloadData(getRoute(hit));
+		}
+	});
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'ArrowDown') {
@@ -178,7 +190,7 @@
 									: 'text-text-secondary hover:bg-accent-amber/5 hover:text-text-primary border-transparent',
 							)}
 							onclick={() => navigate(hit)}
-							onmouseenter={() => (selectedIndex = i)}
+							onmouseenter={() => { selectedIndex = i; prefetch(hit); }}
 						>
 							<Icon class="h-3.5 w-3.5 shrink-0 opacity-50" />
 							<div class="min-w-0 flex-1">
