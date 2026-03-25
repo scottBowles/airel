@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { env } from '$env/dynamic/public';
 	import { cn } from '$lib/utils';
 	import { Search, X, FileText, Users, MapPin, Swords, Gem, Globe, Dna } from 'lucide-svelte';
@@ -116,6 +117,12 @@
 			// Focus input after DOM update
 			setTimeout(() => inputEl?.focus(), 10);
 		}
+	});
+
+	// Close on page navigation
+	$effect(() => {
+		const _path = page.url.pathname;
+		untrack(() => { open = false; });
 	});
 
 	onMount(() => {
