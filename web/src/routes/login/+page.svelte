@@ -115,7 +115,8 @@
 		});
 
 		if (res.ok) {
-			const redirect = page.url.searchParams.get('redirect') || '/';
+			const param = page.url.searchParams.get('redirect') || '/';
+			const redirect = param.startsWith('/') && !param.startsWith('//') ? param : '/';
 			window.location.href = redirect;
 		} else {
 			console.error('Login failed');

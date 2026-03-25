@@ -62,7 +62,7 @@
 		</button>
 	{:else}
 		<a
-			href="/login"
+			href="/login?redirect={encodeURIComponent(page.url.pathname + page.url.search)}"
 			class="flex h-7 w-7 items-center justify-center border border-border-dim text-text-muted transition-colors hover:text-accent-amber"
 			title="Log in"
 		>
@@ -197,7 +197,7 @@
 			</div>
 		{:else}
 			<a
-				href="/login"
+				href="/login?redirect={encodeURIComponent(page.url.pathname + page.url.search)}"
 				class="flex items-center gap-2.5 text-xs text-text-secondary uppercase tracking-wider transition-colors hover:text-accent-amber"
 			>
 				<LogIn class="h-3.5 w-3.5 text-text-muted" />

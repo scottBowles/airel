@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
+	import { page } from '$app/state';
 	import { MessageSquare, Plus, Clock, LogIn } from 'lucide-svelte';
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
@@ -66,7 +67,7 @@
 				Log in with your crew credentials to access the Kozmo AI interface.
 			</p>
 			<div class="mt-4">
-				<Button variant="primary" href="/login">
+				<Button variant="primary" href="/login?redirect={encodeURIComponent(page.url.pathname + page.url.search)}">
 					<LogIn class="h-3 w-3" />
 					SYSTEM ACCESS
 				</Button>
