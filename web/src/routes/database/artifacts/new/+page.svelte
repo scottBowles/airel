@@ -43,7 +43,7 @@
 	}
 </script>
 
-<svelte:head><title>New Artifact — Database — KSS Kontularien</title></svelte:head>
+<svelte:head><title>New Artifact — Database — Kontularien</title></svelte:head>
 
 {#if isStaff}
 <div class="content-pad db-page">

@@ -66,7 +66,7 @@
 </script>
 
 <svelte:head>
-	<title>Chronicle — KSS Kontularien</title>
+	<title>Chronicle — Kontularien</title>
 </svelte:head>
 
 <div class="content-pad db-page">

@@ -107,7 +107,7 @@
 </script>
 
 <svelte:head>
-	<title>{session?.title ?? 'Chat'} — Kozmo — KSS Kontularien</title>
+	<title>{session?.title ?? 'Chat'} — Kozmo — Kontularien</title>
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">

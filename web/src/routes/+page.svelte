@@ -64,7 +64,7 @@
 </script>
 
 <svelte:head>
-	<title>KSS Kontularien — Bridge</title>
+	<title>Kontularien — Bridge</title>
 </svelte:head>
 
 <div class="content-pad flex flex-1 flex-col">

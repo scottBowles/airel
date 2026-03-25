@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>Races — Database — KSS Kontularien</title>
+	<title>Races — Database — Kontularien</title>
 </svelte:head>
 
 <div class="content-pad db-page">

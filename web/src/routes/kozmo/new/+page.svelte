@@ -110,7 +110,7 @@
 </script>
 
 <svelte:head>
-	<title>New Chat — Kozmo — KSS Kontularien</title>
+	<title>New Chat — Kozmo — Kontularien</title>
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">

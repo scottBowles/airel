@@ -43,7 +43,7 @@
 	}
 </script>
 
-<svelte:head><title>New Association — Database — KSS Kontularien</title></svelte:head>
+<svelte:head><title>New Association — Database — Kontularien</title></svelte:head>
 
 {#if isStaff}
 <div class="content-pad db-page">

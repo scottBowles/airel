@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>Items — Database — KSS Kontularien</title>
+	<title>Items — Database — Kontularien</title>
 </svelte:head>
 
 <div class="content-pad db-page">

@@ -54,7 +54,7 @@
 </script>
 
 <svelte:head>
-	<title>New Log — Chronicle — KSS Kontularien</title>
+	<title>New Log — Chronicle — Kontularien</title>
 </svelte:head>
 
 {#if isStaff}

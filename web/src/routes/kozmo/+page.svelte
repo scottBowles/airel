@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Kozmo — KSS Kontularien</title>
+	<title>Kozmo — Kontularien</title>
 </svelte:head>
 
 <div class="content-pad db-page">

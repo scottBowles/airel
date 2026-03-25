@@ -76,7 +76,7 @@
 </script>
 
 <svelte:head>
-	<title>{entity?.name ?? 'Character'} — Database — KSS Kontularien</title>
+	<title>{entity?.name ?? 'Character'} — Database — Kontularien</title>
 </svelte:head>
 
 {#if entity}

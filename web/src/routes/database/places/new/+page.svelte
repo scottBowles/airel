@@ -55,7 +55,7 @@
 	}
 </script>
 
-<svelte:head><title>New Place — Database — KSS Kontularien</title></svelte:head>
+<svelte:head><title>New Place — Database — Kontularien</title></svelte:head>
 
 {#if isStaff}
 <div class="content-pad db-page">

@@ -156,7 +156,7 @@
 </script>
 
 <svelte:head>
-	<title>{log?.title ?? 'Log'} — Chronicle — KSS Kontularien</title>
+	<title>{log?.title ?? 'Log'} — Chronicle — Kontularien</title>
 </svelte:head>
 
 <div class="content-pad db-page">

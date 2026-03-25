@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>Associations — Database — KSS Kontularien</title>
+	<title>Associations — Database — Kontularien</title>
 </svelte:head>
 
 <div class="content-pad db-page">
