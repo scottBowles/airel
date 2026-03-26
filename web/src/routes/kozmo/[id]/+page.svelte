@@ -1,17 +1,10 @@
 <script lang="ts">
-	import { tick } from 'svelte';
 	import { fromStore } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import { getUserContext } from '$lib/auth';
-	import {
-		ArrowLeft,
-		Send,
-		User,
-		Bot,
-		Loader2,
-	} from 'lucide-svelte';
+	import { streamChat } from '$lib/streamChat';
+	import { ArrowLeft, Send, User, Bot, Loader2 } from 'lucide-svelte';
 	import type { PageData } from './$houdini';
 
 	const getUser = getUserContext();
@@ -21,41 +14,36 @@
 		if (!isStaff) goto('/kozmo');
 	});
 
+	type Msg = { id: string; message: string; response: string; createdAt: Date | string };
+
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.ChatSessionDetail).current);
+	// True until the Houdini store has delivered actual data (not null/undefined)
+	let loading = $derived(!store || store.data == null);
 	let session = $derived(
 		store?.data?.node?.__typename === 'ChatSessionType' ? store.data.node : null,
 	);
 
-	let messages = $state<Array<{ id: string; message: string; response: string; createdAt: Date | string }>>([]);
+	let pendingMessages = $state<Msg[]>([]);
+	let displayMessages = $derived<Msg[]>([...(session?.messages ?? []), ...pendingMessages]);
+
 	let inputValue = $state('');
 	let sending = $state(false);
-	let messagesEnd = $state<HTMLDivElement | null>(null);
+	let streaming = $state(false);
+	let abortController: AbortController | null = null;
 
-	// Sync messages from query on load
-	$effect(() => {
-		if (session?.messages) {
-			messages = [...session.messages];
-		}
-	});
+	let scrollContainer: HTMLDivElement | undefined;
 
-	const sendMessageMutation = graphql(`
-		mutation SendChatMessage($input: SendChatMessageInput!) {
-			sendChatMessage(input: $input) {
-				message {
-					id
-					message
-					response
-					createdAt
-					tokensUsed
+	function scrollToBottom(smooth = false) {
+		requestAnimationFrame(() => {
+			if (scrollContainer) {
+				if (smooth) {
+					scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+				} else {
+					scrollContainer.scrollTop = scrollContainer.scrollHeight;
 				}
 			}
-		}
-	`);
-
-	async function scrollToBottom() {
-		await tick();
-		messagesEnd?.scrollIntoView({ behavior: 'smooth' });
+		});
 	}
 
 	async function sendMessage() {
@@ -64,37 +52,50 @@
 		const userMessage = inputValue.trim();
 		inputValue = '';
 		sending = true;
+		streaming = false;
 
-		// Optimistic: show user message immediately
 		const tempId = `temp-${Date.now()}`;
-		messages = [
-			...messages,
+		pendingMessages = [
+			...pendingMessages,
 			{ id: tempId, message: userMessage, response: '', createdAt: new Date().toISOString() },
 		];
-		await scrollToBottom();
+		scrollToBottom(true);
+
+		abortController = new AbortController();
 
 		try {
-			const result = await sendMessageMutation.mutate({
-				input: {
-					sessionId: session.id,
-					message: userMessage,
+			await streamChat({
+				sessionId: session.id,
+				message: userMessage,
+				signal: abortController.signal,
+				onToken(token) {
+					streaming = true;
+					pendingMessages = pendingMessages.map((m) =>
+						m.id === tempId ? { ...m, response: m.response + token } : m,
+					);
+					scrollToBottom();
+				},
+				onDone() {
+					// Message saved server-side; will appear in session.messages on next full load
+				},
+				onError(error) {
+					if (!pendingMessages.find((m) => m.id === tempId)?.response) {
+						pendingMessages = pendingMessages.filter((m) => m.id !== tempId);
+					}
+					toast.error(error || 'Kozmo failed to respond');
 				},
 			});
-			const msg = result.data?.sendChatMessage?.message;
-			if (msg) {
-				// Replace temp message with real one
-				messages = messages.map((m) => (m.id === tempId ? msg : m));
-			} else {
-				// Remove temp message on error
-				messages = messages.filter((m) => m.id !== tempId);
-				toast.error('Kozmo failed to respond');
+		} catch (e) {
+			if ((e as Error).name !== 'AbortError') {
+				if (!pendingMessages.find((m) => m.id === tempId)?.response) {
+					pendingMessages = pendingMessages.filter((m) => m.id !== tempId);
+				}
+				toast.error('Communication error');
 			}
-		} catch {
-			messages = messages.filter((m) => m.id !== tempId);
-			toast.error('Communication error');
 		} finally {
 			sending = false;
-			await scrollToBottom();
+			streaming = false;
+			abortController = null;
 		}
 	}
 
@@ -131,9 +132,16 @@
 	</header>
 
 	<!-- Messages -->
-	<div class="flex-1 overflow-y-auto p-4">
+	<div class="flex-1 overflow-y-auto p-4" bind:this={scrollContainer}>
 		<div class="mx-auto max-w-3xl space-y-5">
-			{#if messages.length === 0}
+			{#if loading}
+				<div class="flex flex-col items-center justify-center py-16 text-center">
+					<Loader2 class="h-6 w-6 animate-spin text-accent-green/40 mb-3" />
+					<p class="machine-text text-xs text-accent-green/50 uppercase tracking-wider">
+						Loading session...
+					</p>
+				</div>
+			{:else if displayMessages.length === 0}
 				<div class="flex flex-col items-center justify-center py-16 text-center">
 					<Bot class="h-8 w-8 text-accent-green/20 mb-3" />
 					<p class="machine-text text-xs text-accent-green/50 uppercase tracking-wider">
@@ -145,7 +153,7 @@
 				</div>
 			{/if}
 
-			{#each messages as msg}
+			{#each displayMessages as msg (msg.id)}
 				<!-- User message -->
 				<div class="flex items-start gap-3">
 					<div class="flex h-7 w-7 shrink-0 items-center justify-center border border-accent-cyan/20 bg-accent-cyan/5">
@@ -166,7 +174,7 @@
 						<div class="min-w-0 flex-1">
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
 							<div class="whitespace-pre-wrap text-xs text-text-secondary leading-relaxed">
-								{msg.response}
+								{msg.response}{#if streaming && msg.id.startsWith('temp-')}<span class="inline-block w-1.5 h-3 bg-accent-green/70 animate-pulse ml-0.5 align-middle"></span>{/if}
 							</div>
 						</div>
 					</div>
@@ -179,14 +187,12 @@
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
 							<div class="flex items-center gap-2 text-xs text-text-muted">
 								<Loader2 class="h-3.5 w-3.5 animate-spin text-accent-green" />
-								<span class="machine-text">Processing query...</span>
+								<span class="machine-text">Searching ship's archives...</span>
 							</div>
 						</div>
 					</div>
 				{/if}
 			{/each}
-
-			<div bind:this={messagesEnd}></div>
 		</div>
 	</div>
 

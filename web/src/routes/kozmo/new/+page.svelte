@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import { getUserContext } from '$lib/auth';
+	import { streamChat } from '$lib/streamChat';
 	import {
 		ArrowLeft,
 		Send,
@@ -22,27 +23,17 @@
 	let messages = $state<Array<{ id: string; message: string; response: string; createdAt: string }>>([]);
 	let inputValue = $state('');
 	let sending = $state(false);
+	let streaming = $state(false);
 	let messagesEnd = $state<HTMLDivElement | null>(null);
+	// Once a session is created, store its ID for follow-up messages
+	let sessionId = $state<string | null>(null);
+	let sessionTitle = $state<string | null>(null);
 
 	const startChatMutation = graphql(`
 		mutation StartNewChatSessionWithMessage($input: StartChatSessionInput!) {
 			startChatSession(input: $input) {
 				id
 				title
-			}
-		}
-	`);
-
-	const sendMessageMutation = graphql(`
-		mutation SendFirstChatMessage($input: SendChatMessageInput!) {
-			sendChatMessage(input: $input) {
-				message {
-					id
-					message
-					response
-					createdAt
-					tokensUsed
-				}
 			}
 		}
 	`);
@@ -58,6 +49,7 @@
 		const userMessage = inputValue.trim();
 		inputValue = '';
 		sending = true;
+		streaming = false;
 
 		const tempId = `temp-${Date.now()}`;
 		messages = [
@@ -67,37 +59,52 @@
 		await scrollToBottom();
 
 		try {
-			// Create the session first
-			const sessionResult = await startChatMutation.mutate({
-				input: { title: userMessage.slice(0, 80) },
-			});
-			const session = sessionResult.data?.startChatSession;
-			if (!session) {
-				messages = messages.filter((m) => m.id !== tempId);
-				toast.error('Failed to start chat');
-				return;
+			// Create the session on first message, reuse for follow-ups
+			let currentSessionId = sessionId;
+			if (!currentSessionId) {
+				const sessionResult = await startChatMutation.mutate({
+					input: { title: userMessage.slice(0, 80) },
+				});
+				const session = sessionResult.data?.startChatSession;
+				if (!session) {
+					messages = messages.filter((m) => m.id !== tempId);
+					toast.error('Failed to start chat');
+					return;
+				}
+				currentSessionId = session.id;
+				sessionId = session.id;
+				sessionTitle = session.title;
+
+				// Update URL without triggering navigation — no flash
+				replaceState(`/kozmo/${session.id}`, {});
 			}
 
-			// Send the message
-			const result = await sendMessageMutation.mutate({
-				input: { sessionId: session.id, message: userMessage },
+			await streamChat({
+				sessionId: currentSessionId,
+				message: userMessage,
+				onToken(token) {
+					streaming = true;
+					messages = messages.map((m) =>
+						m.id === tempId ? { ...m, response: m.response + token } : m,
+					);
+					scrollToBottom();
+				},
+				onDone() {
+					// Already on the right URL — nothing to do
+				},
+				onError(error) {
+					if (!messages.find((m) => m.id === tempId)?.response) {
+						messages = messages.filter((m) => m.id !== tempId);
+					}
+					toast.error(error || 'Kozmo failed to respond');
+				},
 			});
-			const msg = result.data?.sendChatMessage?.message;
-			if (msg) {
-				messages = messages.map((m) => (m.id === tempId ? msg : m));
-			} else {
-				messages = messages.filter((m) => m.id !== tempId);
-				toast.error('Kozmo failed to respond');
-			}
-
-			// Navigate to the real session URL (replace so back goes to list)
-			await scrollToBottom();
-			goto(`/kozmo/${session.id}`, { replaceState: true });
 		} catch {
 			messages = messages.filter((m) => m.id !== tempId);
 			toast.error('Communication error');
 		} finally {
 			sending = false;
+			streaming = false;
 		}
 	}
 
@@ -110,7 +117,7 @@
 </script>
 
 <svelte:head>
-	<title>New Chat — Kozmo — Kontularien</title>
+	<title>{sessionTitle ? `${sessionTitle} — ` : ''}New Chat — Kozmo — Kontularien</title>
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">
@@ -125,7 +132,7 @@
 		<div class="flex items-center gap-2">
 			<Bot class="h-4 w-4 text-accent-green" />
 			<h1 class="machine-text text-xs text-text-primary uppercase tracking-wider">
-				New Session
+				{sessionTitle ?? 'New Session'}
 			</h1>
 		</div>
 		<div class="ml-auto">
@@ -167,7 +174,7 @@
 						<div class="min-w-0 flex-1">
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
 							<div class="whitespace-pre-wrap text-xs text-text-secondary leading-relaxed">
-								{msg.response}
+								{msg.response}{#if streaming && msg.id.startsWith('temp-')}<span class="inline-block w-1.5 h-3 bg-accent-green/70 animate-pulse ml-0.5 align-middle"></span>{/if}
 							</div>
 						</div>
 					</div>
@@ -180,7 +187,7 @@
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
 							<div class="flex items-center gap-2 text-xs text-text-muted">
 								<Loader2 class="h-3.5 w-3.5 animate-spin text-accent-green" />
-								<span class="machine-text">Processing query...</span>
+								<span class="machine-text">Searching ship's archives...</span>
 							</div>
 						</div>
 					</div>
