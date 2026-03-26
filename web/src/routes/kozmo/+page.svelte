@@ -1,18 +1,46 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
+	import { ChatSessionListStore, graphql } from '$houdini';
 	import { page } from '$app/state';
-	import { MessageSquare, Plus, Clock, LogIn } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
+	import { MessageSquare, Plus, Clock, LogIn, Trash2 } from 'lucide-svelte';
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import type { PageData } from './$houdini';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.ChatSessionList).current);
-	let sessions = $derived(store?.data?.chatSessions?.edges ?? []);
+	let allSessions = $derived(store?.data?.chatSessions?.edges ?? []);
+	let archivedIds = new SvelteSet();
+	let sessions = $derived(allSessions.filter((edge) => !archivedIds.has(edge.node.id)));
 
 	const getUser = getUserContext();
 	let user = $derived(getUser());
 	let isStaff = $derived(!!user?.isStaff);
+
+	let confirmArchiveId = $state<string | null>(null);
+
+	const archiveMutation = graphql(`
+		mutation ArchiveChatSession($input: ArchiveChatSessionInput!) {
+			archiveChatSession(input: $input) {
+				id
+				title
+			}
+		}
+	`);
+
+	async function archiveSession(sessionId: string) {
+		try {
+			await archiveMutation.mutate({ input: { sessionId } });
+			archivedIds.add(sessionId);
+			archivedIds = archivedIds;
+			toast.success('Session archived');
+		} catch {
+			toast.error('Failed to archive session');
+		}
+	}
 
 	function formatDate(date: Date | string | null) {
 		if (!date) return '';
@@ -31,6 +59,14 @@
 </svelte:head>
 
 <div class="content-pad db-page">
+	<ConfirmDialog
+		open={!!confirmArchiveId}
+		title="Archive Session"
+		message="Archive this chat session? It will no longer appear in your session list."
+		confirmLabel="Archive"
+		onconfirm={() => { if (confirmArchiveId) archiveSession(confirmArchiveId); confirmArchiveId = null; }}
+		oncancel={() => { confirmArchiveId = null; }}
+	/>
 	<div class="border border-border-dim bg-hull">
 		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
 			<div class="flex items-center gap-2">
@@ -108,22 +144,32 @@
 				<div class="stack-space">
 					{#each sessions as edge, i}
 						{@const session = edge.node}
-						<a
-							href="/kozmo/{session.id}"
-							class="group flex items-center gap-3 border border-border-dim bg-panel px-3 py-2.5 transition-all hover:border-accent-green/30 hover:bg-accent-green/5"
-						>
-							<span class="machine-text text-[9px] text-text-faint w-8 shrink-0">#{String(sessions.length - i).padStart(3, '0')}</span>
-							<MessageSquare class="h-3.5 w-3.5 shrink-0 text-accent-green/30 group-hover:text-accent-green" />
-							<div class="min-w-0 flex-1">
-								<p class="truncate text-xs text-text-primary group-hover:text-accent-green transition-colors">
-									{session.title}
+						<div class="group flex items-center border border-border-dim bg-panel transition-all hover:border-accent-green/30 hover:bg-accent-green/5">
+							<a
+								href="/kozmo/{session.id}"
+								class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5"
+							>
+								<span class="machine-text text-[9px] text-text-faint w-8 shrink-0">#{String(sessions.length - i).padStart(3, '0')}</span>
+								<MessageSquare class="h-3.5 w-3.5 shrink-0 text-accent-green/30 group-hover:text-accent-green" />
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-xs text-text-primary group-hover:text-accent-green transition-colors">
+										{session.title}
+									</p>
+								</div>
+								<p class="machine-text flex items-center gap-1 text-[10px] text-text-muted">
+									<Clock class="h-3 w-3" />
+									{formatDate(session.updatedAt)}
 								</p>
-							</div>
-							<p class="machine-text flex items-center gap-1 text-[10px] text-text-muted">
-								<Clock class="h-3 w-3" />
-								{formatDate(session.updatedAt)}
-							</p>
-						</a>
+							</a>
+							{#if isStaff}
+								<button
+									onclick={(e) => { e.preventDefault(); confirmArchiveId = session.id; }}
+									class="shrink-0 cursor-pointer p-2 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100"
+								>
+									<Trash2 class="h-3.5 w-3.5" />
+								</button>
+							{/if}
+						</div>
 					{/each}
 				</div>
 			</div>

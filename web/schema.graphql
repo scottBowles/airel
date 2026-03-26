@@ -47,6 +47,10 @@ type AliasEdge {
   node: Alias!
 }
 
+input ArchiveChatSessionInput {
+  sessionId: ID!
+}
+
 """ArmorTraits(id, item, ac_bonus)"""
 type ArmorTraits implements Node {
   acBonus: Int!
@@ -1451,6 +1455,7 @@ type Mutation {
     input: AddAiLogSuggestionInput!
   ): AddAiLogSuggestionPayload!
   addEntityLog(input: AddEntityLogInput!): Node!
+  archiveChatSession(input: ArchiveChatSessionInput!): ChatSessionType!
   cleanupOrphanedChunks: ProcessContentPayload!
   createArtifact(input: ArtifactInput!): CreateArtifactPayload!
   createAssociation(input: AssociationInput!): CreateAssociationPayload!
