@@ -37,13 +37,60 @@
 	let editBrief = $state('');
 	let editSynopsis = $state('');
 	let saving = $state(false);
-	let editSetInChanges: { add: { id: string; name: string }[]; remove: string[] } = $state({ add: [], remove: [] });
 
-	function getEffectiveSetIn() {
-		const original = log?.placesSetIn?.edges.map(e => e.node) ?? [];
-		const kept = original.filter(p => !editSetInChanges.remove.includes(p.id));
-		const removed = original.filter(p => editSetInChanges.remove.includes(p.id));
-		return { kept, added: editSetInChanges.add, removed };
+	// Related entity editing state (generic, like EntityDetail)
+	let relatedAdds = $state<Record<string, Array<{ id: string; name: string }>>>({});
+	let relatedRemoves = $state<Record<string, string[]>>({});
+
+	type RelatedConnection = {
+		edges: Array<{ node: { id: string; name: string } }>;
+	} | null;
+
+	type SectionDef = {
+		key: string;
+		label: string;
+		icon: typeof Users;
+		data: RelatedConnection;
+		route: string;
+		entityType: 'Character' | 'Place' | 'Association' | 'Item' | 'Artifact' | 'Race';
+	};
+
+	function addRelated(key: string, entity: { id: string; name: string }) {
+		relatedAdds[key] = [...(relatedAdds[key] ?? []), entity];
+	}
+
+	function removeRelated(key: string, id: string) {
+		const current = relatedRemoves[key] ?? [];
+		if (!current.includes(id)) {
+			relatedRemoves[key] = [...current, id];
+		}
+	}
+
+	function undoAdd(key: string, id: string) {
+		relatedAdds[key] = (relatedAdds[key] ?? []).filter((e) => e.id !== id);
+	}
+
+	function undoRemove(key: string, id: string) {
+		relatedRemoves[key] = (relatedRemoves[key] ?? []).filter((x) => x !== id);
+	}
+
+	function getEffectiveItems(section: SectionDef) {
+		const existing = section.data?.edges.map((e) => e.node) ?? [];
+		const removes = relatedRemoves[section.key] ?? [];
+		const adds = relatedAdds[section.key] ?? [];
+		return {
+			kept: existing.filter((e) => !removes.includes(e.id)),
+			removed: existing.filter((e) => removes.includes(e.id)),
+			added: adds,
+		};
+	}
+
+	function getExcludeIds(section: SectionDef): string[] {
+		const existing = section.data?.edges.map((e) => e.node.id) ?? [];
+		const addedIds = (relatedAdds[section.key] ?? []).map((e) => e.id);
+		const removedIds = relatedRemoves[section.key] ?? [];
+		const inList = [...existing, ...addedIds].filter((id) => !removedIds.includes(id));
+		return inList;
 	}
 
 	const lockMutation = graphql(`
@@ -78,6 +125,12 @@
 					synopsis
 					lockedBySelf
 					placesSetIn(first: 50) { edges { node { id name } } }
+					characters(first: 50) { edges { node { id name thumbnailId imageIds } } }
+					places(first: 50) { edges { node { id name thumbnailId imageIds } } }
+					associations(first: 50) { edges { node { id name } } }
+					items(first: 50) { edges { node { id name } } }
+					artifacts(first: 50) { edges { node { id name } } }
+					races(first: 50) { edges { node { id name } } }
 				}
 				... on OperationInfo {
 					messages { field kind message }
@@ -101,7 +154,8 @@
 			editTitle = log.title ?? '';
 			editBrief = log.brief ?? '';
 			editSynopsis = log.synopsis ?? '';
-			editSetInChanges = { add: [], remove: [] };
+			relatedAdds = {};
+			relatedRemoves = {};
 		}
 	});
 
@@ -113,8 +167,8 @@
 		editTitle !== (log?.title ?? '') ||
 		editBrief !== (log?.brief ?? '') ||
 		editSynopsis !== (log?.synopsis ?? '') ||
-		editSetInChanges.add.length > 0 ||
-		editSetInChanges.remove.length > 0,
+		Object.values(relatedAdds).some((a) => a.length > 0) ||
+		Object.values(relatedRemoves).some((r) => r.length > 0),
 	);
 
 	function discardEdits() {
@@ -127,9 +181,12 @@
 
 	function forceDiscard() {
 		confirmDiscardOpen = false;
-		editSetInChanges = { add: [], remove: [] };
+		relatedAdds = {};
+		relatedRemoves = {};
 		handleUnlock();
 	}
+
+	type NodeInputList = { add?: Array<{ id: string }>; remove?: Array<{ id: string }> };
 
 	async function saveEdits() {
 		if (!log) return;
@@ -138,10 +195,24 @@
 			return;
 		}
 		saving = true;
-		const placesSetIn = editSetInChanges.add.length || editSetInChanges.remove.length
+		const relatedFields: Record<string, NodeInputList> = {};
+		for (const section of allSections) {
+			const adds = relatedAdds[section.key] ?? [];
+			const removes = [...(relatedRemoves[section.key] ?? [])];
+			if (adds.length || removes.length) {
+				relatedFields[section.key] = {
+					...(adds.length ? { add: adds.map((e) => ({ id: e.id })) } : {}),
+					...(removes.length ? { remove: removes.map((id) => ({ id })) } : {}),
+				};
+			}
+		}
+		// placesSetIn is handled separately since it has its own key
+		const placesSetInAdds = relatedAdds['placesSetIn'] ?? [];
+		const placesSetInRemoves = relatedRemoves['placesSetIn'] ?? [];
+		const placesSetIn = (placesSetInAdds.length || placesSetInRemoves.length)
 			? {
-				...(editSetInChanges.add.length ? { add: editSetInChanges.add.map(e => ({ id: e.id })) } : {}),
-				...(editSetInChanges.remove.length ? { remove: editSetInChanges.remove.map(id => ({ id })) } : {}),
+				...(placesSetInAdds.length ? { add: placesSetInAdds.map((e) => ({ id: e.id })) } : {}),
+				...(placesSetInRemoves.length ? { remove: placesSetInRemoves.map((id) => ({ id })) } : {}),
 			}
 			: undefined;
 		const result = await updateMutation.mutate({
@@ -151,11 +222,13 @@
 				brief: editBrief,
 				synopsis: editSynopsis,
 				placesSetIn,
+				...relatedFields,
 			},
 		});
 		saving = false;
 		if (result.data?.updateGamelog?.__typename === 'GameLog') {
-			editSetInChanges = { add: [], remove: [] };
+			relatedAdds = {};
+			relatedRemoves = {};
 			handleUnlock();
 			toast.success('Log updated');
 		} else {
@@ -163,20 +236,25 @@
 		}
 	}
 
-	type RelatedEntity = { id: string; name: string; thumbnailId?: string | null; imageIds?: string[] | null };
-	type RelatedEdge = { node: RelatedEntity };
-
-	const relatedSections = $derived(
+	const allSections: SectionDef[] = $derived(
 		log
 			? [
-					{ label: 'Characters', icon: Users, data: log.characters, route: '/database/characters' },
-					{ label: 'Places', icon: MapPin, data: log.places, route: '/database/places' },
-					{ label: 'Associations', icon: Globe, data: log.associations, route: '/database/associations' },
-					{ label: 'Items', icon: Swords, data: log.items, route: '/database/items' },
-					{ label: 'Artifacts', icon: Gem, data: log.artifacts, route: '/database/artifacts' },
-					{ label: 'Races', icon: Dna, data: log.races, route: '/database/races' },
+					{ key: 'characters', label: 'Characters', icon: Users, data: log.characters, route: '/database/characters', entityType: 'Character' as const },
+					{ key: 'places', label: 'Places', icon: MapPin, data: log.places, route: '/database/places', entityType: 'Place' as const },
+					{ key: 'associations', label: 'Associations', icon: Globe, data: log.associations, route: '/database/associations', entityType: 'Association' as const },
+					{ key: 'items', label: 'Items', icon: Swords, data: log.items, route: '/database/items', entityType: 'Item' as const },
+					{ key: 'artifacts', label: 'Artifacts', icon: Gem, data: log.artifacts, route: '/database/artifacts', entityType: 'Artifact' as const },
+					{ key: 'races', label: 'Races', icon: Dna, data: log.races, route: '/database/races', entityType: 'Race' as const },
 				]
 			: [],
+	);
+
+	const relatedSections = $derived(
+		allSections.filter((s) => s.data && s.data.edges.length > 0),
+	);
+
+	const setInSection: SectionDef = $derived(
+		{ key: 'placesSetIn', label: 'Set In', icon: MapPin, data: log?.placesSetIn ?? null, route: '/database/places', entityType: 'Place' as const },
 	);
 </script>
 
@@ -273,37 +351,33 @@
 				{#if editing}
 					<Panel>
 						<h2 class="title-section mb-3">Set In</h2>
-						{@const effective = getEffectiveSetIn()}
+						{@const effective = getEffectiveItems(setInSection)}
 						{#if effective.kept.length || effective.added.length || effective.removed.length}
 							<div class="flex flex-wrap gap-2 mb-3">
 								{#each effective.kept as place}
 									<span class="inline-flex items-center gap-1 border border-border-dim bg-void px-2 py-0.5 text-xs text-accent-amber">
 										{place.name}
-										<button type="button" onclick={() => { editSetInChanges.remove = [...editSetInChanges.remove, place.id]; }} class="cursor-pointer text-text-muted hover:text-accent-red ml-1">✕</button>
+										<button type="button" onclick={() => removeRelated('placesSetIn', place.id)} class="cursor-pointer text-text-muted hover:text-accent-red ml-1">✕</button>
 									</span>
 								{/each}
 								{#each effective.added as place}
 									<span class="inline-flex items-center gap-1 border border-accent-green/30 bg-accent-green/5 px-2 py-0.5 text-xs text-accent-green">
 										+ {place.name}
-										<button type="button" onclick={() => { editSetInChanges.add = editSetInChanges.add.filter(e => e.id !== place.id); }} class="cursor-pointer text-text-muted hover:text-accent-red ml-1">✕</button>
+										<button type="button" onclick={() => undoAdd('placesSetIn', place.id)} class="cursor-pointer text-text-muted hover:text-accent-red ml-1">✕</button>
 									</span>
 								{/each}
 								{#each effective.removed as place}
 									<span class="inline-flex items-center gap-1 border border-border-dim bg-void px-2 py-0.5 text-xs text-text-muted line-through opacity-50">
 										{place.name}
-										<button type="button" onclick={() => { editSetInChanges.remove = editSetInChanges.remove.filter(id => id !== place.id); }} class="cursor-pointer text-accent-amber hover:text-accent-amber ml-1 no-underline">↩</button>
+										<button type="button" onclick={() => undoRemove('placesSetIn', place.id)} class="cursor-pointer text-accent-amber hover:text-accent-amber ml-1 no-underline">↩</button>
 									</span>
 								{/each}
 							</div>
 						{/if}
 						<EntityPicker
 							entityType="Place"
-							onselect={(e) => {
-								if (!editSetInChanges.add.some(a => a.id === e.id)) {
-									editSetInChanges.add = [...editSetInChanges.add, { id: e.id, name: e.name }];
-								}
-							}}
-							exclude={[...(log?.placesSetIn?.edges.map(e => e.node.id) ?? []), ...editSetInChanges.add.map(e => e.id)].filter(id => !editSetInChanges.remove.includes(id))}
+							onselect={(e) => addRelated('placesSetIn', e)}
+							exclude={getExcludeIds(setInSection)}
 						/>
 					</Panel>
 				{:else if log.placesSetIn && log.placesSetIn.edges.length > 0}
@@ -359,7 +433,81 @@
 
 			<!-- Sidebar — Related entities -->
 			<aside class="stack-space">
-				<RelatedEntitiesBlock sections={relatedSections} />
+				{#if editing}
+					{#each allSections as section}
+						{@const effective = getEffectiveItems(section)}
+						{@const hasContent = effective.kept.length > 0 || effective.added.length > 0}
+						<Panel>
+							<h3 class="title-section mb-2 flex items-center gap-2">
+								<section.icon class="h-3 w-3 text-text-muted" />
+								{section.label}
+							</h3>
+							{#if hasContent}
+								<div class="space-y-px">
+									{#each effective.kept as item}
+										<div class="group flex items-center justify-between">
+											<a
+												href="{section.route}/{item.id}"
+												class="flex-1 truncate px-2 py-1 text-[11px] text-text-secondary uppercase tracking-wider transition-colors hover:text-accent-amber"
+											>
+												{item.name}
+											</a>
+											<button
+												onclick={() => removeRelated(section.key, item.id)}
+												class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100 focus-visible:opacity-100"
+												aria-label="Remove {item.name}"
+											>
+												<X class="h-3 w-3" />
+											</button>
+										</div>
+									{/each}
+									{#each effective.added as item}
+										<div class="group flex items-center justify-between">
+											<span class="flex-1 truncate px-2 py-1 text-[11px] text-accent-green uppercase tracking-wider">
+												+ {item.name}
+											</span>
+											<button
+												onclick={() => undoAdd(section.key, item.id)}
+												class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100 focus-visible:opacity-100"
+												aria-label="Undo add {item.name}"
+											>
+												<X class="h-3 w-3" />
+											</button>
+										</div>
+									{/each}
+								</div>
+							{/if}
+							{#if effective.removed.length > 0}
+								<div class="mt-1 space-y-px border-t border-border-dim pt-1">
+									{#each effective.removed as item}
+										<div class="group flex items-center justify-between opacity-50">
+											<span class="flex-1 truncate px-2 py-1 text-[11px] text-text-muted line-through uppercase tracking-wider">
+												{item.name}
+											</span>
+											<button
+												onclick={() => undoRemove(section.key, item.id)}
+												class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-green group-hover:opacity-100"
+												title="Undo remove"
+											>
+												↩
+											</button>
+										</div>
+									{/each}
+								</div>
+							{/if}
+							<div class="mt-1.5">
+								<EntityPicker
+									entityType={section.entityType}
+									onselect={(e) => addRelated(section.key, e)}
+									exclude={getExcludeIds(section)}
+									placeholder="Add {section.label.toLowerCase()}..."
+								/>
+							</div>
+						</Panel>
+					{/each}
+				{:else}
+					<RelatedEntitiesBlock sections={relatedSections} />
+				{/if}
 			</aside>
 		</div>
 	{:else}
