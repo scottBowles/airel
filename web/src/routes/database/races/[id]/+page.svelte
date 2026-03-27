@@ -5,10 +5,15 @@
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
 	import EntityPicker from '$lib/components/EntityPicker.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
+	import NotFound from '$lib/components/NotFound.svelte';
+	import ErrorState from '$lib/components/ErrorState.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.RaceDetail).current);
+	let fetching = $derived(store?.fetching ?? true);
+	let errors = $derived(store?.errors ?? null);
 	let entity = $derived(store?.data?.node?.__typename === 'Race' ? store.data.node : null);
 
 	const lockMutation = graphql(`
@@ -95,7 +100,11 @@
 	<title>{entity?.name ?? 'Race'} — Database — Kontularien</title>
 </svelte:head>
 
-{#if entity}
+{#if fetching && !entity}
+	<LoadingState message="SCANNING RACE RECORDS" />
+{:else if errors}
+	<ErrorState {errors} />
+{:else if entity}
 	<EntityDetail
 		entityId={entity.id}
 		name={entity.name}
@@ -175,9 +184,5 @@
 		{/snippet}
 	</EntityDetail>
 {:else}
-	<div class="content-pad">
-		<div class="panel-border panel-bg panel-pad text-center">
-			<p class="machine-text text-text-muted">Race not found</p>
-		</div>
-	</div>
+	<NotFound entityName="Race" />
 {/if}

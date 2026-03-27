@@ -6,10 +6,15 @@
 	import EntityPicker from '$lib/components/EntityPicker.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import { X } from 'lucide-svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
+	import NotFound from '$lib/components/NotFound.svelte';
+	import ErrorState from '$lib/components/ErrorState.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.CharacterDetail).current);
+	let fetching = $derived(store?.fetching ?? true);
+	let errors = $derived(store?.errors ?? null);
 	let entity = $derived(store?.data?.node?.__typename === 'Character' ? store.data.node : null);
 
 	let editRaceId = $state<string | null>(null);
@@ -79,7 +84,11 @@
 	<title>{entity?.name ?? 'Character'} — Database — Kontularien</title>
 </svelte:head>
 
-{#if entity}
+{#if fetching && !entity}
+	<LoadingState message="SCANNING CHARACTER RECORDS" />
+{:else if errors}
+	<ErrorState {errors} />
+{:else if entity}
 	<EntityDetail
 		entityId={entity.id}
 		name={entity.name}
@@ -173,9 +182,5 @@
 		{/snippet}
 	</EntityDetail>
 {:else}
-	<div class="content-pad">
-		<div class="panel-border panel-bg panel-pad text-center">
-			<p class="machine-text text-text-muted">Character not found</p>
-		</div>
-	</div>
+	<NotFound entityName="Character" />
 {/if}

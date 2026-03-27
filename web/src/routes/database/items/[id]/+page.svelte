@@ -4,10 +4,15 @@
 	import { toast } from 'svelte-sonner';
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
+	import NotFound from '$lib/components/NotFound.svelte';
+	import ErrorState from '$lib/components/ErrorState.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.ItemDetail).current);
+	let fetching = $derived(store?.fetching ?? true);
+	let errors = $derived(store?.errors ?? null);
 	let entity = $derived(store?.data?.node?.__typename === 'Item' ? store.data.node : null);
 
 	const lockMutation = graphql(`
@@ -71,7 +76,11 @@
 	<title>{entity?.name ?? 'Item'} — Database — Kontularien</title>
 </svelte:head>
 
-{#if entity}
+{#if fetching && !entity}
+	<LoadingState message="SCANNING ITEM RECORDS" />
+{:else if errors}
+	<ErrorState {errors} />
+{:else if entity}
 	<EntityDetail
 		entityId={entity.id}
 		name={entity.name}
@@ -97,9 +106,5 @@
 	/>
 
 {:else}
-	<div class="content-pad">
-		<div class="panel-border panel-bg panel-pad text-center">
-			<p class="machine-text text-text-muted">Item not found</p>
-		</div>
-	</div>
+	<NotFound entityName="Item" />
 {/if}

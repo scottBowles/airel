@@ -7,11 +7,13 @@
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
 	import type { PageData } from './$houdini';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.ChatSessionList).current);
+	let fetching = $derived(store?.fetching ?? true);
 	let allSessions = $derived(store?.data?.chatSessions?.edges ?? []);
 	let archivedIds = new SvelteSet();
 	let sessions = $derived(allSessions.filter((edge) => !archivedIds.has(edge.node.id)));
@@ -119,7 +121,9 @@
 			</p>
 		</div>
 	{:else}
-		{#if sessions.length === 0}
+		{#if fetching && !sessions.length}
+			<LoadingState message="LOADING KOZMO SESSIONS" />
+		{:else if sessions.length === 0}
 			<div class="border border-border-dim bg-panel px-4 py-6 text-center">
 				<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-accent-green/20 bg-accent-green/5">
 					<MessageSquare class="h-5 w-5 text-accent-green" />

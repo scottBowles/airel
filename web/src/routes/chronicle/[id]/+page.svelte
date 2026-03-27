@@ -21,10 +21,15 @@
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
 	import RelatedEntitiesBlock from '$lib/components/RelatedEntitiesBlock.svelte';
 	import EntityPicker from '$lib/components/EntityPicker.svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
+	import NotFound from '$lib/components/NotFound.svelte';
+	import ErrorState from '$lib/components/ErrorState.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.GameLogDetail).current);
+	let fetching = $derived(store?.fetching ?? true);
+	let errors = $derived(store?.errors ?? null);
 	let log = $derived(store?.data?.node?.__typename === 'GameLog' ? store.data.node : null);
 
 	let editTitle = $state('');
@@ -169,7 +174,11 @@
 		<span>Back to Chronicle</span>
 	</a>
 
-	{#if log}
+	{#if fetching && !log}
+		<LoadingState message="RETRIEVING LOG ENTRY" />
+	{:else if errors}
+		<ErrorState {errors} />
+	{:else if log}
 		<!-- Header panel -->
 		<div class="border border-border-dim bg-hull">
 			<div class="border-b border-border-dim px-3 py-1.5 flex items-center justify-between">
@@ -325,8 +334,6 @@
 			</aside>
 		</div>
 	{:else}
-		<div class="border border-border-dim bg-panel px-4 py-8 text-center">
-			<p class="machine-text text-text-muted">LOG NOT FOUND</p>
-		</div>
+		<NotFound entityName="Log" />
 	{/if}
 </div>

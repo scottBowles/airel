@@ -4,6 +4,7 @@
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import EntityGrid from '$lib/components/EntityGrid.svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
 	import type { PageData } from './$houdini';
 
 	const getUser = getUserContext();
@@ -11,6 +12,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.PlaceList).current);
+	let fetching = $derived(store?.fetching ?? true);
 	let entities = $derived(
 		(store?.data?.places?.edges ?? []).map((e) => e.node),
 	);
@@ -27,7 +29,7 @@
 				<MapPin class="h-3 w-3 text-accent-amber/40" />
 				<span class="machine-text text-[9px] text-text-muted">LOC // PLACES</span>
 			</div>
-			<span class="machine-text text-[9px] text-text-muted">{entities.length} RECORDS</span>
+			<span class="machine-text text-[9px] text-text-muted">{fetching && !entities.length ? '...' : entities.length} RECORDS</span>
 		</div>
 		<div class="flex items-center justify-between px-3 py-3">
 			<h1 class="title-display text-lg text-accent-amber text-glow-amber">PLACES</h1>
@@ -40,5 +42,9 @@
 		</div>
 	</div>
 
-	<EntityGrid {entities} basePath="/database/places" emptyMessage="No places in database" />
+	{#if fetching && !entities.length}
+		<LoadingState message="SCANNING PLACE RECORDS" />
+	{:else}
+		<EntityGrid {entities} basePath="/database/places" emptyMessage="No places in database" />
+	{/if}
 </div>

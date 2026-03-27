@@ -6,11 +6,13 @@
 	import { ExternalLink, Plus, X } from 'lucide-svelte';
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
+	import LoadingState from '$lib/components/LoadingState.svelte';
 	import { getUserContext } from '$lib/auth';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let store = $derived(fromStore(data.GameLogList).current);
+	let fetching = $derived(store?.fetching ?? true);
 	let logs = $derived(store?.data?.gameLogs?.edges ?? []);
 
 	const getUser = getUserContext();
@@ -77,7 +79,7 @@
 				<span class="status-dot text-accent-green"></span>
 				<span class="machine-text text-[9px] text-text-muted">LOG-01 // CHRONICLE</span>
 			</div>
-			<span class="machine-text text-[9px] text-text-muted">{logs.length} RECORDS</span>
+			<span class="machine-text text-[9px] text-text-muted">{fetching && !logs.length ? '...' : logs.length} RECORDS</span>
 		</div>
 		<div class="flex items-center justify-between px-3 py-3">
 			<div>
@@ -116,6 +118,9 @@
 	{/if}
 
 	<!-- Log list -->
+	{#if fetching && !logs.length}
+		<LoadingState message="RETRIEVING LOG ENTRIES" />
+	{:else}
 	<div class="space-y-px">
 		{#each logs as edge, i}
 			{@const log = edge.node}
@@ -168,4 +173,5 @@
 			</div>
 		{/each}
 	</div>
+	{/if}
 </div>
