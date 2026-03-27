@@ -77,9 +77,16 @@
 					return;
 				}
 				if (result.event === 'success') {
-					await addImageMutation.mutate({
-						input: { id: entityId, imageId: result.info.public_id },
-					});
+					try {
+						const res = await addImageMutation.mutate({
+							input: { id: entityId, imageId: result.info.public_id },
+						});
+						if (res.errors?.length) {
+							toast.error(res.errors[0].message);
+						}
+					} catch {
+						toast.error('Failed to save image');
+					}
 				}
 			},
 		);
@@ -88,9 +95,16 @@
 
 	async function removeImage(imgId: string) {
 		const newIds = imageIds.filter((id) => id !== imgId);
-		await setImageIdsMutation.mutate({
-			input: { id: entityId, imageIds: newIds },
-		});
+		try {
+			const result = await setImageIdsMutation.mutate({
+				input: { id: entityId, imageIds: newIds },
+			});
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to remove image');
+		}
 	}
 
 	function handleConsider(e: CustomEvent<{ items: Array<{ id: string }> }>) {
@@ -101,9 +115,18 @@
 		localItems = e.detail.items;
 		const newOrder = e.detail.items.map((item) => item.id);
 		if (newOrder.join(',') !== imageIds.join(',')) {
-			await setImageIdsMutation.mutate({
-				input: { id: entityId, imageIds: newOrder },
-			});
+			try {
+				const result = await setImageIdsMutation.mutate({
+					input: { id: entityId, imageIds: newOrder },
+				});
+				if (result.errors?.length) {
+					localItems = imageIds.map((imgId) => ({ id: imgId }));
+					toast.error(result.errors[0].message);
+				}
+			} catch {
+				localItems = imageIds.map((imgId) => ({ id: imgId }));
+				toast.error('Failed to reorder images');
+			}
 		}
 	}
 </script>

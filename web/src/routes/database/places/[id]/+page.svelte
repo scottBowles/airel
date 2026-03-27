@@ -53,37 +53,62 @@
 	`);
 
 	async function handleLock() {
-		if (entity) await lockMutation.mutate({ id: entity.id });
+		try {
+			if (!entity) return;
+			const result = await lockMutation.mutate({ id: entity.id });
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to lock for editing');
+		}
 	}
 	async function handleUnlock() {
-		if (entity) await unlockMutation.mutate({ id: entity.id });
+		try {
+			if (!entity) return;
+			const result = await unlockMutation.mutate({ id: entity.id });
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to unlock');
+		}
 	}
 
 	async function handleSave(fields: Record<string, unknown> & { name: string; description: string; markdownNotes: string }) {
 		if (!entity) return false;
-		const { name: n, description: d, markdownNotes: m, ...relatedChanges } = fields;
-		const parentInput = editParentId
-			? { id: editParentId }
-			: parentCleared
-				? null
-				: undefined;
-		const result = await updateMutation.mutate({
-			input: {
-				id: entity.id,
-				name: n,
-				description: d,
-				markdownNotes: m,
-				placeType: editPlaceType || undefined,
-				...(parentInput !== undefined ? { parent: parentInput } : {}),
-				...relatedChanges,
-			},
-		});
-		if (result.data?.updatePlace?.__typename === 'Place') {
-			toast.success('Place updated');
-			return true;
+		try {
+			const { name: n, description: d, markdownNotes: m, ...relatedChanges } = fields;
+			const parentInput = editParentId
+				? { id: editParentId }
+				: parentCleared
+					? null
+					: undefined;
+			const result = await updateMutation.mutate({
+				input: {
+					id: entity.id,
+					name: n,
+					description: d,
+					markdownNotes: m,
+					placeType: editPlaceType || undefined,
+					...(parentInput !== undefined ? { parent: parentInput } : {}),
+					...relatedChanges,
+				},
+			});
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+				return false;
+			}
+			if (result.data?.updatePlace?.__typename === 'Place') {
+				toast.success('Place updated');
+				return true;
+			}
+			toast.error('Failed to update place');
+			return false;
+		} catch {
+			toast.error('An error occurred');
+			return false;
 		}
-		toast.error('Failed to update place');
-		return false;
 	}
 
 	const placeTypes = ['DISTRICT', 'LOCATION', 'MOON', 'PLANET', 'REGION', 'STAR', 'TOWN'];

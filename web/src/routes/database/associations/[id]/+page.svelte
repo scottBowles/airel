@@ -47,33 +47,58 @@
 	`);
 
 	async function handleLock() {
-		if (entity) await lockMutation.mutate({ id: entity.id });
+		try {
+			if (!entity) return;
+			const result = await lockMutation.mutate({ id: entity.id });
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to lock for editing');
+		}
 	}
 	async function handleUnlock() {
-		if (entity) await unlockMutation.mutate({ id: entity.id });
+		try {
+			if (!entity) return;
+			const result = await unlockMutation.mutate({ id: entity.id });
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to unlock');
+		}
 	}
 
 	async function handleSave(fields: Record<string, unknown> & { name: string; description: string; markdownNotes: string }) {
 		if (!entity) return false;
-		const { name: n, description: d, markdownNotes: m, ...relatedChanges } = fields;
-		const result = await updateMutation.mutate({
-			input: {
-				id: entity.id,
-				name: n,
-				description: d,
-				markdownNotes: m,
-				characters: editMemberChanges.add.length || editMemberChanges.remove.length
-					? { ...(editMemberChanges.add.length ? { add: editMemberChanges.add.map(e => ({ id: e.id })) } : {}), ...(editMemberChanges.remove.length ? { remove: editMemberChanges.remove.map(id => ({ id })) } : {}) }
-					: undefined,
-				...relatedChanges,
-			},
-		});
-		if (result.data?.updateAssociation?.__typename === 'Association') {
-			toast.success('Association updated');
-			return true;
+		try {
+			const { name: n, description: d, markdownNotes: m, ...relatedChanges } = fields;
+			const result = await updateMutation.mutate({
+				input: {
+					id: entity.id,
+					name: n,
+					description: d,
+					markdownNotes: m,
+					characters: editMemberChanges.add.length || editMemberChanges.remove.length
+						? { ...(editMemberChanges.add.length ? { add: editMemberChanges.add.map(e => ({ id: e.id })) } : {}), ...(editMemberChanges.remove.length ? { remove: editMemberChanges.remove.map(id => ({ id })) } : {}) }
+						: undefined,
+					...relatedChanges,
+				},
+			});
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+				return false;
+			}
+			if (result.data?.updateAssociation?.__typename === 'Association') {
+				toast.success('Association updated');
+				return true;
+			}
+			toast.error('Failed to update association');
+			return false;
+		} catch {
+			toast.error('An error occurred');
+			return false;
 		}
-		toast.error('Failed to update association');
-		return false;
 	}
 
 	// Members editing state

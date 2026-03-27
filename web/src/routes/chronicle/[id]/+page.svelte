@@ -141,12 +141,26 @@
 
 	async function handleLock() {
 		if (!log) return;
-		await lockMutation.mutate({ id: log.id });
+		try {
+			const result = await lockMutation.mutate({ id: log.id });
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to lock for editing');
+		}
 	}
 
-	function handleUnlock() {
+	async function handleUnlock() {
 		if (!log) return;
-		unlockMutation.mutate({ id: log.id });
+		try {
+			const result = await unlockMutation.mutate({ id: log.id });
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			}
+		} catch {
+			toast.error('Failed to unlock');
+		}
 	}
 
 	$effect(() => {
@@ -215,24 +229,31 @@
 				...(placesSetInRemoves.length ? { remove: placesSetInRemoves.map((id) => ({ id })) } : {}),
 			}
 			: undefined;
-		const result = await updateMutation.mutate({
-			input: {
-				id: log.id,
-				title: editTitle,
-				brief: editBrief,
-				synopsis: editSynopsis,
-				placesSetIn,
-				...relatedFields,
-			},
-		});
-		saving = false;
-		if (result.data?.updateGamelog?.__typename === 'GameLog') {
-			relatedAdds = {};
-			relatedRemoves = {};
-			handleUnlock();
-			toast.success('Log updated');
-		} else {
-			toast.error('Failed to update log');
+		try {
+			const result = await updateMutation.mutate({
+				input: {
+					id: log.id,
+					title: editTitle,
+					brief: editBrief,
+					synopsis: editSynopsis,
+					placesSetIn,
+					...relatedFields,
+				},
+			});
+			saving = false;
+			if (result.errors?.length) {
+				toast.error(result.errors[0].message);
+			} else if (result.data?.updateGamelog?.__typename === 'GameLog') {
+				relatedAdds = {};
+				relatedRemoves = {};
+				handleUnlock();
+				toast.success('Log updated');
+			} else {
+				toast.error('Failed to update log');
+			}
+		} catch {
+			saving = false;
+			toast.error('An error occurred');
 		}
 	}
 
