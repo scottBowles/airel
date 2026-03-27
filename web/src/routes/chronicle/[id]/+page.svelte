@@ -24,6 +24,7 @@
 	import LoadingState from '$lib/components/LoadingState.svelte';
 	import NotFound from '$lib/components/NotFound.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
@@ -106,7 +107,26 @@
 
 	let editing = $derived(!!log?.lockedBySelf);
 
+	let confirmDiscardOpen = $state(false);
+
+	let hasChanges = $derived(
+		editTitle !== (log?.title ?? '') ||
+		editBrief !== (log?.brief ?? '') ||
+		editSynopsis !== (log?.synopsis ?? '') ||
+		editSetInChanges.add.length > 0 ||
+		editSetInChanges.remove.length > 0,
+	);
+
 	function discardEdits() {
+		if (hasChanges) {
+			confirmDiscardOpen = true;
+			return;
+		}
+		forceDiscard();
+	}
+
+	function forceDiscard() {
+		confirmDiscardOpen = false;
 		editSetInChanges = { add: [], remove: [] };
 		handleUnlock();
 	}
@@ -236,6 +256,15 @@
 				</div>
 			</div>
 		</div>
+
+		<ConfirmDialog
+			open={confirmDiscardOpen}
+			title="Discard Changes"
+			message="You have unsaved changes. Are you sure you want to discard them?"
+			confirmLabel="Discard"
+			onconfirm={forceDiscard}
+			oncancel={() => { confirmDiscardOpen = false; }}
+		/>
 
 		<div class="grid gap-3 lg:grid-cols-[1fr_260px]">
 			<!-- Main content -->

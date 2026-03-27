@@ -20,6 +20,7 @@
 	import EntityLogsBlock from '$lib/components/EntityLogsBlock.svelte';
 	import RelatedEntitiesBlock from '$lib/components/RelatedEntitiesBlock.svelte';
 	import EntityPicker from '$lib/components/EntityPicker.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 
 	type RelatedConnection = {
 		edges: Array<{ node: { id: string; name: string } }>;
@@ -141,7 +142,26 @@
 		}
 	});
 
+	let confirmDiscardOpen = $state(false);
+
+	let hasChanges = $derived(
+		editName !== name ||
+		editDescription !== (description ?? '') ||
+		editMarkdownNotes !== (markdownNotes ?? '') ||
+		Object.values(relatedAdds).some((a) => a.length > 0) ||
+		Object.values(relatedRemoves).some((r) => r.length > 0),
+	);
+
 	function discardEdits() {
+		if (hasChanges) {
+			confirmDiscardOpen = true;
+			return;
+		}
+		forceDiscard();
+	}
+
+	function forceDiscard() {
+		confirmDiscardOpen = false;
 		relatedAdds = {};
 		relatedRemoves = {};
 		onunlock();
@@ -283,6 +303,15 @@
 			</div>
 		</div>
 	</div>
+
+	<ConfirmDialog
+		open={confirmDiscardOpen}
+		title="Discard Changes"
+		message="You have unsaved changes. Are you sure you want to discard them?"
+		confirmLabel="Discard"
+		onconfirm={forceDiscard}
+		oncancel={() => { confirmDiscardOpen = false; }}
+	/>
 
 	<div class="grid gap-3 lg:grid-cols-[1fr_260px]">
 		<!-- Main content -->
