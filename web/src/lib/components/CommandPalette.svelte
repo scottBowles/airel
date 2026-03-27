@@ -6,6 +6,7 @@
 	import { cn } from '$lib/utils';
 	import { Search, X, FileText, Users, MapPin, Swords, Gem, Globe, Dna } from 'lucide-svelte';
 	import { algoliasearch } from 'algoliasearch';
+	import { Dialog } from 'bits-ui';
 
 	let {
 		open = $bindable(false),
@@ -116,8 +117,6 @@
 		} else if (e.key === 'Enter' && results[selectedIndex]) {
 			e.preventDefault();
 			navigate(results[selectedIndex]);
-		} else if (e.key === 'Escape') {
-			open = false;
 		}
 	}
 
@@ -126,8 +125,6 @@
 			query = '';
 			results = [];
 			selectedIndex = 0;
-			// Focus input after DOM update
-			setTimeout(() => inputEl?.focus(), 10);
 		}
 	});
 
@@ -149,89 +146,95 @@
 	});
 </script>
 
-{#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-50 flex items-start justify-center bg-black/80 pt-[12vh] animate-fade-in"
-		onkeydown={handleKeydown}
-		onclick={() => (open = false)}
-	>
-		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-		<div
-			class="w-full max-w-lg animate-slide-down border border-border-subtle bg-hull shadow-glow-amber"
-			onclick={(e) => e.stopPropagation()}
+<Dialog.Root bind:open>
+	<Dialog.Portal>
+		<Dialog.Overlay
+			class="fixed inset-0 z-50 bg-black/80 animate-fade-in"
+		/>
+		<Dialog.Content
+			class="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]"
+			onOpenAutoFocus={(e) => {
+				e.preventDefault();
+				inputEl?.focus();
+			}}
+			onkeydown={handleKeydown}
 		>
-			<!-- Search header -->
-			<div class="flex items-center gap-2 border-b border-border-dim px-3 py-2">
-				<span class="machine-text text-[9px] text-accent-amber/50">QUERY&gt;</span>
-				<Search class="h-3.5 w-3.5 shrink-0 text-accent-amber/40" />
-				<input
-					bind:this={inputEl}
-					bind:value={query}
-					oninput={handleInput}
-					placeholder="SEARCH DATABASE..."
-					class="flex-1 bg-transparent text-sm text-accent-amber placeholder:text-text-muted focus:outline-none"
-				/>
-				<button onclick={() => (open = false)} class="text-text-muted hover:text-accent-amber">
-					<X class="h-3.5 w-3.5" />
-				</button>
-			</div>
+			<Dialog.Title class="sr-only">Search database</Dialog.Title>
+			<div
+				class="w-full max-w-lg animate-slide-down border border-border-subtle bg-hull shadow-glow-amber"
+			>
+				<!-- Search header -->
+				<div class="flex items-center gap-2 border-b border-border-dim px-3 py-2">
+					<span class="machine-text text-[9px] text-accent-amber/50">QUERY&gt;</span>
+					<Search class="h-3.5 w-3.5 shrink-0 text-accent-amber/40" />
+					<input
+						bind:this={inputEl}
+						bind:value={query}
+						oninput={handleInput}
+						placeholder="SEARCH DATABASE..."
+						class="flex-1 bg-transparent text-sm text-accent-amber placeholder:text-text-muted focus:outline-none"
+					/>
+					<Dialog.Close class="text-text-muted hover:text-accent-amber">
+						<X class="h-3.5 w-3.5" />
+					</Dialog.Close>
+				</div>
 
-			<!-- Results -->
-			<div class="max-h-72 overflow-y-auto">
-				{#if results.length > 0}
-					{#each results as hit, i}
-						{@const Icon = getIcon(hit.type)}
-						<button
-							class={cn(
-								'flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors border-l-2',
-								i === selectedIndex
-									? 'bg-accent-amber/8 text-accent-amber border-accent-amber'
-									: 'text-text-secondary hover:bg-accent-amber/5 hover:text-text-primary border-transparent',
-							)}
-							onclick={() => navigate(hit)}
-							onmouseenter={() => { selectedIndex = i; prefetch(hit); }}
-						>
-							<Icon class="h-3.5 w-3.5 shrink-0 opacity-50" />
-							<div class="min-w-0 flex-1">
-								<div class="truncate uppercase tracking-wider">{hit.name}</div>
-								{#if hit.description}
-									<div class="truncate text-xs text-text-secondary normal-case tracking-normal">{hit.description}</div>
-								{/if}
-							</div>
-							<span class="machine-text shrink-0 text-[9px] text-text-muted">{hit.type}</span>
-						</button>
-					{/each}
-				{:else if query && !searching}
-					<div class="px-3 py-6 text-center">
-						<p class="machine-text text-text-muted">NO RECORDS MATCH QUERY</p>
-					</div>
-				{:else if !query}
-					<div class="px-3 py-6 text-center">
-						<p class="machine-text text-text-muted">AWAITING INPUT...</p>
-					</div>
-				{:else}
-					<div class="px-3 py-6 text-center">
-						<p class="machine-text text-accent-amber/60">SCANNING DATABASE...</p>
-					</div>
-				{/if}
-			</div>
+				<!-- Results -->
+				<div class="max-h-72 overflow-y-auto">
+					{#if results.length > 0}
+						{#each results as hit, i}
+							{@const Icon = getIcon(hit.type)}
+							<button
+								class={cn(
+									'flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors border-l-2',
+									i === selectedIndex
+										? 'bg-accent-amber/8 text-accent-amber border-accent-amber'
+										: 'text-text-secondary hover:bg-accent-amber/5 hover:text-text-primary border-transparent',
+								)}
+								onclick={() => navigate(hit)}
+								onmouseenter={() => { selectedIndex = i; prefetch(hit); }}
+							>
+								<Icon class="h-3.5 w-3.5 shrink-0 opacity-50" />
+								<div class="min-w-0 flex-1">
+									<div class="truncate uppercase tracking-wider">{hit.name}</div>
+									{#if hit.description}
+										<div class="truncate text-xs text-text-secondary normal-case tracking-normal">{hit.description}</div>
+									{/if}
+								</div>
+								<span class="machine-text shrink-0 text-[9px] text-text-muted">{hit.type}</span>
+							</button>
+						{/each}
+					{:else if query && !searching}
+						<div class="px-3 py-6 text-center">
+							<p class="machine-text text-text-muted">NO RECORDS MATCH QUERY</p>
+						</div>
+					{:else if !query}
+						<div class="px-3 py-6 text-center">
+							<p class="machine-text text-text-muted">AWAITING INPUT...</p>
+						</div>
+					{:else}
+						<div class="px-3 py-6 text-center">
+							<p class="machine-text text-accent-amber/60">SCANNING DATABASE...</p>
+						</div>
+					{/if}
+				</div>
 
-			<!-- Footer -->
-			<div class="flex items-center gap-4 border-t border-border-dim px-3 py-1.5">
-				<span class="machine-text text-[9px] text-text-muted">
-					<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">↑↓</kbd>
-					NAV
-				</span>
-				<span class="machine-text text-[9px] text-text-muted">
-					<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">↵</kbd>
-					SELECT
-				</span>
-				<span class="machine-text text-[9px] text-text-muted">
-					<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">ESC</kbd>
-					CLOSE
-				</span>
+				<!-- Footer -->
+				<div class="flex items-center gap-4 border-t border-border-dim px-3 py-1.5">
+					<span class="machine-text text-[9px] text-text-muted">
+						<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">↑↓</kbd>
+						NAV
+					</span>
+					<span class="machine-text text-[9px] text-text-muted">
+						<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">↵</kbd>
+						SELECT
+					</span>
+					<span class="machine-text text-[9px] text-text-muted">
+						<kbd class="border border-border-dim bg-void px-1 py-px text-[9px]">ESC</kbd>
+						CLOSE
+					</span>
+				</div>
 			</div>
-		</div>
-	</div>
-{/if}
+		</Dialog.Content>
+	</Dialog.Portal>
+</Dialog.Root>

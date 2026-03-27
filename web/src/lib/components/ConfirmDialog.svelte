@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { AlertDialog } from 'bits-ui';
+
 	let {
 		open = false,
 		title = 'Confirm',
@@ -15,34 +17,44 @@
 		oncancel: () => void;
 	} = $props();
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') oncancel();
-	}
+	let cancelButtonEl = $state<HTMLElement | null>(null);
 </script>
 
-{#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-[100] flex items-center justify-center bg-void/80"
-		onkeydown={handleKeydown}
-	>
-		<div class="w-full max-w-sm border border-border-dim bg-hull p-4 shadow-lg">
-			<h3 class="title-section mb-2">{title}</h3>
-			<p class="mb-4 text-xs text-text-secondary">{message}</p>
+<AlertDialog.Root
+	{open}
+	onOpenChange={(value) => {
+		if (!value) oncancel();
+	}}
+>
+	<AlertDialog.Portal>
+		<AlertDialog.Overlay
+			class="fixed inset-0 z-[100] flex items-center justify-center bg-void/80"
+		/>
+		<AlertDialog.Content
+			class="fixed top-1/2 left-1/2 z-[100] w-full max-w-sm -translate-x-1/2 -translate-y-1/2 border border-border-dim bg-hull p-4 shadow-lg"
+			onOpenAutoFocus={(e) => {
+				e.preventDefault();
+				cancelButtonEl?.focus();
+			}}
+		>
+			<AlertDialog.Title class="title-section mb-2">{title}</AlertDialog.Title>
+			<AlertDialog.Description class="mb-4 text-xs text-text-secondary">
+				{message}
+			</AlertDialog.Description>
 			<div class="flex justify-end gap-2">
-				<button
-					onclick={oncancel}
+				<AlertDialog.Cancel
+					bind:ref={cancelButtonEl}
 					class="cursor-pointer border border-border-dim px-3 py-1 text-xs text-text-muted transition-colors hover:text-text-primary"
 				>
 					Cancel
-				</button>
-				<button
+				</AlertDialog.Cancel>
+				<AlertDialog.Action
 					onclick={onconfirm}
 					class="cursor-pointer border border-accent-red/30 bg-accent-red/10 px-3 py-1 text-xs text-accent-red transition-colors hover:bg-accent-red/20"
 				>
 					{confirmLabel}
-				</button>
+				</AlertDialog.Action>
 			</div>
-		</div>
-	</div>
-{/if}
+		</AlertDialog.Content>
+	</AlertDialog.Portal>
+</AlertDialog.Root>
