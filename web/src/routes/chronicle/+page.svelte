@@ -7,6 +7,7 @@
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
 	import LoadingState from '$lib/components/LoadingState.svelte';
+	import Tooltip from '$lib/components/Tooltip.svelte';
 	import { getUserContext } from '$lib/auth';
 	import type { PageData } from './$houdini';
 
@@ -155,15 +156,19 @@
 
 				<!-- External link gutter -->
 				{#if log.url}
-					<a
-						href={log.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="flex items-center border-l border-border-dim bg-panel px-2.5 text-text-muted transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-						title="Open Google Doc"
-					>
-						<ExternalLink class="h-3.5 w-3.5" />
-					</a>
+					<Tooltip text="Open Google Doc" side="left">
+						{#snippet children(props)}
+							<a
+								{...props}
+								href={log.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="flex items-center border-l border-border-dim bg-panel px-2.5 text-text-muted transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
+							>
+								<ExternalLink class="h-3.5 w-3.5" />
+							</a>
+						{/snippet}
+					</Tooltip>
 				{/if}
 			</div>
 		{:else}

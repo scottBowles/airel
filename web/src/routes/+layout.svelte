@@ -6,6 +6,7 @@
 	import { graphql } from '$houdini';
 	import { Toaster } from 'svelte-sonner';
 	import { setUserContext } from '$lib/auth';
+	import { Tooltip } from 'bits-ui';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 
@@ -32,6 +33,7 @@
 	let searchOpen = $state(false);
 </script>
 
+<Tooltip.Provider>
 <Toaster theme="dark" position="top-right" richColors />
 <CommandPalette bind:open={searchOpen} />
 
@@ -49,3 +51,4 @@
 		{@render children()}
 	</main>
 </div>
+</Tooltip.Provider>

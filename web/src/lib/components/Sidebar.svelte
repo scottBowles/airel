@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { cn } from '$lib/utils';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import Tooltip from '$lib/components/Tooltip.svelte';
 	import {
 		Home,
 		BookOpen,
@@ -53,21 +54,29 @@
 		KSS KONTULARIEN
 	</a>
 	{#if user}
-		<button
-			onclick={() => showLogoutConfirm = true}
-			class="flex h-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 px-1.5 text-[10px] font-bold text-accent-amber uppercase"
-			title="Log out ({user.username})"
-		>
-			{initials}
-		</button>
+		<Tooltip text="Log out ({user.username})" side="bottom">
+			{#snippet children(props)}
+				<button
+					{...props}
+					onclick={() => showLogoutConfirm = true}
+					class="flex h-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 px-1.5 text-[10px] font-bold text-accent-amber uppercase"
+				>
+					{initials}
+				</button>
+			{/snippet}
+		</Tooltip>
 	{:else}
-		<a
-			href="/login?redirect={encodeURIComponent(page.url.pathname + page.url.search)}"
-			class="flex h-7 w-7 items-center justify-center border border-border-dim text-text-muted transition-colors hover:text-accent-amber"
-			title="Log in"
-		>
-			<LogIn class="h-3.5 w-3.5" />
-		</a>
+		<Tooltip text="Log in" side="bottom">
+			{#snippet children(props)}
+				<a
+					{...props}
+					href="/login?redirect={encodeURIComponent(page.url.pathname + page.url.search)}"
+					class="flex h-7 w-7 items-center justify-center border border-border-dim text-text-muted transition-colors hover:text-accent-amber"
+				>
+					<LogIn class="h-3.5 w-3.5" />
+				</a>
+			{/snippet}
+		</Tooltip>
 	{/if}
 </div>
 
@@ -187,13 +196,17 @@
 						{user.isStaff ? 'CLEARANCE: ADMIN' : 'CLEARANCE: CREW'}
 					</p>
 				</div>
-				<button
-					onclick={() => showLogoutConfirm = true}
-					class="text-text-muted transition-colors hover:text-accent-red"
-					title="Log out"
-				>
-					<LogOut class="h-3.5 w-3.5" />
-				</button>
+				<Tooltip text="Log out" side="left">
+					{#snippet children(props)}
+						<button
+							{...props}
+							onclick={() => showLogoutConfirm = true}
+							class="text-text-muted transition-colors hover:text-accent-red"
+						>
+							<LogOut class="h-3.5 w-3.5" />
+						</button>
+					{/snippet}
+				</Tooltip>
 			</div>
 		{:else}
 			<a

@@ -21,6 +21,7 @@
 	let searching = $state(false);
 	let inputEl = $state<HTMLInputElement | null>(null);
 	let activeIndex = $state(-1);
+	let listboxId = $state(`ep-listbox-${Math.random().toString(36).slice(2, 8)}`);
 
 	const client = algoliasearch(env.PUBLIC_ALGOLIA_APP_ID, env.PUBLIC_ALGOLIA_SEARCH_API_KEY);
 
@@ -62,6 +63,7 @@
 		results = [];
 		showDropdown = false;
 		activeIndex = -1;
+		inputEl?.focus();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -87,7 +89,7 @@
 	}
 </script>
 
-<div class="relative">
+<div class="relative" role="group">
 	<div class="flex items-center border border-border-dim bg-bg-inset">
 		<Search class="ml-2 h-3 w-3 shrink-0 text-text-muted" />
 		<input
@@ -101,14 +103,15 @@
 			class="w-full bg-transparent px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-faint"
 			role="combobox"
 			aria-expanded={showDropdown && results.length > 0}
-			aria-activedescendant={activeIndex >= 0 ? `ep-option-${activeIndex}` : undefined}
+			aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
 			aria-autocomplete="list"
-			aria-controls="ep-listbox"
+			aria-controls={listboxId}
 		/>
 		{#if query}
 			<button
 				onclick={() => { query = ''; results = []; showDropdown = false; }}
 				class="mr-1 cursor-pointer p-0.5 text-text-muted hover:text-accent-amber"
+				aria-label="Clear search"
 			>
 				<X class="h-3 w-3" />
 			</button>
@@ -116,10 +119,10 @@
 	</div>
 
 	{#if showDropdown && results.length > 0}
-		<div id="ep-listbox" role="listbox" class="absolute z-50 mt-0.5 max-h-48 w-full overflow-y-auto border border-border-dim bg-hull shadow-lg">
+		<div id={listboxId} role="listbox" class="absolute z-50 mt-0.5 max-h-48 w-full overflow-y-auto border border-border-dim bg-hull shadow-lg">
 			{#each results as hit, i}
 				<button
-					id="ep-option-{i}"
+					id="{listboxId}-option-{i}"
 					role="option"
 					aria-selected={i === activeIndex}
 					onmousedown={(e) => { e.preventDefault(); select(hit); }}

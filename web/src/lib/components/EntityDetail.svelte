@@ -338,7 +338,8 @@
 										</a>
 										<button
 											onclick={() => removeRelated(section.key, item.id)}
-											class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100"
+										class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100 focus-visible:opacity-100"
+										aria-label="Remove {item.name}"
 										>
 											<X class="h-3 w-3" />
 										</button>
@@ -351,7 +352,8 @@
 										</span>
 										<button
 											onclick={() => undoAdd(section.key, item.id)}
-											class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100"
+										class="shrink-0 cursor-pointer p-0.5 text-text-muted opacity-0 transition-opacity hover:text-accent-red group-hover:opacity-100 focus-visible:opacity-100"
+										aria-label="Undo add {item.name}"
 										>
 											<X class="h-3 w-3" />
 										</button>
