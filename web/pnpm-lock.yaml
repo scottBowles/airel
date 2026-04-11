@@ -11,26 +11,10 @@ overrides:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       '@cloudinary/url-gen':
         specifier: ^1.22.0
         version: 1.22.0
-      algoliasearch:
-        specifier: ^5.49.2
-        version: 5.49.2
-      bits-ui:
-        specifier: ^2.15.5
-        version: 2.15.5(@internationalized/date@3.11.0)(@sveltejs/kit@2.55.0(@sveltejs/vite-plugin-svelte@7.0.0(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(svelte@5.49.2))(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(svelte@5.49.2)(typescript@5.9.3))(svelte@5.49.2)
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      svelte-dnd-action:
-        specifier: ^0.9.69
-        version: 0.9.69(svelte@5.49.2)
-      tailwind-merge:
-        specifier: ^3.4.0
-        version: 3.4.0
-    devDependencies:
       '@lucide/svelte':
         specifier: ^1.8.0
         version: 1.8.0(svelte@5.49.2)
@@ -61,6 +45,15 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.0
         version: 4.1.0(@voidzero-dev/vite-plus-test@0.1.13(@types/node@20.19.32)(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.0)(typescript@5.9.3))
+      algoliasearch:
+        specifier: ^5.49.2
+        version: 5.49.2
+      bits-ui:
+        specifier: ^2.15.5
+        version: 2.15.5(@internationalized/date@3.11.0)(@sveltejs/kit@2.55.0(@sveltejs/vite-plugin-svelte@7.0.0(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(svelte@5.49.2))(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(svelte@5.49.2)(typescript@5.9.3))(svelte@5.49.2)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       eslint-plugin-svelte:
         specifier: ^3.14.0
         version: 3.14.0(eslint@9.39.2(jiti@2.6.1))(svelte@5.49.2)
@@ -79,9 +72,15 @@ importers:
       svelte-check:
         specifier: ^4.3.5
         version: 4.3.6(picomatch@4.0.3)(svelte@5.49.2)(typescript@5.9.3)
+      svelte-dnd-action:
+        specifier: ^0.9.69
+        version: 0.9.69(svelte@5.49.2)
       svelte-sonner:
         specifier: ^1.0.7
         version: 1.0.7(svelte@5.49.2)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.4.0
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
