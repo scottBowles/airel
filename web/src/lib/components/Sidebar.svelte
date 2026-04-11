@@ -44,7 +44,7 @@
 
 	async function logout() {
 		await fetch('/auth/logout', { method: 'POST' });
-		window.location.href = '/login';
+		window.location.reload();
 	}
 </script>
 
@@ -59,7 +59,7 @@
 				<button
 					{...props}
 					onclick={() => showLogoutConfirm = true}
-					class="flex h-7 items-center justify-center border border-accent-amber/20 bg-accent-amber/5 px-1.5 text-[10px] font-bold text-accent-amber uppercase"
+					class="flex h-7 cursor-pointer items-center justify-center border border-accent-amber/20 bg-accent-amber/5 px-1.5 text-[10px] font-bold text-accent-amber uppercase"
 				>
 					{initials}
 				</button>
@@ -201,7 +201,7 @@
 						<button
 							{...props}
 							onclick={() => showLogoutConfirm = true}
-							class="text-text-muted transition-colors hover:text-accent-red"
+							class="cursor-pointer text-text-muted transition-colors hover:text-accent-red"
 						>
 							<LogOut class="h-3.5 w-3.5" />
 						</button>
