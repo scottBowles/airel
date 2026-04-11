@@ -4,6 +4,7 @@
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import { getUserContext } from '$lib/auth';
+	import { getShuffledStatusMessages } from '$lib/kozmoStatusMessages';
 	import { streamChat } from '$lib/streamChat';
 	import {
 		ArrowLeft,
@@ -25,6 +26,17 @@
 	let sending = $state(false);
 	let streaming = $state(false);
 	let messagesEnd = $state<HTMLDivElement | null>(null);
+	let statusMessages = $state<string[]>([]);
+	let statusIndex = $state(0);
+	let statusText = $derived(statusMessages[statusIndex % statusMessages.length] ?? '');
+
+	$effect(() => {
+		if (!sending || streaming) return;
+		const interval = setInterval(() => {
+			statusIndex++;
+		}, 3000);
+		return () => clearInterval(interval);
+	});
 	// Once a session is created, store its ID for follow-up messages
 	let sessionId = $state<string | null>(null);
 	let sessionTitle = $state<string | null>(null);
@@ -50,6 +62,8 @@
 		inputValue = '';
 		sending = true;
 		streaming = false;
+		statusMessages = getShuffledStatusMessages();
+		statusIndex = 0;
 
 		const tempId = `temp-${Date.now()}`;
 		messages = [
@@ -187,7 +201,7 @@
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
 							<div class="flex items-center gap-2 text-xs text-text-muted">
 								<Loader2 class="h-3.5 w-3.5 animate-spin text-accent-green" />
-								<span class="machine-text">Searching ship's archives...</span>
+							<span class="machine-text">{statusText}</span>
 							</div>
 						</div>
 					</div>

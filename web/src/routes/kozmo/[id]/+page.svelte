@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { getUserContext } from '$lib/auth';
+	import { getShuffledStatusMessages } from '$lib/kozmoStatusMessages';
 	import { streamChat } from '$lib/streamChat';
 	import { ArrowLeft, Send, User, Bot, Loader2 } from 'lucide-svelte';
 	import type { PageData } from './$houdini';
@@ -32,6 +33,18 @@
 	let streaming = $state(false);
 	let abortController: AbortController | null = null;
 
+	let statusMessages = $state<string[]>([]);
+	let statusIndex = $state(0);
+	let statusText = $derived(statusMessages[statusIndex % statusMessages.length] ?? '');
+
+	$effect(() => {
+		if (!sending || streaming) return;
+		const interval = setInterval(() => {
+			statusIndex++;
+		}, 3000);
+		return () => clearInterval(interval);
+	});
+
 	let scrollContainer: HTMLDivElement | undefined;
 
 	function scrollToBottom(smooth = false) {
@@ -53,6 +66,8 @@
 		inputValue = '';
 		sending = true;
 		streaming = false;
+		statusMessages = getShuffledStatusMessages();
+		statusIndex = 0;
 
 		const tempId = `temp-${Date.now()}`;
 		pendingMessages = [
@@ -187,7 +202,7 @@
 							<p class="machine-text mb-1 text-accent-green/50 text-[9px]">KOZMO</p>
 							<div class="flex items-center gap-2 text-xs text-text-muted">
 								<Loader2 class="h-3.5 w-3.5 animate-spin text-accent-green" />
-								<span class="machine-text">Searching ship's archives...</span>
+							<span class="machine-text">{statusText}</span>
 							</div>
 						</div>
 					</div>
