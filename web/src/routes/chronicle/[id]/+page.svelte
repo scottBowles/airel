@@ -340,7 +340,6 @@
 						lockedBySelf={log.lockedBySelf}
 						lockUser={log.lockUser}
 						onlock={handleLock}
-						onunlock={handleUnlock}
 					/>
 					{#if editing}
 						<Button size="sm" onclick={saveEdits} disabled={saving}>

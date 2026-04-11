@@ -289,7 +289,7 @@
 				</div>
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
-				<LockIndicator {locked} {lockedBySelf} {lockUser} {onlock} {onunlock} />
+				<LockIndicator {locked} {lockedBySelf} {lockUser} {onlock} />
 				{#if editing}
 					<Button size="sm" onclick={saveEdits} disabled={saving}>
 						<Save class="mr-1 h-3 w-3" />
