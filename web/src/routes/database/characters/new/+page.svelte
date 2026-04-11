@@ -3,7 +3,8 @@
 	import { toast } from 'svelte-sonner';
 	import { graphql } from '$houdini';
 	import { getUserContext } from '$lib/auth';
-	import { ArrowLeft, Plus } from 'lucide-svelte';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Plus from '@lucide/svelte/icons/plus';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import EntityPicker from '$lib/components/EntityPicker.svelte';

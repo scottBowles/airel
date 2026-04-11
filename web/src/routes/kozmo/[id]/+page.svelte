@@ -5,7 +5,11 @@
 	import { getUserContext } from '$lib/auth';
 	import { getShuffledStatusMessages } from '$lib/kozmoStatusMessages';
 	import { streamChat } from '$lib/streamChat';
-	import { ArrowLeft, Send, User, Bot, Loader2 } from 'lucide-svelte';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Send from '@lucide/svelte/icons/send';
+	import User from '@lucide/svelte/icons/user';
+	import Bot from '@lucide/svelte/icons/bot';
+	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import type { PageData } from './$houdini';
 
 	const getUser = getUserContext();

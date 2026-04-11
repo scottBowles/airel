@@ -2,19 +2,17 @@
 	import { fromStore } from 'svelte/store';
 	import { formatGameDate } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
-	import {
-		ArrowLeft,
-		Calendar,
-		ExternalLink,
-		Users,
-		MapPin,
-		Globe,
-		Swords,
-		Gem,
-		Dna,
-		Save,
-		X,
-	} from 'lucide-svelte';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Calendar from '@lucide/svelte/icons/calendar';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import Users from '@lucide/svelte/icons/users';
+	import MapPin from '@lucide/svelte/icons/map-pin';
+	import Globe from '@lucide/svelte/icons/globe';
+	import Swords from '@lucide/svelte/icons/swords';
+	import Gem from '@lucide/svelte/icons/gem';
+	import Dna from '@lucide/svelte/icons/dna';
+	import Save from '@lucide/svelte/icons/save';
+	import X from '@lucide/svelte/icons/x';
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
 	import Panel from '$lib/components/Panel.svelte';

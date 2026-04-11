@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { getUserContext } from '$lib/auth';
-	import { Lock, Unlock } from 'lucide-svelte';
+	import Lock from '@lucide/svelte/icons/lock';
+	import Unlock from '@lucide/svelte/icons/unlock';
 
 	let {
 		locked,

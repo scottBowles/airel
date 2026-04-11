@@ -31,6 +31,9 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
     devDependencies:
+      '@lucide/svelte':
+        specifier: ^1.8.0
+        version: 1.8.0(svelte@5.49.2)
       '@sveltejs/adapter-auto':
         specifier: ^7.0.1
         version: 7.0.1(@sveltejs/kit@2.55.0(@sveltejs/vite-plugin-svelte@7.0.0(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(svelte@5.49.2))(@voidzero-dev/vite-plus-core@0.1.13(@types/node@20.19.32)(esbuild@0.27.3)(jiti@2.6.1)(typescript@5.9.3))(svelte@5.49.2)(typescript@5.9.3))
@@ -70,9 +73,6 @@ importers:
       isomorphic-dompurify:
         specifier: ^3.5.1
         version: 3.5.1
-      lucide-svelte:
-        specifier: ^0.575.0
-        version: 0.575.0(svelte@5.49.2)
       svelte:
         specifier: ^5.48.2
         version: 5.49.2
@@ -584,6 +584,11 @@ packages:
   '@kitql/helpers@0.8.13':
     resolution: {integrity: sha512-8Om4jxF3XLTrpCkrZ8q6kHco4o6u/zKisA7XjLdiUDeSX7VSprlq6fnG2xayrbrc1He+pHQkgj2cHqqUvEHTGg==}
     engines: {node: ^16.14 || >=18}
+
+  '@lucide/svelte@1.8.0':
+    resolution: {integrity: sha512-+zYQUKqEOVP5lxbGmxL1OVgGMQtRK91eIJ0bR+3Cr1ts4oQEsQfxyzzd5X47psJlblAuGFrl2xm4YuATjR9oaA==}
+    peerDependencies:
+      svelte: ^5
 
   '@oxc-project/runtime@0.120.0':
     resolution: {integrity: sha512-7fvACzS46TkHuzA+Tag8ac40qfwURXRTdc4AtyItF59AoNPOO/QjPMqPyvJH8CaUdGu0ntWDX1CCUNyLMxxX5g==}
@@ -2172,11 +2177,6 @@ packages:
     resolution: {integrity: sha512-aY/R+aEsRelme17KGQa/1ZSIpLpNYYrhcrepKTZgE+W3WM16YMCaPwOHLHsmopZHELU0Ojin1lPVxKR0MihncA==}
     engines: {node: 20 || >=22}
 
-  lucide-svelte@0.575.0:
-    resolution: {integrity: sha512-Tu15tJfbmRNPaU61yeNFf3jfRHs8ABA+NwTt7TWmwVbhlSA3H7sW65tX6RttcP7HGV4aHUlYhXixZOlntoFBdw==}
-    peerDependencies:
-      svelte: ^3 || ^4 || ^5.0.0-next.42
-
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -3175,6 +3175,10 @@ snapshots:
   '@kitql/helpers@0.8.13':
     dependencies:
       esm-env: 1.2.2
+
+  '@lucide/svelte@1.8.0(svelte@5.49.2)':
+    dependencies:
+      svelte: 5.49.2
 
   '@oxc-project/runtime@0.120.0': {}
 
@@ -4485,10 +4489,6 @@ snapshots:
   lru-cache@11.2.5: {}
 
   lru-cache@11.2.7: {}
-
-  lucide-svelte@0.575.0(svelte@5.49.2):
-    dependencies:
-      svelte: 5.49.2
 
   lz-string@1.5.0: {}
 

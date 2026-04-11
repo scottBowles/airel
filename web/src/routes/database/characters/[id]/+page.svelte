@@ -5,7 +5,7 @@
 	import EntityDetail from '$lib/components/EntityDetail.svelte';
 	import EntityPicker from '$lib/components/EntityPicker.svelte';
 	import Panel from '$lib/components/Panel.svelte';
-	import { X } from 'lucide-svelte';
+	import X from '@lucide/svelte/icons/x';
 	import LoadingState from '$lib/components/LoadingState.svelte';
 	import NotFound from '$lib/components/NotFound.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';

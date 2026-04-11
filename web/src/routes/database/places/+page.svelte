@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
-	import { MapPin, Plus } from 'lucide-svelte';
+	import MapPin from '@lucide/svelte/icons/map-pin';
+	import Plus from '@lucide/svelte/icons/plus';
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import EntityGrid from '$lib/components/EntityGrid.svelte';

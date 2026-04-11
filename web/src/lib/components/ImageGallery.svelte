@@ -4,7 +4,10 @@
 	import { toast } from 'svelte-sonner';
 	import { dndzone } from 'svelte-dnd-action';
 	import { getUserContext } from '$lib/auth';
-	import { ImageIcon, Plus, GripVertical, Trash2 } from 'lucide-svelte';
+	import ImageIcon from '@lucide/svelte/icons/image';
+	import Plus from '@lucide/svelte/icons/plus';
+	import GripVertical from '@lucide/svelte/icons/grip-vertical';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import CloudinaryImage from '$lib/components/CloudinaryImage.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import Button from '$lib/components/Button.svelte';

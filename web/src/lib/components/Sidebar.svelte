@@ -3,15 +3,13 @@
 	import { cn } from '$lib/utils';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import Tooltip from '$lib/components/Tooltip.svelte';
-	import {
-		Home,
-		BookOpen,
-		Database,
-		MessageSquare,
-		Search,
-		LogIn,
-		LogOut,
-	} from 'lucide-svelte';
+	import Home from '@lucide/svelte/icons/home';
+	import BookOpen from '@lucide/svelte/icons/book-open';
+	import Database from '@lucide/svelte/icons/database';
+	import MessageSquare from '@lucide/svelte/icons/message-square';
+	import Search from '@lucide/svelte/icons/search';
+	import LogIn from '@lucide/svelte/icons/log-in';
+	import LogOut from '@lucide/svelte/icons/log-out';
 
 	let {
 		user,

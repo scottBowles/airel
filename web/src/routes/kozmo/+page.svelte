@@ -3,7 +3,11 @@
 	import { ChatSessionListStore, graphql } from '$houdini';
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import { MessageSquare, Plus, Clock, LogIn, Trash2 } from 'lucide-svelte';
+	import MessageSquare from '@lucide/svelte/icons/message-square';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Clock from '@lucide/svelte/icons/clock';
+	import LogIn from '@lucide/svelte/icons/log-in';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';

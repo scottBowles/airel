@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { env } from '$env/dynamic/public';
 	import { algoliasearch } from 'algoliasearch';
-	import { Search, X } from 'lucide-svelte';
+	import Search from '@lucide/svelte/icons/search';
+	import X from '@lucide/svelte/icons/x';
 
 	let {
 		entityType,

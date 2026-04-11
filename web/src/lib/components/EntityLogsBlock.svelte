@@ -3,7 +3,10 @@
 	import { toast } from 'svelte-sonner';
 	import { formatGameDate } from '$lib/utils';
 	import { getUserContext } from '$lib/auth';
-	import { BookOpen, Calendar, Plus, Trash2 } from 'lucide-svelte';
+	import BookOpen from '@lucide/svelte/icons/book-open';
+	import Calendar from '@lucide/svelte/icons/calendar';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import Panel from '$lib/components/Panel.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';

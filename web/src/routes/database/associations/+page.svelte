@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fromStore } from 'svelte/store';
-	import { Globe, Plus } from 'lucide-svelte';
+	import Globe from '@lucide/svelte/icons/globe';
+	import Plus from '@lucide/svelte/icons/plus';
 	import { getUserContext } from '$lib/auth';
 	import Button from '$lib/components/Button.svelte';
 	import EntityGrid from '$lib/components/EntityGrid.svelte';

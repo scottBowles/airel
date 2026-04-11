@@ -3,7 +3,9 @@
 	import { fromStore } from 'svelte/store';
 	import { formatGameDate } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
-	import { ExternalLink, Plus, X } from 'lucide-svelte';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import Plus from '@lucide/svelte/icons/plus';
+	import X from '@lucide/svelte/icons/x';
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
 	import LoadingState from '$lib/components/LoadingState.svelte';

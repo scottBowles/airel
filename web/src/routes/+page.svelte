@@ -1,16 +1,12 @@
 <script lang="ts">
-	import {
-		BookOpen,
-		Database,
-		MessageSquare,
-		Shield,
-		Activity,
-		Radio,
-		Cpu,
-		Crosshair,
-		Gauge,
-		Zap,
-	} from 'lucide-svelte';
+	import BookOpen from '@lucide/svelte/icons/book-open';
+	import Database from '@lucide/svelte/icons/database';
+	import MessageSquare from '@lucide/svelte/icons/message-square';
+	import Activity from '@lucide/svelte/icons/activity';
+	import Radio from '@lucide/svelte/icons/radio';
+	import Cpu from '@lucide/svelte/icons/cpu';
+	import Crosshair from '@lucide/svelte/icons/crosshair';
+	import Gauge from '@lucide/svelte/icons/gauge';
 
 	const systems = [
 		{

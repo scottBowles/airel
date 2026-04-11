@@ -4,7 +4,15 @@
 	import { page } from '$app/state';
 	import { env } from '$env/dynamic/public';
 	import { cn } from '$lib/utils';
-	import { Search, X, FileText, Users, MapPin, Swords, Gem, Globe, Dna } from 'lucide-svelte';
+	import Search from '@lucide/svelte/icons/search';
+	import X from '@lucide/svelte/icons/x';
+	import FileText from '@lucide/svelte/icons/file-text';
+	import Users from '@lucide/svelte/icons/users';
+	import MapPin from '@lucide/svelte/icons/map-pin';
+	import Swords from '@lucide/svelte/icons/swords';
+	import Gem from '@lucide/svelte/icons/gem';
+	import Globe from '@lucide/svelte/icons/globe';
+	import Dna from '@lucide/svelte/icons/dna';
 	import { algoliasearch } from 'algoliasearch';
 	import { Dialog } from 'bits-ui';
 

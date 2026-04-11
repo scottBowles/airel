@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { Users, MapPin, Globe, Swords, Gem, Dna } from 'lucide-svelte';
+	import Users from '@lucide/svelte/icons/users';
+	import MapPin from '@lucide/svelte/icons/map-pin';
+	import Globe from '@lucide/svelte/icons/globe';
+	import Swords from '@lucide/svelte/icons/swords';
+	import Gem from '@lucide/svelte/icons/gem';
+	import Dna from '@lucide/svelte/icons/dna';
 
 	const categories = [
 		{ slug: 'characters', label: 'CHARACTERS', code: 'CHR', description: 'Crew, NPCs, and notable figures', icon: Users },

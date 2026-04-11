@@ -1,17 +1,15 @@
 <script lang="ts">
 	import type { Component, Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import {
-		ArrowLeft,
-		Users,
-		MapPin,
-		Globe,
-		Swords,
-		Gem,
-		Dna,
-		Save,
-		X,
-	} from 'lucide-svelte';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Users from '@lucide/svelte/icons/users';
+	import MapPin from '@lucide/svelte/icons/map-pin';
+	import Globe from '@lucide/svelte/icons/globe';
+	import Swords from '@lucide/svelte/icons/swords';
+	import Gem from '@lucide/svelte/icons/gem';
+	import Dna from '@lucide/svelte/icons/dna';
+	import Save from '@lucide/svelte/icons/save';
+	import X from '@lucide/svelte/icons/x';
 	import Panel from '$lib/components/Panel.svelte';
 	import LockIndicator from '$lib/components/LockIndicator.svelte';
 	import CloudinaryImage from '$lib/components/CloudinaryImage.svelte';
