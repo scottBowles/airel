@@ -35,7 +35,7 @@
 
 <Tooltip.Provider>
 <Toaster theme="dark" position="top-right" richColors />
-<CommandPalette bind:open={searchOpen} />
+<CommandPalette bind:open={searchOpen} isStaff={user?.isStaff ?? false} />
 
 {#if isNavigating}
 	<div class="fixed top-0 left-0 right-0 z-[10000] h-0.5 bg-accent-amber/20">
