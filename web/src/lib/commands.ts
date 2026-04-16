@@ -91,7 +91,7 @@ export const commands: Command[] = [
 	},
 	{
 		id: 'nav-kozmo',
-		label: 'KOZMO',
+		label: 'KOZMO CHAT',
 		keywords: [
 			'ai',
 			'chat',
