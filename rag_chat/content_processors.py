@@ -1,4 +1,5 @@
 # rag_chat/content_processors.py
+import hashlib
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple
 
@@ -51,6 +52,15 @@ class BaseContentProcessor(ABC):
         """Get a unique identifier for the object"""
         pass
 
+    @abstractmethod
+    def _hash_input(self, obj) -> str:
+        """Return concatenated field values used for hashing"""
+        pass
+
+    def compute_source_hash(self, obj) -> str:
+        raw = self._hash_input(obj)
+        return hashlib.sha256(clean_text(raw).encode()).hexdigest()
+
     def should_chunk(self, text: str) -> bool:
         """Determine if text should be split into chunks"""
         # Default: chunk if longer than 1000 words
@@ -84,6 +94,9 @@ class BaseContentProcessor(ABC):
 
 class GameLogProcessor(BaseContentProcessor):
     content_type = "gamelog"
+
+    def _hash_input(self, gamelog) -> str:
+        return f"{gamelog.log_text or ''}\n{gamelog.title or ''}"
 
     def extract_text(self, gamelog) -> str:
         return gamelog.log_text or ""
@@ -123,6 +136,11 @@ class GameLogProcessor(BaseContentProcessor):
 
 class CharacterProcessor(BaseContentProcessor):
     content_type = "character"
+
+    def _hash_input(self, character) -> str:
+        race_name = character.race.name if character.race else ""
+        assoc_names = sorted(a.name for a in character.associations.all())
+        return f"{character.name}\n{character.description or ''}\n{race_name}\n{','.join(assoc_names)}"
 
     def extract_text(self, character) -> str:
         text_parts = []
@@ -193,6 +211,10 @@ class CharacterProcessor(BaseContentProcessor):
 class PlaceProcessor(BaseContentProcessor):
     content_type = "place"
 
+    def _hash_input(self, place) -> str:
+        parent_name = place.parent.name if place.parent else ""
+        return f"{place.name}\n{place.description or ''}\n{place.place_type or ''}\n{parent_name}"
+
     def extract_text(self, place) -> str:
         text_parts = []
 
@@ -249,6 +271,9 @@ class PlaceProcessor(BaseContentProcessor):
 class ItemProcessor(BaseContentProcessor):
     content_type = "item"
 
+    def _hash_input(self, item) -> str:
+        return f"{item.name}\n{item.description or ''}"
+
     def extract_text(self, item) -> str:
         text_parts = []
 
@@ -292,6 +317,10 @@ class ItemProcessor(BaseContentProcessor):
 
 class ArtifactProcessor(BaseContentProcessor):
     content_type = "artifact"
+
+    def _hash_input(self, artifact) -> str:
+        item_names = sorted(i.name for i in artifact.items.all())
+        return f"{artifact.name}\n{artifact.description or ''}\n{','.join(item_names)}"
 
     def extract_text(self, artifact) -> str:
         text_parts = []
@@ -350,6 +379,9 @@ class ArtifactProcessor(BaseContentProcessor):
 class RaceProcessor(BaseContentProcessor):
     content_type = "race"
 
+    def _hash_input(self, race) -> str:
+        return f"{race.name}\n{race.description or ''}"
+
     def extract_text(self, race) -> str:
         text_parts = []
 
@@ -392,6 +424,9 @@ class RaceProcessor(BaseContentProcessor):
 
 class AssociationProcessor(BaseContentProcessor):
     content_type = "association"
+
+    def _hash_input(self, association) -> str:
+        return f"{association.name}\n{association.description or ''}"
 
     def extract_text(self, association) -> str:
         text_parts = []
