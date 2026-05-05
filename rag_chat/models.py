@@ -81,6 +81,47 @@ class ContentChunk(models.Model):
         return f"{content_type_name.title()}: {title}"
 
 
+class EmbeddingRevision(models.Model):
+    """
+    Tracks whether a source object's content has changed since it was last embedded.
+    One row per source object (unlike ContentChunk which has one row per chunk).
+    """
+
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to={
+            "app_label__in": [
+                "character",
+                "place",
+                "item",
+                "race",
+                "association",
+                "nucleus",
+            ],
+            "model__in": [
+                "character",
+                "place",
+                "item",
+                "artifact",
+                "race",
+                "association",
+                "gamelog",
+            ],
+        },
+    )
+    object_id = models.PositiveBigIntegerField()
+    source_hash = models.CharField(max_length=64, null=True, blank=True)
+    last_processed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("content_type", "object_id")]
+
+    def __str__(self):
+        content_type_name = self.content_type.model if self.content_type else "Unknown"
+        return f"EmbeddingRevision: {content_type_name}/{self.object_id}"
+
+
 class ChatSession(models.Model):
     """
     Represents a chat conversation with the RAG bot

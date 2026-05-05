@@ -163,6 +163,28 @@ class ContentChunkAdmin(admin.ModelAdmin):
         limit = forms.IntegerField(required=False, label="Limit", initial=10)
 
 
+@admin.register(models.EmbeddingRevision)
+class EmbeddingRevisionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "content_type",
+        "object_id",
+        "source_hash",
+        "last_processed_at",
+    )
+    list_filter = ("content_type",)
+    search_fields = ("object_id",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(models.QueryCache)
 class QueryCacheAdmin(admin.ModelAdmin):
     list_display = (

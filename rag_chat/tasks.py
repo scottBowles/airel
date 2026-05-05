@@ -10,7 +10,7 @@ from .content_processors import CONTENT_PROCESSORS, get_processor
 
 # from .models import ContentChunk, GameLogChunk
 from .embeddings import get_embedding
-from .models import ContentChunk
+from .models import ContentChunk, EmbeddingRevision
 
 logger = logging.getLogger(__name__)
 
@@ -233,6 +233,7 @@ def cleanup_orphaned_chunks():
     Clean up chunks that reference deleted objects
     """
     orphaned_count = 0
+    orphaned_revisions = 0
 
     for content_type_str in CONTENT_PROCESSORS.keys():
         if content_type_str == "custom":
@@ -284,12 +285,24 @@ def cleanup_orphaned_chunks():
                 orphaned_count += count
                 logger.info(f"Cleaned up {count} orphaned {content_type_str} chunks")
 
+                # Also clean up orphaned EmbeddingRevision rows
+                rev_deleted = EmbeddingRevision.objects.filter(
+                    content_type=content_type_obj, object_id__in=orphaned_object_ids
+                ).delete()
+                rev_count = rev_deleted[0] if rev_deleted else 0
+                if rev_count:
+                    orphaned_revisions += rev_count
+                    logger.info(
+                        f"Cleaned up {rev_count} orphaned {content_type_str} embedding revisions"
+                    )
+
         except Exception as e:
             logger.error(f"Failed to cleanup {content_type_str} chunks: {str(e)}")
 
     return {
         "status": "completed",
         "orphaned_chunks_deleted": orphaned_count,
+        "orphaned_revisions_deleted": orphaned_revisions,
     }
 
 
