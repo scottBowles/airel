@@ -269,9 +269,7 @@ def cleanup_orphaned_chunks():
                 continue
 
             # Get valid object IDs from the actual model
-            valid_object_ids = set(
-                str(id) for id in model.objects.values_list("id", flat=True)
-            )
+            valid_object_ids = set(model.objects.values_list("id", flat=True))
 
             # Find orphaned chunks
             orphaned_object_ids = chunk_object_ids - valid_object_ids
