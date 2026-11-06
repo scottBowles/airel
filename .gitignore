@@ -1,0 +1,22 @@
+# Repo-wide ignores. api/ and web/ each keep their own .gitignore for
+# tool-specific output.
+
+.DS_Store
+Thumbs.db
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Editors
+.idea/

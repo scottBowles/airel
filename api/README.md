@@ -1,11 +1,11 @@
-API for https://airel.onrender.com/
+Backend API for https://airel.vip
 
 ## 🐳 Docker Deployment (Coolify)
 
 **New!** This repository now includes optimized Docker configuration for Coolify deployment:
 
-- **Quick Deploy**: See [COOLIFY_QUICK_DEPLOY.md](COOLIFY_QUICK_DEPLOY.md) for fast setup
-- **Complete Guide**: See [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) for detailed instructions
+- **Quick Deploy**: See [COOLIFY_QUICK_DEPLOY.md](docs/COOLIFY_QUICK_DEPLOY.md) for fast setup
+- **Complete Guide**: See [COOLIFY_DEPLOYMENT.md](docs/COOLIFY_DEPLOYMENT.md) for detailed instructions
 - **Environment Setup**: Copy [.env.template](.env.template) for configuration
 
 The Docker setup includes:
@@ -29,9 +29,9 @@ This application now supports background task processing using Celery with Redis
 
 ### Documentation
 
-- **🐳 Docker/Coolify Deployment**: [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md) | [Quick Deploy](COOLIFY_QUICK_DEPLOY.md)
-- **Local Development**: [CELERY_LOCAL_DEVELOPMENT.md](CELERY_LOCAL_DEVELOPMENT.md)
-- **Production Setup**: [CELERY_PRODUCTION.md](CELERY_PRODUCTION.md)
+- **🐳 Docker/Coolify Deployment**: [COOLIFY_DEPLOYMENT.md](docs/COOLIFY_DEPLOYMENT.md) | [Quick Deploy](docs/COOLIFY_QUICK_DEPLOY.md)
+- **Local Development**: [CELERY_LOCAL_DEVELOPMENT.md](docs/CELERY_LOCAL_DEVELOPMENT.md)
+- **Production Setup**: [CELERY_PRODUCTION.md](docs/CELERY_PRODUCTION.md)
 
 ### Background Tasks Available
 
