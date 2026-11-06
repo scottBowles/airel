@@ -1,0 +1,502 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@plugin '@tailwindcss/forms';
+
+/* ──────────────────────────────────────────────────────────
+   KSS KONTULARIEN – SHIPBOARD CONSOLE INTERFACE
+   RETRO SCI-FI TERMINAL DESIGN SYSTEM
+   Fonts: Orbitron (display), Share Tech Mono (everything else)
+   ────────────────────────────────────────────────────────── */
+
+@theme {
+	/* ── Colour Tokens ── */
+	--color-void: #050505;
+	--color-hull: #0c0c0f;
+	--color-panel: #111114;
+	--color-panel-light: #1a1a1f;
+	--color-panel-hover: #16161b;
+	--color-border-dim: rgba(255, 176, 0, 0.08);
+	--color-border-subtle: rgba(255, 176, 0, 0.15);
+	--color-border-accent: rgba(255, 176, 0, 0.3);
+
+	/* Accent palette — CRT phosphor tones */
+	--color-accent-cyan: #4de8e0;
+	--color-accent-cyan-dim: rgba(77, 232, 224, 0.1);
+	--color-accent-cyan-glow: rgba(77, 232, 224, 0.3);
+	--color-accent-amber: #ffb000;
+	--color-accent-amber-dim: rgba(255, 176, 0, 0.08);
+	--color-accent-green: #39ff14;
+	--color-accent-green-dim: rgba(57, 255, 20, 0.08);
+	--color-accent-red: #ff2a2a;
+	--color-accent-red-dim: rgba(255, 42, 42, 0.1);
+	--color-accent-purple: #c084fc;
+
+	/* Text — terminal phosphor tones */
+	--color-text-primary: #d4c5a0;
+	--color-text-secondary: #b0a688;
+	--color-text-muted: #8a7e60;
+	--color-text-faint: #6b634a;
+	--color-text-accent: #ffb000;
+
+	/* ── Typography ── */
+	--font-display: 'Orbitron', ui-monospace, monospace;
+	--font-body: 'Share Tech Mono', ui-monospace, monospace;
+	--font-mono: 'Share Tech Mono', ui-monospace, monospace;
+
+	/* ── Spacing extras ── */
+	--spacing-18: 4.5rem;
+
+	/* ── Border radius — NONE. Industrial. ── */
+	--radius-panel: 0px;
+
+	/* ── Shadows ── */
+	--shadow-glow-cyan: 0 0 8px rgba(77, 232, 224, 0.2), 0 0 30px rgba(77, 232, 224, 0.06);
+	--shadow-glow-amber: 0 0 8px rgba(255, 176, 0, 0.25), 0 0 30px rgba(255, 176, 0, 0.08);
+	--shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 2px 8px rgba(0, 0, 0, 0.6);
+	--shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+
+	/* ── Animations ── */
+	--animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+	--animate-scan: scanline 8s linear infinite;
+	--animate-fade-in: fade-in 0.3s ease-out;
+	--animate-slide-up: slide-up 0.3s ease-out;
+	--animate-slide-down: slide-down 0.2s ease-out;
+	--animate-blink: blink 1.2s step-end infinite;
+	--animate-flicker: flicker 0.15s ease-in-out;
+}
+
+@keyframes pulse-glow {
+	0%,
+	100% {
+		opacity: 0.3;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+@keyframes scanline {
+	0% {
+		transform: translateY(-100%);
+	}
+	100% {
+		transform: translateY(100%);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slide-down {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+@keyframes flicker {
+	0% {
+		opacity: 1;
+	}
+	25% {
+		opacity: 0.8;
+	}
+	50% {
+		opacity: 1;
+	}
+	75% {
+		opacity: 0.9;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+@keyframes crt-on {
+	0% {
+		transform: scaleY(0.005) scaleX(0);
+		opacity: 0;
+	}
+	40% {
+		transform: scaleY(0.005) scaleX(1);
+		opacity: 0.5;
+	}
+	60% {
+		transform: scaleY(1) scaleX(1);
+		opacity: 0.8;
+	}
+	100% {
+		transform: scaleY(1) scaleX(1);
+		opacity: 1;
+	}
+}
+
+@keyframes nav-progress {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(400%);
+	}
+}
+
+/* ── Global Base ── */
+html {
+	background-color: var(--color-void);
+	color: var(--color-text-primary);
+	font-family: var(--font-body);
+	font-size: 14px;
+	line-height: 1.5;
+	letter-spacing: 0.02em;
+}
+
+body {
+	min-height: 100dvh;
+	background-color: var(--color-void);
+	/* CRT vignette effect */
+	background-image: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+	background-attachment: fixed;
+}
+
+/* Persistent CRT scanlines over everything */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 9999;
+	background: repeating-linear-gradient(
+		0deg,
+		transparent 0px,
+		transparent 2px,
+		rgba(0, 0, 0, 0.12) 2px,
+		rgba(0, 0, 0, 0.12) 4px
+	);
+	mix-blend-mode: multiply;
+}
+
+/* Subtle noise grain texture */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 9998;
+	opacity: 0.03;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-size: 256px 256px;
+}
+
+/* Selection */
+::selection {
+	background-color: rgba(255, 176, 0, 0.3);
+	color: #fff;
+}
+
+/* Scrollbar styling — industrial */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--color-void);
+	border-left: 1px solid rgba(255, 176, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(255, 176, 0, 0.15);
+	border: 1px solid rgba(255, 176, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 176, 0, 0.25);
+}
+
+/* ── Shared Utility Classes ── */
+
+/* Panel styling — industrial frame */
+@utility panel-border {
+	border: 1px solid var(--color-border-dim);
+	outline: 1px solid rgba(255, 176, 0, 0.03);
+	outline-offset: 2px;
+}
+
+@utility panel-bg {
+	background-color: var(--color-panel);
+	box-shadow: var(--shadow-panel);
+}
+
+@utility panel-glow {
+	box-shadow: var(--shadow-glow-amber);
+	border-color: rgba(255, 176, 0, 0.3);
+}
+
+/* Content spacing */
+@utility content-pad {
+	padding: 0.25rem 0.75rem 0.75rem;
+	@media (min-width: 640px) {
+		padding: 0.25rem 1rem 1rem;
+	}
+	@media (min-width: 1024px) {
+		padding: 1.5rem;
+	}
+}
+
+@utility panel-pad {
+	padding: 0.75rem;
+	@media (min-width: 640px) {
+		padding: 1rem;
+	}
+}
+
+@utility stack-space {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	@media (min-width: 640px) {
+		gap: 1rem;
+	}
+}
+
+/* Typography */
+@utility title-display {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+@utility title-section {
+	font-family: var(--font-mono);
+	font-weight: 400;
+	font-size: 0.75rem;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	border-bottom: 1px solid var(--color-border-dim);
+	padding-bottom: 0.35rem;
+}
+
+@utility copy-readable {
+	font-family: var(--font-mono);
+	line-height: 1.6;
+	font-weight: 400;
+}
+
+@utility machine-text {
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+/* Text glow helpers — phosphor style */
+@utility text-glow-cyan {
+	color: var(--color-accent-cyan);
+	text-shadow:
+		0 0 6px rgba(77, 232, 224, 0.4),
+		0 0 20px rgba(77, 232, 224, 0.15);
+}
+
+@utility text-glow-amber {
+	color: var(--color-accent-amber);
+	text-shadow:
+		0 0 6px rgba(255, 176, 0, 0.5),
+		0 0 20px rgba(255, 176, 0, 0.2);
+}
+
+@utility text-glow-green {
+	color: var(--color-accent-green);
+	text-shadow:
+		0 0 6px rgba(57, 255, 20, 0.4),
+		0 0 20px rgba(57, 255, 20, 0.15);
+}
+
+@utility text-glow-red {
+	color: var(--color-accent-red);
+	text-shadow:
+		0 0 6px rgba(255, 42, 42, 0.4),
+		0 0 20px rgba(255, 42, 42, 0.15);
+}
+
+/* Industrial border styles */
+@utility border-industrial-dim {
+	border-color: var(--color-border-dim);
+}
+
+@utility border-industrial-accent {
+	border-color: var(--color-border-accent);
+}
+
+/* Corner bracket decoration */
+@utility console-frame {
+	position: relative;
+	&::before,
+	&::after {
+		content: '';
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		border-color: var(--color-accent-amber);
+		opacity: 0.3;
+	}
+	&::before {
+		top: -1px;
+		left: -1px;
+		border-top: 1px solid;
+		border-left: 1px solid;
+	}
+	&::after {
+		bottom: -1px;
+		right: -1px;
+		border-bottom: 1px solid;
+		border-right: 1px solid;
+	}
+}
+
+/* Status indicator dot */
+@utility status-dot {
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 0;
+	background-color: currentColor;
+	box-shadow: 0 0 4px currentColor;
+}
+
+/* Horizontal rule — circuit trace style */
+@utility trace-line {
+	height: 1px;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		var(--color-border-subtle) 15%,
+		var(--color-border-subtle) 85%,
+		transparent
+	);
+}
+
+/* Database page layout helpers */
+@utility db-page {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	@media (min-width: 640px) {
+		gap: 1.25rem;
+	}
+}
+
+@utility db-grid {
+	display: grid;
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+	gap: 2px;
+	@media (min-width: 640px) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	@media (min-width: 1024px) {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	@media (min-width: 1280px) {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+/* Scan line overlay effect */
+@utility scanline-overlay {
+	position: relative;
+	&::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: repeating-linear-gradient(
+			transparent 0px,
+			transparent 2px,
+			rgba(255, 176, 0, 0.01) 2px,
+			rgba(255, 176, 0, 0.01) 4px
+		);
+		z-index: 50;
+	}
+}
+
+/* Inset panel — recessed instrument effect */
+@utility panel-inset {
+	background-color: var(--color-void);
+	box-shadow: var(--shadow-inset);
+	border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+	body::after,
+	body::before {
+		display: none !important;
+	}
+}
+
+/* ── Focus visible — amber ring ── */
+:focus-visible {
+	outline: 1px solid var(--color-accent-amber);
+	outline-offset: 1px;
+}
+
+/* ── Form inputs — terminal style ── */
+input[type='text'],
+input[type='url'],
+input[type='email'],
+input[type='search'],
+textarea,
+select {
+	font-family: var(--font-mono) !important;
+	background-color: var(--color-void) !important;
+	border: 1px solid var(--color-border-dim) !important;
+	color: var(--color-text-primary) !important;
+	caret-color: var(--color-accent-amber);
+	border-radius: 0 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--color-text-faint) !important;
+	font-family: var(--font-mono) !important;
+}

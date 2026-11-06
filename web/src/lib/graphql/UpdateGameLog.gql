@@ -1,0 +1,24 @@
+mutation UpdateGameLog($input: GameLogInputPartial!) {
+	updateGamelog(input: $input) {
+		... on GameLog {
+			id
+			title
+			brief
+			synopsis
+			gameDate
+			url
+			lockedBySelf
+			lockUser {
+				id
+				username
+			}
+		}
+		... on OperationInfo {
+			messages {
+				field
+				kind
+				message
+			}
+		}
+	}
+}

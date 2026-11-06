@@ -1,0 +1,17 @@
+query ChatSessionDetail($id: ID!) {
+	node(id: $id) {
+		... on ChatSessionType {
+			id
+			title
+			createdAt
+			updatedAt
+			messages {
+				id
+				message
+				response
+				createdAt
+				tokensUsed
+			}
+		}
+	}
+}

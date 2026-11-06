@@ -1,0 +1,20 @@
+query PlaceList($first: Int, $after: String) {
+	places(first: $first, after: $after) {
+		edges {
+			node {
+				id
+				name
+				description
+				thumbnailId
+				imageIds
+				placeType
+				updated
+			}
+		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
+	}
+}
