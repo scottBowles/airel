@@ -1,0 +1,18 @@
+query GameLogList($first: Int, $after: String, $order: GameLogOrder) {
+	gameLogs(first: $first, after: $after, order: $order) {
+		edges {
+			node {
+				id
+				title
+				brief
+				synopsis
+				gameDate
+				url
+			}
+		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+	}
+}

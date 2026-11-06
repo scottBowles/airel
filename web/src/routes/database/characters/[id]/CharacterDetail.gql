@@ -1,0 +1,113 @@
+query CharacterDetail($id: ID!) {
+	node(id: $id) {
+		... on Character {
+			id
+			name
+			description
+			thumbnailId
+			imageIds
+			markdownNotes
+			size
+			created
+			updated
+			lockedBySelf
+			lockUser {
+				id
+				username
+			}
+			lockTime
+			race {
+				id
+				name
+			}
+			associations(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			featuresAndTraits(first: 50) {
+				edges {
+					node {
+						id
+						name
+						description
+					}
+				}
+			}
+			proficiencies(first: 50) {
+				edges {
+					node {
+						id
+						name
+						proficiencyType
+						description
+					}
+				}
+			}
+			relatedCharacters(first: 50) {
+				edges {
+					node {
+						id
+						name
+						thumbnailId
+						imageIds
+					}
+				}
+			}
+			relatedPlaces(first: 50) {
+				edges {
+					node {
+						id
+						name
+						thumbnailId
+						imageIds
+					}
+				}
+			}
+			relatedItems(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedArtifacts(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedAssociations(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedRaces(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			logs(first: 20, order: { gameDate: DESC }) {
+				edges {
+					node {
+						id
+						title
+						gameDate
+					}
+				}
+			}
+		}
+	}
+}

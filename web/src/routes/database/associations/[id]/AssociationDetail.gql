@@ -1,0 +1,87 @@
+query AssociationDetail($id: ID!) {
+	node(id: $id) {
+		... on Association {
+			id
+			name
+			description
+			thumbnailId
+			imageIds
+			markdownNotes
+			created
+			updated
+			lockedBySelf
+			lockUser {
+				id
+				username
+			}
+			lockTime
+			characters(first: 50) {
+				edges {
+					node {
+						id
+						name
+						thumbnailId
+						imageIds
+					}
+				}
+			}
+			relatedCharacters(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedPlaces(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedAssociations(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedItems(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedArtifacts(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			relatedRaces(first: 50) {
+				edges {
+					node {
+						id
+						name
+					}
+				}
+			}
+			logs(first: 20, order: { gameDate: DESC }) {
+				edges {
+					node {
+						id
+						title
+						gameDate
+					}
+				}
+			}
+		}
+	}
+}

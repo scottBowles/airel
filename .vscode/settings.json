@@ -1,12 +1,27 @@
 {
-    "python.formatting.provider": "none",
-    "prettier.tabWidth": 4,
-    "python.testing.unittestArgs": ["-v", "-s", ".", "-p", "test_*.py"],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
-    "python.analysis.typeCheckingMode": "off",
-    "python.languageServer": "Pylance",
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
-    }
+	// Frontend (web/): oxc formats everything it understands.
+	"files.associations": {
+		"*.css": "tailwindcss"
+	},
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "oxc.oxc-vscode",
+	"[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[svelte]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[markdown]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+	"[graphql]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+
+	// Backend (api/)
+	"python.defaultInterpreterPath": "${workspaceFolder}/api/.venv/bin/python",
+	"python.analysis.extraPaths": ["${workspaceFolder}/api"],
+	"python.analysis.typeCheckingMode": "off",
+	"python.languageServer": "Pylance",
+	"python.testing.unittestArgs": ["-v", "-s", "./api", "-p", "test_*.py"],
+	"python.testing.pytestEnabled": false,
+	"python.testing.unittestEnabled": true,
+	"[python]": { "editor.defaultFormatter": "ms-python.black-formatter" }
 }

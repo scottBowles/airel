@@ -1,0 +1,23 @@
+query CharacterList($first: Int, $after: String) {
+	characters(first: $first, after: $after) {
+		edges {
+			node {
+				id
+				name
+				description
+				thumbnailId
+				imageIds
+				race {
+					id
+					name
+				}
+				updated
+			}
+		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
+	}
+}

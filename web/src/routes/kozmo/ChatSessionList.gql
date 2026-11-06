@@ -1,0 +1,16 @@
+query ChatSessionList($first: Int, $after: String) {
+	chatSessions(first: $first, after: $after) {
+		edges {
+			node {
+				id
+				title
+				createdAt
+				updatedAt
+			}
+		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+	}
+}
