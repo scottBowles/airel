@@ -12,7 +12,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 run="cd '$root' && api/.venv/bin/honcho -f Procfile.dev start"
 
 osascript <<EOF
-tell application "iTerm2"
+tell application id "com.googlecode.iterm2"
 	activate
 	set w to (create window with default profile)
 	set apiPane to current session of current tab of w
