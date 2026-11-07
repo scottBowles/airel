@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Opens a new iTerm2 window with one pane per Procfile.dev process:
+#   ┌─────────┬─────────┐
+#   │ api     │         │
+#   ├─────────┤  web    │
+#   │ worker  │         │
+#   └─────────┴─────────┘
+# macOS + iTerm2 only. Everyone else (and agents): honcho -f Procfile.dev start
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+run="cd '$root' && api/.venv/bin/honcho -f Procfile.dev start"
+
+osascript <<EOF
+tell application "iTerm2"
+	activate
+	set w to (create window with default profile)
+	set apiPane to current session of current tab of w
+	tell apiPane
+		set webPane to (split vertically with default profile)
+		set workerPane to (split horizontally with default profile)
+		write text "$run api"
+	end tell
+	tell webPane to write text "$run web"
+	tell workerPane to write text "$run worker"
+end tell
+EOF
