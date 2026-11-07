@@ -54,13 +54,13 @@ class Item(Entity, relay.Node):
         Annotated["Artifact", strawberry.lazy("item.types")]
     ] = strawberry_django.connection()
     armor: Optional[ArmorTraits] = strawberry_django.field(
-        resolver=lambda self, info: getattr(self, "armor", None)
+        resolver=lambda self: getattr(self, "armor", None)
     )
     weapon: Optional[WeaponTraits] = strawberry_django.field(
-        resolver=lambda self, info: getattr(self, "weapon", None)
+        resolver=lambda self: getattr(self, "weapon", None)
     )
     equipment: Optional[EquipmentTraits] = strawberry_django.field(
-        resolver=lambda self, info: getattr(self, "equipment", None)
+        resolver=lambda self: getattr(self, "equipment", None)
     )
 
 
@@ -108,7 +108,7 @@ class ItemQuery:
 @strawberry.type
 class ItemMutation:
     @strawberry_django.mutation(permission_classes=[IsStaff])
-    def create_item(self, info, input: ItemInput) -> Item:
+    def create_item(self, info: strawberry.Info, input: ItemInput) -> Item:
         """
         Create an item with traits if present.
         """
@@ -145,7 +145,7 @@ class ItemMutation:
     @strawberry_django.mutation(
         permission_classes=[IsStaff, IsLockUserOrSuperuserIfLocked]
     )
-    def update_item(self, info, input: ItemInputPartial) -> Item:
+    def update_item(self, info: strawberry.Info, input: ItemInputPartial) -> Item:
         # Collect data from input
         data = vars(input)
         node_id: strawberry.relay.GlobalID = data.pop("id")

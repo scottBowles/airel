@@ -196,14 +196,14 @@ class RAGQuery:
     @strawberry_django.connection(
         DjangoListConnection[ChatSessionType], permission_classes=[CanUseRAGChat]
     )
-    def chat_sessions(self, info) -> list[models.ChatSession]:
+    def chat_sessions(self, info: strawberry.Info) -> list[models.ChatSession]:
         user = info.context.request.user
         return models.ChatSession.objects.filter(user=user, is_archived=False)
 
     @strawberry_django.connection(
         DjangoListConnection[ChatMessageType], permission_classes=[CanUseRAGChat]
     )
-    def chat_messages(self, info) -> list[models.ChatMessage]:
+    def chat_messages(self, info: strawberry.Info) -> list[models.ChatMessage]:
         user = info.context.request.user
         return models.ChatMessage.objects.filter(
             session__user=user, session__is_archived=False
@@ -321,7 +321,7 @@ class RAGQuery:
 class RAGMutation:
     @strawberry.mutation(permission_classes=[CanUseRAGChat])
     def archive_chat_session(
-        self, info, input: ArchiveChatSessionInput
+        self, info: strawberry.Info, input: ArchiveChatSessionInput
     ) -> ChatSessionType:
         user = info.context.request.user
         session = input.session_id.resolve_node_sync(
@@ -334,7 +334,7 @@ class RAGMutation:
         return session
 
     @strawberry.mutation(permission_classes=[CanStartChatSession])
-    def start_chat_session(self, info, input: StartChatSessionInput) -> ChatSessionType:
+    def start_chat_session(self, info: strawberry.Info, input: StartChatSessionInput) -> ChatSessionType:
         user = info.context.request.user
         rag_service = services.RAGService()
         session = rag_service.create_chat_session(user, title=input.title)
@@ -342,7 +342,7 @@ class RAGMutation:
 
     @strawberry.mutation(permission_classes=[CanSendChatMessage])
     def send_chat_message(
-        self, info, input: SendChatMessageInput
+        self, info: strawberry.Info, input: SendChatMessageInput
     ) -> SendChatMessagePayload:
         user = info.context.request.user
 
@@ -373,7 +373,7 @@ class RAGMutation:
 
     @strawberry.mutation
     def process_content(
-        self, info, input: ProcessContentInput
+        self, info: strawberry.Info, input: ProcessContentInput
     ) -> ProcessContentPayload:
         user = info.context.request.user
         if not user.is_authenticated or not user.is_superuser:
@@ -400,7 +400,7 @@ class RAGMutation:
 
     @strawberry.mutation
     def process_all_content(
-        self, info, input: ProcessAllContentInput
+        self, info: strawberry.Info, input: ProcessAllContentInput
     ) -> ProcessAllContentPayload:
         user = info.context.request.user
         if not user.is_authenticated or not user.is_superuser:
@@ -439,7 +439,7 @@ class RAGMutation:
             )
 
     @strawberry.mutation
-    def cleanup_orphaned_chunks(self, info) -> ProcessContentPayload:
+    def cleanup_orphaned_chunks(self, info: strawberry.Info) -> ProcessContentPayload:
         user = info.context.request.user
         if not user.is_authenticated or not user.is_superuser:
             raise Exception("Only superusers can cleanup data.")

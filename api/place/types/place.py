@@ -76,7 +76,7 @@ class PlaceMutation:
     )
     def update_place(
         self,
-        info,
+        info: strawberry.Info,
         input: PlaceInputPartial,
     ) -> Place:
         data = vars(input)
