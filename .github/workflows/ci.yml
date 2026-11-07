@@ -1,0 +1,78 @@
+# Runs the api/ and web/ checks on every PR and on pushes to main.
+# Third-party actions are pinned to commit SHAs; the comment names the release.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16 # matches production
+        env:
+          POSTGRES_USER: airel
+          POSTGRES_DB: airel
+          POSTGRES_HOST_AUTH_METHOD: trust # throwaway container, so no password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U airel" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: api
+    env:
+      # Placeholder values only, as in bin/cloud-session-start.sh: no real keys reach CI.
+      DATABASE_URL: postgres://airel@127.0.0.1:5432/airel
+      SECRET_KEY: ci-only
+      ALGOLIA_APPLICATION_ID: placeholder
+      ALGOLIA_API_KEY: placeholder
+      ALGOLIA_AUTO_INDEXING: "false"
+      OPENAI_API_KEY: placeholder
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12" # api/runtime.txt
+          enable-cache: true
+          cache-dependency-glob: api/requirements*.txt
+      # ffmpeg for transcription's audio splitting (pydub).
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+      - run: uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt -r requirements-dev.txt
+      # NLTK data that rag_chat loads at import time (same set as api/Dockerfile).
+      - run: .venv/bin/python -m nltk.downloader -q -d "$HOME/nltk_data" punkt punkt_tab averaged_perceptron_tagger averaged_perceptron_tagger_eng stopwords
+      - run: .venv/bin/python manage.py check
+      - run: .venv/bin/python manage.py makemigrations --check --dry-run
+      - run: .venv/bin/python manage.py test
+
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    env:
+      PUBLIC_GRAPHQL_ENDPOINT: http://127.0.0.1:8000/graphql/
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Installs the vite-plus version locked in web/pnpm-lock.yaml, Node from
+      # web/.node-version, and runs vp install.
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          working-directory: web
+          node-version-file: .node-version
+          cache: true
+      - run: vp exec houdini generate # $houdini runtime, which vp check needs
+      - run: vp check
+      - run: vp test run
+      - run: vp build
