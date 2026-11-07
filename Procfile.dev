@@ -1,0 +1,6 @@
+# Local dev processes. Run all:   api/.venv/bin/honcho -f Procfile.dev start
+#                      Run one:   api/.venv/bin/honcho -f Procfile.dev start api
+# Ports are fixed (strict) so tools and agents can rely on them.
+api: cd api && exec .venv/bin/python manage.py runserver 127.0.0.1:8000
+web: cd web && exec vp dev --port 5173 --strictPort
+worker: cd api && exec .venv/bin/celery -A website worker --loglevel=info

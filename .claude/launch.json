@@ -1,0 +1,17 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "api",
+			"runtimeExecutable": "api/.venv/bin/honcho",
+			"runtimeArgs": ["-f", "Procfile.dev", "start", "api"],
+			"port": 8000
+		},
+		{
+			"name": "web",
+			"runtimeExecutable": "api/.venv/bin/honcho",
+			"runtimeArgs": ["-f", "Procfile.dev", "start", "web"],
+			"port": 5173
+		}
+	]
+}
