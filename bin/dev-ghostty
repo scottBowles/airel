@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Opens a new Ghostty window with one pane per Procfile.dev process:
+#   ┌─────────┬─────────┐
+#   │ api     │         │
+#   ├─────────┤  web    │
+#   │ worker  │         │
+#   └─────────┴─────────┘
+# Each pane starts a normal shell and types the command, so Ctrl-C leaves
+# you at a prompt in the right folder. macOS + Ghostty 1.3+ only.
+# Everyone else (and agents): api/.venv/bin/honcho -f Procfile.dev start
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+run="api/.venv/bin/honcho -f Procfile.dev start"
+
+osascript <<EOF
+tell application id "com.mitchellh.ghostty"
+	activate
+	set w to new window with configuration {initial working directory:"$root", initial input:"$run api" & linefeed}
+	set apiTerm to focused terminal of selected tab of w
+	split apiTerm direction right with configuration {initial working directory:"$root", initial input:"$run web" & linefeed}
+	split apiTerm direction down with configuration {initial working directory:"$root", initial input:"$run worker" & linefeed}
+end tell
+EOF
