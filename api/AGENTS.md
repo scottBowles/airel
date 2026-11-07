@@ -13,7 +13,8 @@ Each app exposes `Query`/`Mutation` classes from its `types/` package (or `types
 `ALGOLIA_AUTO_INDEXING=false .venv/bin/python manage.py test [app]` (Django's unittest runner; needs local Postgres).
 
 - **Algolia:** models in each app's `index.py` are registered with Algolia, so with indexing on, every model save calls the Algolia API. `ALGOLIA_AUTO_INDEXING=false` turns that off; cloud sessions set it in their `.env`.
-- **Known failures** on `main`, unrelated to your change: `graphql_jwt` imports, `test_default_initialization`, and (when running as root, as cloud sessions do) `test_safe_save_json_file_permission_error`. Compare against `main` before treating a failure as yours.
+- **Known failures:** none. The suite passes on `main`, so treat any failure as yours. (`test_safe_save_json_file_permission_error` is skipped when running as root, as cloud sessions do.)
+- **Style:** test behavior through public entry points (the `/graphql/` endpoint, service methods, Celery tasks) and mock only real boundaries: OpenAI (`nucleus.ai`), Algolia, R2 and Google. `association/tests.py` shows how to call GraphQL as a logged-in user.
 
 ## Cloud sessions
 

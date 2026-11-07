@@ -2,10 +2,13 @@
 Tests for utility functions.
 """
 
+import os
 import tempfile
 import json
 import shutil
 from pathlib import Path
+
+from unittest import skipIf
 
 from django.test import TestCase
 
@@ -51,6 +54,10 @@ class UtilityFunctionTests(TestCase):
         self.assertFalse(result)
         self.assertFalse(output_path.exists())
 
+    @skipIf(
+        hasattr(os, "geteuid") and os.geteuid() == 0,
+        "root ignores directory permissions",
+    )
     def test_safe_save_json_file_permission_error(self):
         """Test handling of file permission errors."""
         test_data = {"text": "Hello world"}

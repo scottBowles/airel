@@ -1,126 +1,81 @@
 """
-Tests for AudioProcessingService class.
+Tests for AudioProcessingService: splitting a recording into voiced chunks
+that remember where they came from in the original audio.
 """
 
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from django.test import TestCase
+from pydub import AudioSegment
 
-from transcription.services.AudioProcessingService import AudioProcessingService
+from transcription.services.AudioProcessingService import (
+    AudioProcessingService,
+    cleanup_audio_data_files,
+)
 from transcription.services.TranscriptionConfig import TranscriptionConfig
 
+VAD = "transcription.services.AudioProcessingService.VADProcessingService.extract_voiced_segments"
 
-class AudioProcessingServiceTests(TestCase):
-    """Test the AudioProcessingService with instance-based configuration."""
 
+class SplitAudioFileTests(TestCase):
     def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.temp_path = Path(self.temp_dir)
-        self.config = TranscriptionConfig(
-            max_file_size_mb=1,  # Small for testing
-            chunk_duration_minutes=1,
+        self.temp_path = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.temp_path, ignore_errors=True)
+        self.recording = self.temp_path / "Izar.wav"
+        AudioSegment.silent(duration=100_000).export(self.recording, format="wav")
+
+    def split(self, voiced_segments, chunk_seconds):
+        service = AudioProcessingService(
+            TranscriptionConfig(chunk_duration_minutes=chunk_seconds / 60)
         )
-        self.service = AudioProcessingService(self.config)
+        with patch(VAD, return_value=voiced_segments):
+            chunks = service.split_audio_file(self.recording, "Izar")
+        self.addCleanup(cleanup_audio_data_files, chunks)
+        return chunks
 
-    def tearDown(self):
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    def test_groups_voiced_segments_up_to_chunk_duration(self):
+        chunks = self.split([(0, 20), (30, 50), (70, 90)], chunk_seconds=40)
 
-    def test_initialization_with_config(self):
-        """Test that service initializes with config instance."""
-        self.assertEqual(self.service.config, self.config)
+        self.assertEqual(len(chunks), 2)
+        self.assertAlmostEqual(chunks[0].duration, 40.0, places=1)
+        self.assertAlmostEqual(chunks[1].duration, 20.0, places=1)
+        self.assertTrue(all(c.character_name == "Izar" for c in chunks))
+        self.assertTrue(all(c.file_path.exists() for c in chunks))
 
-    def test_get_file_size_mb(self):
-        """Test file size calculation."""
-        # Create a test file with known size
-        test_file = self.temp_path / "test.txt"
-        test_content = "x" * 1024  # 1KB
-        test_file.write_text(test_content)
+    def test_chunk_times_map_back_to_original_recording(self):
+        first, second = self.split([(0, 20), (30, 50), (70, 90)], chunk_seconds=40)
 
-        size_mb = AudioProcessingService.get_file_size_mb(test_file)
-        expected_size = 1024 / (1024 * 1024)  # Convert to MB
-        self.assertAlmostEqual(size_mb, expected_size, places=6)
+        # Silence between voiced segments is cut out of the chunk audio...
+        self.assertAlmostEqual(first.convert_processed_to_original_timestamp(5), 5)
+        self.assertAlmostEqual(first.convert_processed_to_original_timestamp(25), 35)
+        # ...and later chunks start where their audio started in the recording
+        self.assertAlmostEqual(second.convert_processed_to_original_timestamp(0), 70)
+        self.assertAlmostEqual(second.convert_processed_to_original_timestamp(10), 80)
 
-    def test_get_file_size_with_zero_size_file(self):
-        """Test file size calculation with zero-byte file."""
-        zero_file = self.temp_path / "empty.mp3"
-        zero_file.touch()  # Create empty file
+    def test_no_voiced_audio_gives_no_chunks(self):
+        self.assertEqual(self.split([], chunk_seconds=60), [])
 
-        size = AudioProcessingService.get_file_size_mb(zero_file)
-        self.assertEqual(size, 0.0)
+    def test_unreadable_file_gives_no_chunks(self):
+        garbage = self.temp_path / "broken.mp3"
+        garbage.write_bytes(b"not audio")
+        service = AudioProcessingService(TranscriptionConfig())
 
-    @patch("transcription.services.AudioProcessingService.AudioSegment")
-    def test_split_audio_file_under_limit(self, mock_audio_segment):
-        """Test that small files are not split."""
-        test_file = self.temp_path / "small.mp3"
-        test_file.write_text("small content")  # Very small file
+        self.assertEqual(service.split_audio_file(garbage, "Izar"), [])
 
-        # Mock AudioSegment.from_file to return a mock audio segment
-        mock_audio = Mock()
-        mock_audio_segment.from_file.return_value = mock_audio
 
-        # Patch ChunkingProcessor.process to return a single AudioData
-        with patch(
-            "transcription.services.AudioProcessingService.ChunkingProcessor.process"
-        ) as mock_process:
-            from transcription.services.AudioProcessingService import AudioData
-
-            audio_data = AudioData.from_audio_segment(
-                mock_audio, character_name="TestCharacter"
+class FileSizeTests(TestCase):
+    def test_file_size_in_megabytes(self):
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(b"x" * 1024 * 1024)
+            f.flush()
+            self.assertAlmostEqual(
+                AudioProcessingService.get_file_size_mb(Path(f.name)), 1.0
             )
-            mock_process.return_value = [audio_data]
-            result = self.service.split_audio_file(test_file, "TestCharacter")
 
-        # Should return a list of AudioData objects
-        self.assertEqual(len(result), 1)
-        self.assertIsInstance(result[0], AudioData)
-        mock_audio_segment.from_file.assert_called_once_with(test_file)
-
-    @patch("transcription.services.AudioProcessingService.AudioSegment")
-    def test_split_audio_file_over_limit(self, mock_audio_segment):
-        """Test that large files are split into chunks."""
-        test_file = self.temp_path / "large.mp3"
-        large_content = "x" * (2 * 1024 * 1024)  # 2MB
-        test_file.write_bytes(large_content.encode())
-
-        # Mock audio processing
-        mock_audio = Mock()
-        mock_audio_segment.from_file.return_value = mock_audio
-
-        # Patch ChunkingProcessor.process to return two AudioData objects
-        with patch(
-            "transcription.services.AudioProcessingService.ChunkingProcessor.process"
-        ) as mock_process:
-            from transcription.services.AudioProcessingService import AudioData
-
-            audio_data1 = AudioData.from_audio_segment(
-                mock_audio, character_name="TestCharacter"
-            )
-            audio_data2 = AudioData.from_audio_segment(
-                mock_audio, character_name="TestCharacter"
-            )
-            mock_process.return_value = [audio_data1, audio_data2]
-            result = self.service.split_audio_file(test_file, "TestCharacter")
-
-        # Should create 2 chunks (2 minutes / 1 minute per chunk)
-        self.assertEqual(len(result), 2)
-        self.assertIsInstance(result[0], AudioData)
-        self.assertIsInstance(result[1], AudioData)
-        mock_audio_segment.from_file.assert_called_once_with(test_file)
-
-    @patch("transcription.services.AudioProcessingService.AudioSegment")
-    def test_split_audio_handles_exceptions(self, mock_audio_segment):
-        """Test that splitting handles exceptions gracefully."""
-        test_file = self.temp_path / "problematic.mp3"
-        large_content = "x" * (2 * 1024 * 1024)  # 2MB
-        test_file.write_bytes(large_content.encode())
-
-        # Mock exception during audio processing
-        mock_audio_segment.from_file.side_effect = Exception("Audio processing failed")
-
-        result = self.service.split_audio_file(test_file, "TestCharacter")
-
-        # Should return empty list when splitting fails
-        self.assertEqual(result, [])
+    def test_missing_file_is_zero(self):
+        self.assertEqual(
+            AudioProcessingService.get_file_size_mb(Path("/nonexistent.mp3")), 0.0
+        )
