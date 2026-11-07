@@ -14,4 +14,4 @@ The frontend's `web/schema.graphql` is pulled from the running backend by Houdin
 
 ## Pull requests
 
-Open the PR and leave it open: the user reviews and merges every PR. When work comes in parts, branch each part from the previous part's branch, and open each PR against that branch. A hook (`bin/block-pr-merge.sh`) blocks merge and auto-merge calls.
+Commit, push and open PRs only when the task asks for them. A PR you open stays open: the user reviews and merges every PR (a hook, `bin/block-pr-merge.sh`, blocks merge calls). For a PR that builds on another unmerged one, branch from that PR's branch and open the new PR against it.
