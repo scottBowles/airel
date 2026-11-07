@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
+from nucleus import ai
 from nucleus.ai_helpers import openai_titles_from_text_chat
 from nucleus.models import GameLog
 from nucleus.gdrive import fetch_airel_file_text
@@ -14,13 +15,12 @@ class Command(BaseCommand):
         for log in tqdm(logs):
             log_text = fetch_airel_file_text(log.google_id)
             try:
-                response = openai_titles_from_text_chat(log_text)
-                res_json = response["choices"][0]["message"]["content"]
+                res_json = openai_titles_from_text_chat(log_text)
                 obj = json.loads(res_json)
                 if len(obj["titles"]) > 5:
                     obj["titles"] = obj["titles"][:5]
                 for title in obj["titles"]:
                     log.ailogsuggestion_set.create(title=title)
-            except Exception as e:
+            except (ai.APIError, ValueError, KeyError) as e:
                 print(f"Error creating AI suggestion for {log}: {e}")
                 continue

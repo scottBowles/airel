@@ -2,13 +2,11 @@
 Tests for TranscriptionConfig class.
 """
 
-import os
 import tempfile
 import shutil
 from pathlib import Path
-from unittest.mock import patch
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from transcription.services.TranscriptionConfig import TranscriptionConfig
 
@@ -43,33 +41,12 @@ class TranscriptionConfigTests(TestCase):
             chunk_duration_minutes=5,
             delay_between_requests=10,
             recent_threshold_days=90,
-            openai_api_key="test_key",
         )
 
         self.assertEqual(config.max_file_size_mb, 15)
         self.assertEqual(config.chunk_duration_minutes, 5)
         self.assertEqual(config.delay_between_requests, 10)
         self.assertEqual(config.recent_threshold_days, 90)
-        self.assertEqual(config.openai_api_key, "test_key")
-
-    @patch("transcription.services.TranscriptionConfig.settings")
-    @patch("transcription.services.TranscriptionConfig.os")
-    def test_openai_key_from_environment(self, mock_os, mock_settings):
-        """Test that OpenAI API key is loaded from environment."""
-        # Make sure Django settings doesn't have the key
-        del mock_settings.OPENAI_API_KEY  # Simulate attribute not existing
-        # Mock environment variable
-        mock_os.getenv.return_value = "env_test_key"
-
-        config = TranscriptionConfig()
-        self.assertEqual(config.openai_api_key, "env_test_key")
-
-    @override_settings(OPENAI_API_KEY="settings_test_key")
-    def test_openai_key_from_settings(self):
-        """Test that OpenAI API key is loaded from Django settings."""
-        with patch.dict(os.environ, {}, clear=True):
-            config = TranscriptionConfig()
-            self.assertEqual(config.openai_api_key, "settings_test_key")
 
     def test_multiple_config_instances_independence(self):
         """Test that multiple config instances don't interfere with each other."""

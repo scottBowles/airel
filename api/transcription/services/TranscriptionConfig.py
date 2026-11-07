@@ -1,9 +1,3 @@
-import os
-from typing import Optional
-
-from django.conf import settings
-
-
 class TranscriptionConfig:
     """Configuration settings for transcription service."""
 
@@ -13,18 +7,12 @@ class TranscriptionConfig:
         chunk_duration_minutes: int = 1,
         delay_between_requests: int = 21,
         recent_threshold_days: int = 180,
-        openai_api_key: Optional[str] = None,
         enable_text_cleaning: bool = True,
         enable_audio_preprocessing: bool = True,
         repetition_detection_threshold: float = 0.4,
         max_allowed_repetitions: int = 3,
     ):
         """Initialize configuration settings."""
-
-        # API Configuration
-        self.openai_api_key = openai_api_key or getattr(
-            settings, "OPENAI_API_KEY", os.getenv("OPENAI_API_KEY")
-        )
 
         # File Processing
         self.max_file_size_mb = max_file_size_mb  # Buffer under 25MB Whisper limit

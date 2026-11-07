@@ -6,6 +6,8 @@ from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 
+from nucleus import ai
+
 from .content_processors import CONTENT_PROCESSORS, get_processor
 
 # from .models import ContentChunk, GameLogChunk
@@ -114,7 +116,7 @@ def process_content(
                     f"Created chunk {i+1}/{total_chunks} for {content_type} {object_id}"
                 )
 
-            except Exception as e:
+            except ai.APIError as e:
                 logger.error(
                     f"Failed to create chunk {i} for {content_type} {object_id}: {str(e)}"
                 )

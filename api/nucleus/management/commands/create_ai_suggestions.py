@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
+from nucleus import ai
 from nucleus.ai_helpers import openai_summarize_text_chat
 from nucleus.models import GameLog
 from nucleus.gdrive import fetch_airel_file_text
@@ -20,8 +21,7 @@ class Command(BaseCommand):
             log_text = fetch_airel_file_text(log.google_id)
             for i in range(3 - num_suggestions):
                 try:
-                    response = openai_summarize_text_chat(log_text)
-                    res_json = response["choices"][0]["message"]["content"]
+                    res_json = openai_summarize_text_chat(log_text)
                     obj = json.loads(res_json)
                     suggestion = log.ailogsuggestion_set.create(
                         title=obj["title"],
@@ -33,10 +33,9 @@ class Command(BaseCommand):
                         races=obj["races"],
                     )
                     print("Created AI suggestion with id", suggestion.id)
-                except Exception as e:
+                except (ai.APIError, ValueError, KeyError) as e:
                     try:
-                        response = openai_summarize_text_chat(log.summary)
-                        res_json = response["choices"][0]["message"]["content"]
+                        res_json = openai_summarize_text_chat(log.summary)
                         obj = json.loads(res_json)
                         suggestion = log.ailogsuggestion_set.create(
                             title=obj["title"],
@@ -50,7 +49,7 @@ class Command(BaseCommand):
                         print(
                             "Created AI suggestion from summary with id", suggestion.id
                         )
-                    except Exception as err:
+                    except (ai.APIError, ValueError, KeyError) as err:
                         print(
                             f"Error creating AI suggestion from summary for {log}: {err}"
                         )

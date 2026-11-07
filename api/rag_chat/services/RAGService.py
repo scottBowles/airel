@@ -8,12 +8,12 @@ from typing import Any, Dict, Generator, List, Optional
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
-from openai import OpenAI
 from pgvector.django import CosineDistance
 
 from association.models import Association
 from character.models import Character
 from item.models import Artifact, Item
+from nucleus import ai
 from nucleus.models import GameLog, Entity, Alias
 from nucleus.utils import dedupe_model_instances
 from place.models import Place
@@ -94,9 +94,6 @@ _CONTENT_TYPE_MODEL_MAP: dict[str, type] = {
     "race": Race,
     "association": Association,
 }
-
-# Initialize OpenAI client
-openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 @dataclass
@@ -206,7 +203,7 @@ class RAGService:
             )
             return results
 
-        except Exception as e:
+        except ai.APIError as e:
             logger.error(f"Semantic search failed: {str(e)}")
             return []
 
@@ -374,17 +371,15 @@ use of relevant entities, aliases, or prior context. Output only the enriched qu
             else contextmanager(lambda: (yield))()
         )
         with with_llm:
-            enhancement_response = openai_client.chat.completions.create(
-                model=enhancement_model,
-                messages=[
+            enhanced_search_query = ai.chat_completion_text(
+                [
                     {"role": "system", "content": system_prompt_for_query_enhancement},
                     {"role": "user", "content": user_prompt_for_query_enhancement},
                 ],
+                model=enhancement_model,
                 temperature=0.0,
             )
-        enhanced_search_query = (
-            enhancement_response.choices[0].message.content or query
-        ).strip()
+        enhanced_search_query = enhanced_search_query or query.strip()
         logger.info(f"Enhanced search query: {enhanced_search_query[:100]}...")
 
         return enhanced_search_query
@@ -732,9 +727,8 @@ Your goal: Be the ultimate space fantasy campaign ship's computer that understan
           {"type": "error", "error": "..."} on failure
         """
         try:
-            stream = openai_client.chat.completions.create(
-                model=self.model,
-                messages=[
+            stream = ai.chat_completion(
+                [
                     {"role": "system", "content": prepared_context.system_prompt},
                     {
                         "role": "assistant",
@@ -742,6 +736,7 @@ Your goal: Be the ultimate space fantasy campaign ship's computer that understan
                     },
                     {"role": "user", "content": query},
                 ],
+                model=self.model,
                 temperature=0.3,
                 max_completion_tokens=2000,
                 stream=True,
@@ -758,7 +753,7 @@ Your goal: Be the ultimate space fantasy campaign ship's computer that understan
 
             yield {"type": "done", "tokens_used": tokens_used}
 
-        except Exception as e:
+        except ai.APIError as e:
             logger.error(f"Streaming response failed: {str(e)}")
             yield {"type": "error", "error": str(e)}
 
@@ -802,13 +797,13 @@ Your goal: Be the ultimate space fantasy campaign ship's computer that understan
                 }
 
             t0 = time.perf_counter()
-            response = openai_client.chat.completions.create(
-                model=self.model,
-                messages=[
+            response = ai.chat_completion(
+                [
                     {"role": "system", "content": prepared.system_prompt},
                     {"role": "assistant", "content": prepared.assembled_context},
                     {"role": "user", "content": query},
                 ],
+                model=self.model,
                 temperature=0.3,
                 max_completion_tokens=2000,
             )
@@ -834,7 +829,7 @@ Your goal: Be the ultimate space fantasy campaign ship's computer that understan
             )
             return response_data
 
-        except Exception as e:
+        except ai.APIError as e:
             logger.error(f"Failed to generate response: {str(e)}")
             return {
                 "response": f"I encountered an error while processing your question: {str(e)}",

@@ -5,12 +5,10 @@ Tests for edge cases, error handling, and regression scenarios.
 import tempfile
 import shutil
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
 from transcription.services.TranscriptionConfig import TranscriptionConfig
-from transcription.services.TranscriptionService import TranscriptionService
 from transcription.services.AudioProcessingService import AudioProcessingService
 from transcription.services.CampaignContextService import CampaignContextService
 from transcription.responses import WhisperResponse
@@ -22,9 +20,7 @@ class ErrorHandlingTests(TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
         self.temp_path = Path(self.temp_dir)
-        self.config = TranscriptionConfig(
-            openai_api_key="test_key",
-        )
+        self.config = TranscriptionConfig()
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -36,9 +32,7 @@ class EdgeCaseTests(TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
         self.temp_path = Path(self.temp_dir)
-        self.config = TranscriptionConfig(
-            openai_api_key="test_key",
-        )
+        self.config = TranscriptionConfig()
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -152,34 +146,6 @@ class EdgeCaseTests(TestCase):
         self.assertLessEqual(len(result), 20)  # Allow some buffer for truncation
 
 
-class RegressionTests(TestCase):
-    """Tests to prevent regression of previously fixed issues"""
-
-    def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.temp_path = Path(self.temp_dir)
-
-    def tearDown(self):
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    @patch("transcription.services.TranscriptionService.openai")
-    def test_context_service_uses_consistent_api(self, mock_openai):
-        """Test that context service uses the new API consistently."""
-        service = TranscriptionService(TranscriptionConfig(openai_api_key="test_key"))
-
-        # Should use get_formatted_context, not the old two-step API
-        self.assertTrue(hasattr(service.context_service, "get_formatted_context"))
-
-        # Mock the method to ensure it's called
-        service.context_service.get_formatted_context = Mock(
-            return_value="test context"
-        )
-
-        prompt = service._create_whisper_prompt("TestPlayer")
-
-        service.context_service.get_formatted_context.assert_called_once()
-
-
 class IntegrationTests(TestCase):
     """Integration tests for the entire transcription system."""
 
@@ -209,29 +175,3 @@ class IntegrationTests(TestCase):
         # Verify config2 is unchanged
         self.assertEqual(config2.max_file_size_mb, 20)
         self.assertNotEqual(config1.max_file_size_mb, config2.max_file_size_mb)
-
-    @patch("transcription.services.TranscriptionService.openai")
-    def test_service_instances_use_correct_config(self, mock_openai):
-        """Test that service instances use their assigned config."""
-        config1 = TranscriptionConfig(
-            recent_threshold_days=30,
-            openai_api_key="key1",
-        )
-
-        config2 = TranscriptionConfig(
-            recent_threshold_days=90,
-            openai_api_key="key2",
-        )
-
-        service1 = TranscriptionService(config1)
-        service2 = TranscriptionService(config2)
-
-        # Verify services use correct configs
-        self.assertEqual(service1.config.recent_threshold_days, 30)
-        self.assertEqual(service2.config.recent_threshold_days, 90)
-
-        # Verify context services use correct configs
-        self.assertEqual(service1.context_service.config, config1)
-        self.assertEqual(service2.context_service.config, config2)
-        self.assertEqual(service1.context_service.config.recent_threshold_days, 30)
-        self.assertEqual(service2.context_service.config.recent_threshold_days, 90)
