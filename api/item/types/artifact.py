@@ -71,7 +71,7 @@ class ArtifactMutation:
     )
     def update_artifact(
         self,
-        info,
+        info: strawberry.Info,
         input: ArtifactInputPartial,
     ) -> Artifact:
         data = vars(input)

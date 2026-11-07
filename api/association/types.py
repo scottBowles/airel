@@ -71,7 +71,7 @@ class AssociationMutation:
     )
     def update_association(
         self,
-        info,
+        info: strawberry.Info,
         input: AssociationInputPartial,
     ) -> Association:
         data = vars(input)

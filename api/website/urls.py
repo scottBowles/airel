@@ -63,7 +63,11 @@ urlpatterns = [
     path("__debug__/", include("debug_toolbar.urls")),
     path(
         "graphiql/",
-        csrf_exempt(GraphQLView.as_view(schema=schema, graphiql=settings.DEBUG)),
+        csrf_exempt(
+            GraphQLView.as_view(
+                schema=schema, graphql_ide="graphiql" if settings.DEBUG else None
+            )
+        ),
     ),
     path(
         "graphql/",

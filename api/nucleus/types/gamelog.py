@@ -103,7 +103,7 @@ class GameLog(Lockable, relay.Node):
         Annotated["Race", strawberry.lazy("race.types.race")]
     ] = strawberry_django.connection()
     ai_suggestions: Optional[CombinedGameLogAiSummary] = strawberry.field(
-        resolver=lambda root, info: models.CombinedAiLogSuggestion(root)
+        resolver=lambda root: models.CombinedAiLogSuggestion(root)
     )
 
 
@@ -150,7 +150,7 @@ class GameLogQuery:
 
     @strawberry.field(permission_classes=[IsSuperuser])
     def ai_log_suggestions(
-        self, info, id: strawberry.relay.GlobalID
+        self, info: strawberry.Info, id: strawberry.relay.GlobalID
     ) -> GameLogAiSummary:
         gamelog = id.resolve_node_sync(info, ensure_type=models.GameLog)
         aiLogSummary = gamelog.get_ai_log_suggestions()
@@ -169,7 +169,7 @@ class GameLogQuery:
 @strawberry.type
 class GameLogMutation:
     @strawberry_django.mutation(permission_classes=[IsStaff])
-    def get_or_create_game_log(self, info, input: GetOrCreateGameLogInput) -> GameLog:
+    def get_or_create_game_log(self, info: strawberry.Info, input: GetOrCreateGameLogInput) -> GameLog:
         google_id = models.GameLog.get_id_from_url(input.url)
         log = models.GameLog.objects.get_or_create(google_id=google_id)[0]
         if input.lock:
@@ -181,7 +181,7 @@ class GameLogMutation:
     )
     def update_gamelog(
         self,
-        info,
+        info: strawberry.Info,
         input: GameLogInputPartial,
     ) -> GameLog:
         data = vars(input)
@@ -219,7 +219,7 @@ class GameLogMutation:
     @strawberry_django.input_mutation(permission_classes=[IsStaff])
     def add_ai_log_suggestion(
         self,
-        info,
+        info: strawberry.Info,
         id: strawberry.relay.GlobalID,
         title: str,
         brief: str,

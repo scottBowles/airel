@@ -87,7 +87,7 @@ class CharacterMutation:
     )
     def update_character(
         self,
-        info,
+        info: strawberry.Info,
         input: CharacterInputPartial,
     ) -> Character:
         data = vars(input)

@@ -69,7 +69,7 @@ class RaceMutation:
     )
     def update_race(
         self,
-        info,
+        info: strawberry.Info,
         input: RaceInputPartial,
     ) -> Race:
         data = vars(input)
