@@ -2,10 +2,14 @@
 # SessionStart hook (.claude/settings.json). Cloud sessions only; exits at once anywhere else.
 # Starts Postgres and Redis, writes placeholder .env files, installs api/ and web/ dependencies
 # when their manifests changed, and migrates the database. System tools come from bin/cloud-setup.sh.
+# Its stdout reaches the agent's context, so it ends with a one-line status; details go to $LOG.
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/..}" || exit 1
 
-log() { echo "cloud-session-start: $*" >&2; }
+LOG=/tmp/cloud-session-start.log
+exec 3>&1 >"$LOG" 2>&1 # keep stdout (fd 3) for the status line; everything else to the log
+failed=()
+log() { echo "cloud-session-start: $*"; failed+=("$*"); }
 sudo_() { if [ "$(id -u)" = 0 ]; then "$@"; else sudo "$@"; fi; }
 as_pg() { sudo_ su postgres -c "$1"; }
 hash_of() { cat "$@" 2>/dev/null | sha256sum | cut -d' ' -f1; }
@@ -71,4 +75,14 @@ if [ "$(cat web/node_modules/.deps-hash 2>/dev/null)" != "$web_hash" ]; then
 fi
 
 (cd api && .venv/bin/python manage.py migrate --noinput -v0) || log "migrate failed"
+
+# Houdini's generated runtime ($houdini), which vp check needs; vp dev/build/test also regenerate it.
+(cd web && vp exec houdini generate) || log "houdini generate failed"
+
+if [ ${#failed[@]} -eq 0 ]; then
+	echo "Cloud session ready: Postgres + pgvector, Redis, api/.venv, web/node_modules, migrations, \$houdini runtime. .env files hold placeholder keys only." >&3
+else
+	printf 'Cloud session setup had failures (details in %s):\n' "$LOG" >&3
+	printf -- '- %s\n' "${failed[@]}" >&3
+fi
 exit 0
