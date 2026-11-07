@@ -274,6 +274,10 @@ AUTHENTICATION_BACKENDS = [
 ALGOLIA = {
     "APPLICATION_ID": os.environ.get("ALGOLIA_APPLICATION_ID"),
     "API_KEY": os.environ.get("ALGOLIA_API_KEY"),
+    # Set ALGOLIA_AUTO_INDEXING=false for tests and keyless environments:
+    # otherwise every model save calls the Algolia API.
+    "AUTO_INDEXING": os.environ.get("ALGOLIA_AUTO_INDEXING", "true").lower()
+    != "false",
 }
 
 STRAWBERRY_DJANGO = {
