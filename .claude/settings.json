@@ -1,0 +1,35 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"permissions": {
+		"allow": [
+			"Bash(.venv/bin/python manage.py test:*)",
+			"Bash(api/.venv/bin/python api/manage.py test:*)",
+			"Bash(.venv/bin/python manage.py check:*)",
+			"Bash(.venv/bin/python manage.py makemigrations --check:*)",
+			"Bash(.venv/bin/black --check:*)",
+			"Bash(vp check:*)",
+			"Bash(vp test:*)",
+			"Bash(vp lint:*)",
+			"Bash(vp build:*)",
+			"Bash(git status:*)",
+			"Bash(git diff:*)",
+			"Bash(git log:*)",
+			"Bash(git show:*)",
+			"Bash(gh pr view:*)",
+			"Bash(gh pr checks:*)",
+			"Bash(gh run view:*)",
+			"Bash(gh run list:*)",
+			"mcp__svelte__get-documentation",
+			"mcp__svelte__list-sections",
+			"mcp__svelte__svelte-autofixer"
+		],
+		"deny": [
+			"Read(./api/.env)",
+			"Read(./web/.env)",
+			"Read(**/.env.local)",
+			"Read(**/.env.production)",
+			"Edit(./api/.env)",
+			"Edit(./web/.env)"
+		]
+	}
+}
