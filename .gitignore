@@ -20,3 +20,4 @@ node_modules/
 
 # Editors
 .idea/
+.claude/settings.local.json
