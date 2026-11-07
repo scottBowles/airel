@@ -13,7 +13,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 run="api/.venv/bin/honcho -f Procfile.dev start"
 
-osascript <<EOF
+osascript >/dev/null <<EOF
 tell application id "com.mitchellh.ghostty"
 	activate
 	set w to new window with configuration {initial working directory:"$root", initial input:"$run api" & linefeed}
