@@ -1,130 +1,75 @@
 """
-Tests for CampaignContextService class.
+Tests for CampaignContextService: the campaign context text that goes into Whisper prompts.
 """
 
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
 
-from transcription.services.TranscriptionConfig import TranscriptionConfig
+from association.models import Association
+from character.models import Character
+from item.models import Artifact
+from nucleus.models import GameLog
+from place.models import Place
+from race.models import Race
 from transcription.services.CampaignContextService import CampaignContextService
+from transcription.services.TranscriptionConfig import TranscriptionConfig
 
 
-class CampaignContextServiceTests(TestCase):
-    """Test the CampaignContextService with instance-based configuration."""
-
+class FormattedContextTests(TestCase):
     def setUp(self):
-        self.config = TranscriptionConfig(recent_threshold_days=30)
-        self.service = CampaignContextService(self.config)
+        self.service = CampaignContextService(
+            TranscriptionConfig(recent_threshold_days=30)
+        )
 
-    def test_initialization_with_config(self):
-        """Test that service initializes with config instance."""
-        self.assertEqual(self.service.config, self.config)
-        self.assertEqual(self.service.config.recent_threshold_days, 30)
+    def make_log(self, days_ago):
+        with patch("nucleus.models.GameLog.update_from_google"):
+            return GameLog.objects.create(
+                title=f"Log {days_ago}",
+                url=f"log-{days_ago}",
+                game_date=timezone.now() - timedelta(days=days_ago),
+            )
 
-    @patch("transcription.services.CampaignContextService.timezone")
-    def test_get_campaign_context_empty_database(self, mock_timezone):
-        """Test context fetching with empty database."""
-        mock_timezone.now.return_value = timezone.now()
+    def test_empty_database_gives_empty_context(self):
+        self.assertEqual(self.service.get_formatted_context(), "")
 
-        context = self.service.get_campaign_context()
+    def test_lists_entities_by_section(self):
+        elf = Race.objects.create(name="Elf")
+        Character.objects.create(name="Izar", race=elf)
+        Place.objects.create(name="Hielo")
+        Artifact.objects.create(name="ReDream")
+        Association.objects.create(name="The Branch")
 
-        expected_keys = ["characters", "places", "races", "items", "associations"]
-        for key in expected_keys:
-            self.assertIn(key, context)
-            self.assertEqual(context[key], [])
+        context = self.service.get_formatted_context()
 
-    def test_format_context_for_prompt_empty_context(self):
-        """Test prompt formatting with empty context."""
-        empty_context = {
-            "characters": [],
-            "places": [],
-            "races": [],
-            "items": [],
-            "associations": [],
-        }
+        self.assertIn("Key Characters: Izar (Elf)", context)
+        self.assertIn("Important Places: Hielo", context)
+        self.assertIn("Races: Elf", context)
+        self.assertIn("ReDream (artifact)", context)
+        self.assertIn("Organizations: The Branch", context)
 
-        result = self.service._format_context_for_prompt(empty_context)
-        self.assertEqual(result, "")
+    def test_recently_mentioned_characters_come_first(self):
+        old = Character.objects.create(name="Aardvark")
+        recent = Character.objects.create(name="Zed")
+        old.logs.add(self.make_log(days_ago=400))
+        recent.logs.add(self.make_log(days_ago=3))
 
-    def test_format_context_for_prompt_with_data(self):
-        """Test prompt formatting with sample data."""
-        context = {
-            "characters": [
-                {"name": "Gandalf", "race": "Wizard", "recently_mentioned": True},
-                {"name": "Legolas", "race": "Elf", "recently_mentioned": False},
-            ],
-            "places": [{"name": "Rivendell", "recently_mentioned": True}],
-            "races": [{"name": "Dwarf", "recently_mentioned": False}],
-            "items": [
-                {
-                    "name": "Ring of Power",
-                    "type": "artifact",
-                    "recently_mentioned": True,
-                }
-            ],
-            "associations": [{"name": "Fellowship", "recently_mentioned": True}],
-        }
+        context = self.service.get_formatted_context()
 
-        result = self.service._format_context_for_prompt(context)
+        self.assertLess(context.index("Zed"), context.index("Aardvark"))
 
-        # Check that all sections are included
-        self.assertIn("Key Characters:", result)
-        self.assertIn("Gandalf (Wizard)", result)
-        self.assertIn("Important Places:", result)
-        self.assertIn("Rivendell", result)
-        self.assertIn("Notable Items:", result)
-        self.assertIn("Ring of Power (artifact)", result)
-        self.assertIn("Organizations:", result)
-        self.assertIn("Fellowship", result)
+    def test_respects_max_length(self):
+        for i in range(50):
+            Character.objects.create(name=f"Character {i:02}")
 
-    def test_format_context_truncates_long_text(self):
-        """Test that long context is properly truncated."""
-        # Create context that will exceed max_length
-        long_characters = [
-            {"name": f"Character_{i}", "race": "Human", "recently_mentioned": False}
-            for i in range(50)
-        ]
-        context = {
-            "characters": long_characters,
-            "places": [],
-            "races": [],
-            "items": [],
-            "associations": [],
-        }
+        context = self.service.get_formatted_context(max_length=100)
 
-        result = self.service._format_context_for_prompt(context, max_length=100)
+        self.assertTrue(context)
+        self.assertLessEqual(len(context), 100)
 
-        self.assertLessEqual(len(result), 120)  # Allow some buffer for truncation logic
-        self.assertTrue(result.endswith("...") or result.endswith("."))
+    def test_zero_max_length_gives_empty_context(self):
+        Character.objects.create(name="Izar")
 
-    def test_format_context_with_max_length_zero(self):
-        """Test context formatting with max_length=0."""
-        context = {
-            "characters": [
-                {"name": "Test", "race": "Human", "recently_mentioned": True}
-            ],
-            "places": [],
-            "races": [],
-            "items": [],
-            "associations": [],
-        }
-
-        result = self.service._format_context_for_prompt(context, max_length=0)
-        self.assertEqual(result, "")
-
-    def test_format_context_with_very_small_max_length(self):
-        """Test context formatting with very small max_length."""
-        context = {
-            "characters": [
-                {"name": "Test", "race": "Human", "recently_mentioned": True}
-            ],
-            "places": [],
-            "races": [],
-            "items": [],
-            "associations": [],
-        }
-
-        result = self.service._format_context_for_prompt(context, max_length=10)
-        self.assertLessEqual(len(result), 20)  # Allow some buffer for truncation
+        self.assertEqual(self.service.get_formatted_context(max_length=0), "")

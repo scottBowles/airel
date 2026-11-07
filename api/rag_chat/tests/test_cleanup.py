@@ -2,7 +2,7 @@ import numpy as np
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
-from character.tests.factories import NPCFactory
+from character.models import Character
 from rag_chat.models import ContentChunk, EmbeddingRevision
 from rag_chat.tasks import cleanup_orphaned_chunks
 
@@ -25,7 +25,7 @@ class CleanupOrphanedChunksTests(TestCase):
         )
 
     def test_deletes_orphaned_chunks_and_revisions(self):
-        character = NPCFactory()
+        character = Character.objects.create(name="Izar")
         ct = ContentType.objects.get_for_model(character)
 
         # Create chunks and revisions for the real character
@@ -58,7 +58,7 @@ class CleanupOrphanedChunksTests(TestCase):
         )
 
     def test_keeps_revisions_when_no_orphans(self):
-        character = NPCFactory()
+        character = Character.objects.create(name="Izar")
         ct = ContentType.objects.get_for_model(character)
 
         self._make_chunk(ct, character.id)
@@ -74,7 +74,7 @@ class CleanupOrphanedChunksTests(TestCase):
     def test_revision_without_chunk_not_cleaned(self):
         """EmbeddingRevision cleanup is keyed off chunk object_ids, so a
         revision with no matching chunk won't be found by the current logic."""
-        character = NPCFactory()
+        character = Character.objects.create(name="Izar")
         ct = ContentType.objects.get_for_model(character)
 
         # Only a revision, no chunk
