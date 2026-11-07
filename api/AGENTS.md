@@ -10,10 +10,14 @@ Each app exposes `Query`/`Mutation` classes from its `types/` package (or `types
 
 ## Tests
 
-`.venv/bin/python manage.py test [app]` (Django's unittest runner; needs local Postgres).
+`ALGOLIA_AUTO_INDEXING=false .venv/bin/python manage.py test [app]` (Django's unittest runner; needs local Postgres).
 
-- **Algolia:** models in each app's `index.py` are registered with Algolia, so a model save calls the Algolia API whenever `.env` has Algolia keys. Run tests with `ALGOLIA["AUTO_INDEXING"] = False`.
-- **Known failures** on `main`, unrelated to your change: `graphql_jwt` imports and stale `TranscriptionService.openai` mocks. Compare against `main` before treating a failure as yours.
+- **Algolia:** models in each app's `index.py` are registered with Algolia, so with indexing on, every model save calls the Algolia API. `ALGOLIA_AUTO_INDEXING=false` turns that off; cloud sessions set it in their `.env`.
+- **Known failures** on `main`, unrelated to your change: `graphql_jwt` imports, stale `TranscriptionService.openai` mocks, `test_default_initialization`, and (when running as root, as cloud sessions do) `test_safe_save_json_file_permission_error`. Compare against `main` before treating a failure as yours.
+
+## Cloud sessions
+
+`bin/cloud-session-start.sh` (a SessionStart hook) starts Postgres and Redis, writes placeholder `.env` files and installs dependencies. The keys are placeholders, so OpenAI, R2 and Google calls fail: mock them in tests.
 
 ## Formatting
 
