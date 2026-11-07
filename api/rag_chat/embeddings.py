@@ -2,26 +2,14 @@ import hashlib
 import re
 from typing import Any, Dict, List, Optional
 
-from django.conf import settings
-from openai import OpenAI
-
-# Initialize OpenAI client
-
-openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+from nucleus import ai
 
 
 def get_embedding(text: str) -> List[float]:
     """
-    Get embedding using OpenAI's cheapest embedding model
+    Embed text with settings.OPENAI_EMBEDDINGS_MODEL. Raises ai.APIError on API failure.
     """
-    try:
-        response = openai_client.embeddings.create(
-            model=settings.OPENAI_EMBEDDINGS_MODEL,
-            input=text.strip(),
-        )
-        return response.data[0].embedding
-    except Exception as e:
-        raise Exception(f"Failed to get embedding: {str(e)}")
+    return ai.embed(text)
 
 
 def chunk_document(text: str, chunk_size: int = 800, overlap: int = 100) -> List[str]:

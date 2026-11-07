@@ -461,8 +461,7 @@ class GameLog(PessimisticConcurrencyLockModel, models.Model):
             return self.ailogsuggestion_set.first()
 
         text = self.get_text()
-        response = openai_summarize_text_chat(text)
-        json_res: str = response["choices"][0]["text"]
+        json_res: str = openai_summarize_text_chat(text)
 
         try:
             data = json.loads(json_res)

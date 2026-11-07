@@ -1,26 +1,11 @@
 import tempfile
 import time
 from pathlib import Path
-from typing import List, Optional, TypedDict
-from .AudioProcessingService import AudioData
-from django.conf import settings
-
-
-class TranscriptChunkDict(TypedDict):
-    transcript: dict  # Raw Whisper response (verbose_json)
-    chunk: AudioData  # AudioData object
-
-
-class CombinedTranscriptDict(TypedDict, total=False):
-    text: str
-    segments: List[dict]
-    chunks: List[dict]  # List of raw Whisper responses
-
-
-from openai import OpenAI
+from typing import BinaryIO, List, Optional, Protocol, TypedDict
 
 from pydub import AudioSegment
 
+from nucleus import ai
 from nucleus.models import GameLog, SessionAudio
 from transcription.models import AudioTranscript
 
@@ -31,21 +16,41 @@ from ..utils import ordinal
 from .CampaignContextService import CampaignContextService
 from .TranscriptCleaner import TranscriptCleaner
 from .TranscriptionConfig import TranscriptionConfig
-from .AudioProcessingService import AudioProcessingService
+from .AudioProcessingService import AudioData, AudioProcessingService
+
+
+class TranscriptChunkDict(TypedDict):
+    transcript: dict  # Raw Whisper response (verbose_json)
+    chunk: AudioData
+    chunk_number: int  # 1-based position among all chunks of the file
+
+
+class CombinedTranscriptDict(TypedDict, total=False):
+    text: str
+    segments: List[dict]
+    chunks: List[dict]  # List of raw Whisper responses
+
+
+class Transcriber(Protocol):
+    """Turns an audio file into a Whisper verbose_json response dict.
+
+    Raises ai.APIError when the transcription API fails.
+    """
+
+    def __call__(self, file: BinaryIO, *, prompt: Optional[str] = None) -> dict:
+        ...
 
 
 class TranscriptionService:
     """Main service for transcribing D&D audio files with campaign context."""
 
-    def __init__(self, config: Optional[TranscriptionConfig] = None):
+    def __init__(
+        self,
+        config: Optional[TranscriptionConfig] = None,
+        transcriber: Optional[Transcriber] = None,
+    ):
         self.config = config or TranscriptionConfig()
-
-        if not self.config.openai_api_key:
-            raise ValueError(
-                "OpenAI API key not found. Set OPENAI_API_KEY in settings or environment."
-            )
-
-        self.openai_client = OpenAI(api_key=self.config.openai_api_key)
+        self.transcriber: Transcriber = transcriber or ai.transcribe
 
         self.context_service = CampaignContextService(self.config)
         self.audio_service = AudioProcessingService(self.config)
@@ -109,15 +114,15 @@ class TranscriptionService:
                     # Convert segment times to original timeline using AudioData method
                     if hasattr(whisper_response, "segments"):
                         for segment in whisper_response.segments:
-                            segment["start"] = (
-                                chunk.convert_processed_to_original_timestamp(
-                                    segment["start"]
-                                )
+                            segment[
+                                "start"
+                            ] = chunk.convert_processed_to_original_timestamp(
+                                segment["start"]
                             )
-                            segment["end"] = (
-                                chunk.convert_processed_to_original_timestamp(
-                                    segment["end"]
-                                )
+                            segment[
+                                "end"
+                            ] = chunk.convert_processed_to_original_timestamp(
+                                segment["end"]
                             )
                     processing_time = time.time() - start_time
                     self._save_audio_transcript(
@@ -152,21 +157,22 @@ class TranscriptionService:
                         # Convert segment times to original timeline for this chunk using AudioData method
                         if hasattr(whisper_response, "segments"):
                             for segment in whisper_response.segments:
-                                segment["start"] = (
-                                    chunk.convert_processed_to_original_timestamp(
-                                        segment["start"]
-                                    )
+                                segment[
+                                    "start"
+                                ] = chunk.convert_processed_to_original_timestamp(
+                                    segment["start"]
                                 )
-                                segment["end"] = (
-                                    chunk.convert_processed_to_original_timestamp(
-                                        segment["end"]
-                                    )
+                                segment[
+                                    "end"
+                                ] = chunk.convert_processed_to_original_timestamp(
+                                    segment["end"]
                                 )
                         # Collect transcripts for processing
                         all_transcripts.append(
                             {
                                 "transcript": whisper_response.raw_response,
                                 "chunk": chunk,
+                                "chunk_number": i + 1,
                             }
                         )
 
@@ -196,11 +202,7 @@ class TranscriptionService:
                         num_chunks=len(audio_chunks),
                         processing_time=processing_time,
                     )
-                    self._save_transcript_chunks(
-                        audio_transcript,
-                        combined_transcript,
-                        [item["chunk"].file_path for item in all_transcripts],
-                    )
+                    self._save_transcript_chunks(audio_transcript, all_transcripts)
                     success = True
         finally:
             # Explicitly clean up all chunk temp files
@@ -281,41 +283,23 @@ class TranscriptionService:
     def _save_transcript_chunks(
         self,
         audio_transcript: AudioTranscript,
-        combined_transcript: CombinedTranscriptDict,
-        chunk_paths: List[Path],
+        transcribed_chunks: List[TranscriptChunkDict],
     ):
         """Save individual chunk data to database."""
-        chunk_transcripts = combined_transcript.get("chunks", [])
-
-        for i, (chunk_path, chunk_transcript) in enumerate(
-            zip(chunk_paths, chunk_transcripts)
-        ):
-            # Extract chunk data - chunk_transcript is already the raw transcript data
-            whisper_response = WhisperResponse(chunk_transcript)
-            chunk_text = whisper_response.text
-
-            # Set chunk timing offset based on chunk index and config
-            start_time_offset = i * self.config.chunk_duration_minutes * 60
-
-            # Get duration from segments if available
-            duration_seconds = 0.0
-            if whisper_response.segments:
-                last_segment = max(
-                    whisper_response.segments, key=lambda s: s.get("end", 0)
-                )
-                duration_seconds = last_segment.get("end", 0.0)
-
+        for item in transcribed_chunks:
+            chunk = item["chunk"]
             TranscriptChunk.objects.create(
                 transcript=audio_transcript,
-                chunk_number=i + 1,
-                filename=chunk_path.name,
-                start_time_offset=start_time_offset,
-                duration_seconds=duration_seconds,
-                chunk_text=chunk_text,
-                whisper_response=chunk_transcript,
+                chunk_number=item["chunk_number"],
+                filename=chunk.file_path.name,
+                # Where the chunk's audio starts in the original file
+                start_time_offset=chunk.convert_processed_to_original_timestamp(0.0),
+                duration_seconds=chunk.duration or 0.0,
+                chunk_text=WhisperResponse(item["transcript"]).text,
+                whisper_response=item["transcript"],
             )
 
-        print(f"✅ Saved {len(chunk_transcripts)} transcript chunks to database")
+        print(f"✅ Saved {len(transcribed_chunks)} transcript chunks to database")
 
     def _create_whisper_prompt(
         self,
@@ -384,16 +368,14 @@ class TranscriptionService:
         previous_transcript: str = "",
         session_notes: str = "",
     ) -> Optional[WhisperResponse]:
-        """Make a Whisper API call with validation and error handling."""
+        """Transcribe one file. Returns None if the API fails or the response is invalid."""
         try:
             with file_path.open("rb") as f:
                 print(f"Transcribing {file_path.name}...")
                 if chunk_info:
                     print(chunk_info)
-                response = self.openai_client.audio.transcribe(
-                    model="whisper-1",
-                    file=f,
-                    response_format="verbose_json",
+                response = self.transcriber(
+                    f,
                     prompt=self._create_whisper_prompt(
                         character_name,
                         chunk_info,
@@ -401,8 +383,6 @@ class TranscriptionService:
                         previous_transcript,
                         session_notes,
                     ),
-                    temperature=0,  # Keep low to reduce hallucinations
-                    language="en",
                 )
 
                 # Validate response structure using WhisperResponse
@@ -424,65 +404,35 @@ class TranscriptionService:
                     f.seek(0)  # Rewind file pointer before retry
                     try:
                         # Retry without prompt to reduce hallucinations
-                        response = self.openai_client.audio.transcribe(
-                            model="whisper-1",
-                            file=f,
-                            response_format="verbose_json",
-                            temperature=0,
-                            language="en",
-                        )
-                        whisper_response = WhisperResponse(response)
-                    except Exception as retry_exc:
+                        retry_response = WhisperResponse(self.transcriber(f))
+                    except ai.APIError as retry_exc:
                         print(
                             f"⚠️ Retry failed for {file_path.name}: {retry_exc}. Using first attempt's transcript."
                         )
                         # Return the original whisper_response from the first attempt
                         return whisper_response
+                    if retry_response.is_valid:
+                        return retry_response
 
                 return whisper_response
 
-        except Exception as e:
+        except ai.APIError as e:
             print(f"❌ Failed to transcribe {file_path.name}: {e}")
             return None
 
     def _create_combined_transcript(
         self, all_transcripts: List[dict]
-    ) -> Optional[CombinedTranscriptDict]:
-        """Create a combined transcript from multiple chunks. Pure function - no side effects."""
-        try:
-            # Safely extract text from all transcripts
-            text_parts = []
-            for transcript in all_transcripts:
-                whisper_response = WhisperResponse(transcript)
-                text = whisper_response.text
-                if text:
-                    text_parts.append(text)
-
-            combined_text = "\n\n".join(text_parts)
-            combined_transcript: CombinedTranscriptDict = {
-                "text": combined_text,
-                "segments": [],
-                "chunks": all_transcripts,
-            }
-
-            # Combine segments with time offsets
-            time_offset = 0
-            for transcript in all_transcripts:
-                whisper_response = WhisperResponse(transcript)
-                segments = whisper_response.segments
-                for segment in segments:
-                    adjusted_segment = segment.copy()
-                    adjusted_segment["start"] += time_offset
-                    adjusted_segment["end"] += time_offset
-                    combined_transcript["segments"].append(adjusted_segment)
-
-                time_offset += self.config.chunk_duration_minutes * 60
-
-            return combined_transcript
-
-        except Exception as e:
-            print(f"❌ Failed to create combined transcript: {e}")
-            return None
+    ) -> CombinedTranscriptDict:
+        """
+        Combine chunk transcripts into one. Segment times must already be on the
+        original file's timeline (process_session_audio maps them per chunk).
+        """
+        responses = [WhisperResponse(transcript) for transcript in all_transcripts]
+        return {
+            "text": "\n\n".join(r.text for r in responses if r.text),
+            "segments": [dict(seg) for r in responses for seg in r.segments],
+            "chunks": all_transcripts,
+        }
 
     @staticmethod
     def make_concat_prompt(gamelog: GameLog) -> str:
@@ -630,18 +580,15 @@ Session log:
         print("prompt:", prompt)
         import tiktoken
 
-        openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
         encoding = tiktoken.encoding_for_model(model)
         num_tokens = len(encoding.encode(prompt))
         print(f"Estimated token count: {num_tokens} tokens")
-        response = openai_client.chat.completions.create(
+        session_log = ai.chat_completion_text(
+            [{"role": "user", "content": prompt}],
             model=model,
-            messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=3500,
         )
-        session_log = response.choices[0].message.content.strip()
         gamelog.generated_log_text = session_log
         gamelog.save(update_fields=["generated_log_text"])
         return session_log
@@ -701,7 +648,6 @@ Session log:
         """
         if use_celery:
             try:
-
                 return process_session_audio_task.delay_on_commit(
                     session_audio.pk, previous_transcript, session_notes
                 )
@@ -745,7 +691,6 @@ Session log:
         """
         if use_celery:
             try:
-
                 return generate_session_log_task.delay_on_commit(
                     gamelog.id, method, model
                 )

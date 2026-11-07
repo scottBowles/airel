@@ -13,11 +13,15 @@ Each app exposes `Query`/`Mutation` classes from its `types/` package (or `types
 `ALGOLIA_AUTO_INDEXING=false .venv/bin/python manage.py test [app]` (Django's unittest runner; needs local Postgres).
 
 - **Algolia:** models in each app's `index.py` are registered with Algolia, so with indexing on, every model save calls the Algolia API. `ALGOLIA_AUTO_INDEXING=false` turns that off; cloud sessions set it in their `.env`.
-- **Known failures** on `main`, unrelated to your change: `graphql_jwt` imports, stale `TranscriptionService.openai` mocks, `test_default_initialization`, and (when running as root, as cloud sessions do) `test_safe_save_json_file_permission_error`. Compare against `main` before treating a failure as yours.
+- **Known failures** on `main`, unrelated to your change: `graphql_jwt` imports, `test_default_initialization`, and (when running as root, as cloud sessions do) `test_safe_save_json_file_permission_error`. Compare against `main` before treating a failure as yours.
 
 ## Cloud sessions
 
 `bin/cloud-session-start.sh` (a SessionStart hook) starts Postgres and Redis, writes placeholder `.env` files and installs dependencies. The keys are placeholders, so OpenAI, R2 and Google calls fail: mock them in tests.
+
+## OpenAI
+
+All OpenAI calls go through `nucleus/ai.py` (`transcribe`, `chat_completion`, `chat_completion_text`, `embed`); don't construct `OpenAI(...)` elsewhere. The client is built on first use. Catch `ai.APIError` around calls, not `Exception`. In tests, patch `nucleus.ai` functions or inject a fake (e.g. `TranscriptionService(transcriber=...)`); `nucleus/test_ai.py` checks the module against an autospec of the SDK.
 
 ## Formatting
 

@@ -3,16 +3,14 @@ from typing import List, Tuple
 
 from django.conf import settings
 from django.db import transaction
-from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
+
+from nucleus import ai
 
 from ..models import ChatMessage, ChatSession
 from ..utils import count_tokens
 
 logger = logging.getLogger(__name__)
-
-# Initialize OpenAI client
-openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 def _divide_messages(
@@ -106,18 +104,17 @@ def _format_prompt_messages_to_str(messages: List[ChatCompletionMessageParam]) -
 
 def _generate_new_summary(prompt: str, model: str) -> str:
     """EFFECT: LLM call. Generate a conversation summary from the given prompt."""
-    response = openai_client.chat.completions.create(
-        model=model,
-        messages=[
+    return ai.chat_completion_text(
+        [
             {
                 "role": "system",
                 "content": "You summarize past conversation context.",
             },
             {"role": "user", "content": prompt},
         ],
+        model=model,
         temperature=0.2,
     )
-    return (response.choices[0].message.content or "").strip()
 
 
 def build_conversation_memory(

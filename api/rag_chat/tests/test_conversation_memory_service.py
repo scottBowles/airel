@@ -216,15 +216,11 @@ class GetPromptMessagesStrTests(TestCase):
         )
         self.assertIn("Previously discussed dragons.", result)
 
-    @patch("rag_chat.services.build_conversation_memory.openai_client")
-    def test_summarization_triggered_when_over_limit(self, mock_openai):
-        # Set up mock LLM response
-        mock_choice = MagicMock()
-        mock_choice.message.content = "Summary of the conversation so far."
-        mock_response = MagicMock()
-        mock_response.choices = [mock_choice]
-        mock_openai.chat.completions.create.return_value = mock_response
-
+    @patch(
+        "nucleus.ai.chat_completion_text",
+        return_value="Summary of the conversation so far.",
+    )
+    def test_summarization_triggered_when_over_limit(self, mock_chat):
         # Create enough messages to exceed a very small limit
         for i in range(10):
             ChatMessage.objects.create(
@@ -241,7 +237,7 @@ class GetPromptMessagesStrTests(TestCase):
         )
 
         # LLM was called to generate summary
-        mock_openai.chat.completions.create.assert_called_once()
+        mock_chat.assert_called_once()
 
         # Summary was persisted to the session
         self.session.refresh_from_db()
@@ -259,11 +255,11 @@ class GetPromptMessagesStrTests(TestCase):
         # Result includes the new summary
         self.assertIn("Summary of the conversation so far.", result)
 
-    @patch("rag_chat.services.build_conversation_memory.openai_client")
-    def test_no_llm_call_when_under_limit(self, mock_openai):
+    @patch("nucleus.ai.chat_completion_text")
+    def test_no_llm_call_when_under_limit(self, mock_chat):
         ChatMessage.objects.create(session=self.session, message="hi", response="hello")
         build_conversation_memory(self.session, "new", max_tokens_before_summary=10000)
-        mock_openai.chat.completions.create.assert_not_called()
+        mock_chat.assert_not_called()
 
     def test_already_summarized_messages_excluded(self):
         ChatMessage.objects.create(
