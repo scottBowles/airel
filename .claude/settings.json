@@ -12,6 +12,26 @@
 					}
 				]
 			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "Bash",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash \"$CLAUDE_PROJECT_DIR\"/bin/block-pr-merge.sh"
+					}
+				]
+			},
+			{
+				"matcher": ".*[Mm]erge.*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo \"Blocked: in this repo agents don't merge pull requests or enable auto-merge. Leave the PR open; the user merges it.\" >&2; exit 2"
+					}
+				]
+			}
 		]
 	},
 	"permissions": {
