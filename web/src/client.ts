@@ -1,5 +1,4 @@
 import { HoudiniClient, type ClientPlugin } from '$houdini';
-import { env } from '$env/dynamic/public';
 import { decodeJwt } from '$lib/utils';
 import { browser } from '$app/environment';
 
@@ -56,6 +55,5 @@ const authPlugin: ClientPlugin = () => {
 };
 
 export default new HoudiniClient({
-	url: env.PUBLIC_GRAPHQL_ENDPOINT,
 	plugins: [authPlugin]
 });

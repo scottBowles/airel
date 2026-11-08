@@ -34,6 +34,7 @@
 	const updateMutation = graphql(`
 		mutation UpdateCharacterDetail($input: CharacterInputPartial!) {
 			updateCharacter(input: $input) {
+				__typename
 				... on Character {
 					id name description markdownNotes lockedBySelf
 					race { id name }

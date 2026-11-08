@@ -19,6 +19,7 @@
 	const createMutation = graphql(`
 		mutation CreateItem($input: ItemInput!) {
 			createItem(input: $input) {
+				__typename
 				... on Item { id name }
 				... on OperationInfo { messages { field kind message } }
 			}

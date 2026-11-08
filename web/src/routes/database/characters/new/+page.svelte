@@ -22,6 +22,7 @@
 	const createMutation = graphql(`
 		mutation CreateCharacter($input: CharacterInput!) {
 			createCharacter(input: $input) {
+				__typename
 				... on Character { id name }
 				... on OperationInfo { messages { field kind message } }
 			}

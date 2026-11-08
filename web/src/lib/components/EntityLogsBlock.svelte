@@ -35,6 +35,7 @@
 	const addLogMutation = graphql(`
 		mutation AddEntityLogMutation($input: AddEntityLogInput!) {
 			addEntityLog(input: $input) {
+				__typename
 				... on Artifact { id logs(first: 50, order: { gameDate: DESC }) { edges { node { id title gameDate } } } }
 				... on Association { id logs(first: 50, order: { gameDate: DESC }) { edges { node { id title gameDate } } } }
 				... on Character { id logs(first: 50, order: { gameDate: DESC }) { edges { node { id title gameDate } } } }
@@ -48,6 +49,7 @@
 	const removeLogMutation = graphql(`
 		mutation RemoveEntityLogMutation($input: RemoveEntityLogInput!) {
 			removeEntityLog(input: $input) {
+				__typename
 				... on Artifact { id logs(first: 50, order: { gameDate: DESC }) { edges { node { id title gameDate } } } }
 				... on Association { id logs(first: 50, order: { gameDate: DESC }) { edges { node { id title gameDate } } } }
 				... on Character { id logs(first: 50, order: { gameDate: DESC }) { edges { node { id title gameDate } } } }

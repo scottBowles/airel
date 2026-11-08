@@ -1,5 +1,6 @@
 query GameLogDetail($id: ID!) {
 	node(id: $id) {
+		__typename
 		... on GameLog {
 			id
 			title

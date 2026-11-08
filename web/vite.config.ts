@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 import houdini from 'houdini/vite';
 
 export default defineConfig({
+	// Expose PUBLIC_* on import.meta.env so houdini.config.js can bake in PUBLIC_GRAPHQL_ENDPOINT.
+	envPrefix: ['VITE_', 'PUBLIC_'],
 	staged: {
 		'*': 'vp check --fix'
 	},

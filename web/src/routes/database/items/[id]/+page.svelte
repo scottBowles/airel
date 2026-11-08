@@ -28,6 +28,7 @@
 	const updateMutation = graphql(`
 		mutation UpdateItemDetail($input: ItemInputPartial!) {
 			updateItem(input: $input) {
+				__typename
 				... on Item {
 					id name description markdownNotes lockedBySelf
 					relatedCharacters(first: 50) { edges { node { id name } } }
