@@ -20,8 +20,8 @@ done
 
 # Validate Dockerfile
 echo -e "\n📦 Validating Dockerfile..."
-if grep -q "FROM python:3.11-slim" Dockerfile; then
-    echo "✅ Using Python 3.11 slim base image"
+if grep -q "FROM python:3.14-slim" Dockerfile; then
+    echo "✅ Using Python 3.14 slim base image"
 else
     echo "❌ Incorrect base image"
 fi
