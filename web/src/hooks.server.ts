@@ -42,7 +42,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.user = null;
 	}
 
-	const response = await resolve(event);
+	const response = await resolve(event, {
+		// Houdini 2.0 reads content-type from GraphQL responses fetched during SSR, and SvelteKit
+		// only lets a load's fetch read headers listed here.
+		filterSerializedResponseHeaders: (name) => name === 'content-type'
+	});
 
 	// Fix for Google Sign-In popup communication
 	response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
