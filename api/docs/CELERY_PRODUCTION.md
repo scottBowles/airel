@@ -117,7 +117,7 @@ You can use the included `docker-compose.yml` for multi-service deployment:
 ```
 
 The included `Dockerfile` is configured for production deployment with:
-- Python 3.11 slim base image
+- Python 3.14 slim base image
 - System dependencies (build tools, PostgreSQL client, FFmpeg)
 - Application code and requirements
 - Proper working directory and environment setup

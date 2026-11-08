@@ -13,7 +13,7 @@ export DEBIAN_FRONTEND=noninteractive
 npm install -g --silent vite-plus || echo "cloud-setup: vite-plus install failed" >&2 &
 
 # Python for api/ (see api/runtime.txt).
-uv python install 3.12 || echo "cloud-setup: python 3.12 install failed" >&2 &
+uv python install 3.14 || echo "cloud-setup: python 3.14 install failed" >&2 &
 
 wait
 exit 0
