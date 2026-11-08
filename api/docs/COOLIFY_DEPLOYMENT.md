@@ -115,6 +115,7 @@ For now, **Method 1 (Docker Compose) is strongly recommended**.
 | `CLOUDFLARE_R2_*` | R2 storage config | -       |
 | `GOOGLE_API_KEY`  | Google API key    | -       |
 | `ALGOLIA_*`       | Search config     | -       |
+| `ALGOLIA_AUTO_INDEXING` | `false` turns off indexing on save and the startup reindex | `true` |
 
 ## Service Communication
 
