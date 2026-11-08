@@ -17,6 +17,7 @@
 	const getOrCreateGameLog = graphql(`
 		mutation CreateNewGameLog($input: GetOrCreateGameLogInput!) {
 			getOrCreateGameLog(input: $input) {
+				__typename
 				... on GameLog {
 					id
 					title

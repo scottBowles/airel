@@ -25,6 +25,7 @@
 	const createMutation = graphql(`
 		mutation CreatePlace($input: PlaceInput!) {
 			createPlace(input: $input) {
+				__typename
 				... on Place { id name }
 				... on OperationInfo { messages { field kind message } }
 			}

@@ -33,6 +33,7 @@
 	const getOrCreateGameLog = graphql(`
 		mutation CreateNewGameLogInline($input: GetOrCreateGameLogInput!) {
 			getOrCreateGameLog(input: $input) {
+				__typename
 				... on GameLog {
 					id
 					title

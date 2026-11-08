@@ -19,6 +19,7 @@
 	const createMutation = graphql(`
 		mutation CreateAssociation($input: AssociationInput!) {
 			createAssociation(input: $input) {
+				__typename
 				... on Association { id name }
 				... on OperationInfo { messages { field kind message } }
 			}

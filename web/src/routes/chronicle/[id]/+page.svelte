@@ -116,6 +116,7 @@
 	const updateMutation = graphql(`
 		mutation UpdateGameLogDetail($input: GameLogInputPartial!) {
 			updateGamelog(input: $input) {
+				__typename
 				... on GameLog {
 					id
 					title

@@ -35,6 +35,7 @@
 	const updateMutation = graphql(`
 		mutation UpdatePlaceDetail($input: PlaceInputPartial!) {
 			updatePlace(input: $input) {
+				__typename
 				... on Place {
 					id name description markdownNotes placeType lockedBySelf
 					parent { id name placeType }

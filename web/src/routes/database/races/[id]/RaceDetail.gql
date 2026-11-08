@@ -1,5 +1,6 @@
 query RaceDetail($id: ID!) {
 	node(id: $id) {
+		__typename
 		... on Race {
 			id
 			name

@@ -19,6 +19,7 @@
 	const createMutation = graphql(`
 		mutation CreateRace($input: RaceInput!) {
 			createRace(input: $input) {
+				__typename
 				... on Race { id name }
 				... on OperationInfo { messages { field kind message } }
 			}

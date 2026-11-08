@@ -31,6 +31,7 @@
 	const addImageMutation = graphql(`
 		mutation EntityAddImage($input: EntityAddImageInput!) {
 			entityAddImage(input: $input) {
+				__typename
 				... on Artifact { id imageIds }
 				... on Association { id imageIds }
 				... on Character { id imageIds }
@@ -44,6 +45,7 @@
 	const setImageIdsMutation = graphql(`
 		mutation EntitySetImageIds($input: EntitySetImageIdsInput!) {
 			entitySetImageIds(input: $input) {
+				__typename
 				... on Artifact { id imageIds }
 				... on Association { id imageIds }
 				... on Character { id imageIds }

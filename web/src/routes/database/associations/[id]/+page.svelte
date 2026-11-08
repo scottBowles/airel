@@ -29,6 +29,7 @@
 	const updateMutation = graphql(`
 		mutation UpdateAssociationDetail($input: AssociationInputPartial!) {
 			updateAssociation(input: $input) {
+				__typename
 				... on Association {
 					id name description markdownNotes lockedBySelf
 					characters(first: 50) { edges { node { id name } } }
