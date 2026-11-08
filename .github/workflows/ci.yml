@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: pgvector/pgvector:pg16 # matches production
+        image: pgvector/pgvector:pg18 # local dev and the relaunched production database
         env:
           POSTGRES_USER: airel
           POSTGRES_DB: airel
