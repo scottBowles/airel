@@ -1,0 +1,14 @@
+# Installed and generated inside the image.
+node_modules
+build
+.svelte-kit
+.houdini
+.vitest
+coverage
+
+# Local env files would leak into the build (Vite loads .env), so keep them out.
+.env
+.env.*
+
+.git
+.DS_Store
