@@ -10,6 +10,8 @@ Monorepo for a tabletop-RPG campaign app.
 
 `Procfile.dev` defines the dev processes with fixed ports: `api` (8000), `web` (5173), `worker` (Celery). Start them with `api/.venv/bin/honcho -f Procfile.dev start [api|web|worker]`; with no name, all three start. Postgres and Redis must already be running.
 
+To see a change in the running app, signed in as a test user (Google sign-in can't be automated), use the `verify-ui` skill (`.claude/skills/verify-ui/SKILL.md`).
+
 The frontend's `web/schema.graphql` is pulled from the running backend by Houdini. A change to a GraphQL type in `api/` usually needs matching query and UI changes in `web/`, so do both in the same change.
 
 ## Pull requests
