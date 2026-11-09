@@ -42,6 +42,7 @@ from race.types import (
     RaceMutation,
     # TraitMutation,
 )
+from nucleus.types.search import SearchQuery
 from rag_chat.types import RAGQuery, RAGMutation
 
 
@@ -84,6 +85,7 @@ queries = (
     # SkillQuery,
     # TraitQuery,
     RAGQuery,
+    SearchQuery,
     # UserQuery,
     UserQueries,
     NodeQuery,

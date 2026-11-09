@@ -2,7 +2,6 @@
 	import { onMount, untrack } from 'svelte';
 	import { goto, preloadData } from '$app/navigation';
 	import { page } from '$app/state';
-	import { env } from '$env/dynamic/public';
 	import { cn } from '$lib/utils';
 	import { filterCommands, getCategoryLabel, getCombinedRecents, recordCommandUsage, recordEntityVisit, type Command, type CommandCategory, type RecentItem } from '$lib/commands';
 	import Search from '@lucide/svelte/icons/search';
@@ -16,7 +15,7 @@
 	import Dna from '@lucide/svelte/icons/dna';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Clock from '@lucide/svelte/icons/clock';
-	import { algoliasearch } from 'algoliasearch';
+	import { createEntitySearch, type EntitySearchHit } from '$lib/entitySearch';
 	import { Dialog } from 'bits-ui';
 
 	let {
@@ -28,14 +27,14 @@
 	} = $props();
 
 	let query = $state('');
-	let entityResults = $state<Array<{ objectID: string; name: string; type: string; description?: string; global_id?: string }>>([]);
+	let entityResults = $state<EntitySearchHit[]>([]);
 	let selectedIndex = $state(0);
 	let inputEl = $state<HTMLInputElement | null>(null);
 	let searching = $state(false);
 
-	const client = algoliasearch(env.PUBLIC_ALGOLIA_APP_ID, env.PUBLIC_ALGOLIA_SEARCH_API_KEY);
+	const runSearch = createEntitySearch();
 
-	// ── Algolia entity search ──
+	// ── Entity search ──
 
 	const typeIcons: Record<string, typeof Search> = {
 		character: Users,
@@ -61,12 +60,13 @@
 		return typeIcons[type.toLowerCase()] ?? Search;
 	}
 
-	function getEntityRoute(hit: { objectID: string; type: string; global_id?: string }) {
+	function getEntityRoute(hit: { id: string; type: string }) {
 		const base = typeRoutes[hit.type.toLowerCase()] ?? '/database';
-		return `${base}/${hit.global_id ?? hit.objectID}`;
+		return `${base}/${hit.id}`;
 	}
 
-	const indexNames = ['Association', 'Artifact', 'Character', 'Item', 'Place', 'Race'];
+	// All six entity types, ranked together by the API (exact, prefix, substring, similarity).
+	const SEARCH_LIMIT = 15;
 
 	async function searchEntities(q: string) {
 		if (!q.trim()) {
@@ -74,27 +74,11 @@
 			return;
 		}
 		searching = true;
-		try {
-			const { results: searchResults } = await client.search({
-				requests: indexNames.map((indexName) => ({ indexName, query: q, hitsPerPage: 5 })),
-			});
-			const merged: typeof entityResults = [];
-			for (let i = 0; i < searchResults.length; i++) {
-				const res = searchResults[i];
-				if ('hits' in res) {
-					const typeName = indexNames[i].toLowerCase();
-					for (const hit of res.hits as Array<{ objectID: string; name: string; description?: string; global_id?: string }>) {
-						merged.push({ ...hit, type: typeName });
-					}
-				}
-			}
-			entityResults = merged;
-			selectedIndex = 0;
-		} catch {
-			entityResults = [];
-		} finally {
-			searching = false;
-		}
+		const hits = await runSearch(q, { limit: SEARCH_LIMIT });
+		if (hits === null) return; // superseded by a newer search
+		entityResults = hits;
+		selectedIndex = 0;
+		searching = false;
 	}
 
 	// ── Command filtering ──
@@ -186,7 +170,7 @@
 			}
 		} else {
 			const route = getEntityRoute(item.hit);
-			recordEntityVisit({ id: item.hit.global_id ?? item.hit.objectID, name: item.hit.name, type: item.hit.type, route });
+			recordEntityVisit({ id: item.hit.id, name: item.hit.name, type: item.hit.type, route });
 			navigateToPath(route);
 		}
 	}

@@ -990,6 +990,15 @@ input EntitySetImageIdsInput {
   imageIds: [String!]!
 }
 
+enum EntityType {
+  ARTIFACT
+  ASSOCIATION
+  CHARACTER
+  ITEM
+  PLACE
+  RACE
+}
+
 """EquipmentTraits(id, item, brief_description)"""
 type EquipmentTraits implements Node {
   briefDescription: String!
@@ -2022,6 +2031,11 @@ type Query {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): RaceConnection!
+
+  """
+  Entities whose name or an alias matches the query, best first: exact, then prefix, then substring, then trigram similarity (for typos).
+  """
+  search(limit: Int! = 10, query: String!, types: [EntityType!] = null): [SearchHit!]!
   searchContent(contentTypes: [String!] = null, limit: Int = 10, query: String!, similarityThreshold: Float = null): [ContentChunkType!]!
 }
 
@@ -2298,6 +2312,14 @@ type RevokeRefreshTokenType {
 
 input RevokeTokenInput {
   refreshToken: String!
+}
+
+type SearchHit {
+  description: String
+  id: ID!
+  name: String!
+  thumbnail: String
+  type: EntityType!
 }
 
 input SendChatMessageInput {

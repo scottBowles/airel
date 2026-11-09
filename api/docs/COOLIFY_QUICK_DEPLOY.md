@@ -66,8 +66,6 @@ Copy from `.env.template` and set appropriate values:
 - `OPENAI_API_KEY`
 - `CLOUDFLARE_R2_*` (for file storage)
 - `GOOGLE_API_KEY`
-- `ALGOLIA_*` (for search)
-- `ALGOLIA_AUTO_INDEXING=false` while the Algolia app is unavailable: model saves and the startup reindex otherwise fail
 
 ## 🏥 Health Checks
 

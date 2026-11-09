@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
-	import { algoliasearch } from 'algoliasearch';
+	import { createEntitySearch, type EntitySearchHit } from '$lib/entitySearch';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 
@@ -17,14 +16,14 @@
 	} = $props();
 
 	let query = $state('');
-	let results = $state<Array<{ objectID: string; name: string; global_id?: string }>>([]);
+	let results = $state<EntitySearchHit[]>([]);
 	let showDropdown = $state(false);
 	let searching = $state(false);
 	let inputEl = $state<HTMLInputElement | null>(null);
 	let activeIndex = $state(-1);
 	let listboxId = $state(`ep-listbox-${Math.random().toString(36).slice(2, 8)}`);
 
-	const client = algoliasearch(env.PUBLIC_ALGOLIA_APP_ID, env.PUBLIC_ALGOLIA_SEARCH_API_KEY);
+	const runSearch = createEntitySearch();
 
 	async function search(q: string) {
 		if (!q.trim()) {
@@ -32,22 +31,14 @@
 			return;
 		}
 		searching = true;
-		try {
-			const { results: searchResults } = await client.search({
-				requests: [{ indexName: entityType, query: q, hitsPerPage: 10 }],
-			});
-			const res = searchResults[0];
-			if (res && 'hits' in res) {
-				results = (res.hits as Array<{ objectID: string; name: string; global_id?: string }>)
-					.filter((h) => !exclude.includes(h.global_id ?? h.objectID));
-			} else {
-				results = [];
-			}
-		} catch {
-			results = [];
-		} finally {
-			searching = false;
-		}
+		// Ask for extra hits so up to 10 remain after dropping the excluded ones.
+		const hits = await runSearch(q, {
+			types: [entityType.toUpperCase() as Uppercase<typeof entityType>],
+			limit: 10 + exclude.length,
+		});
+		if (hits === null) return; // superseded by a newer search
+		results = hits.filter((h) => !exclude.includes(h.id)).slice(0, 10);
+		searching = false;
 	}
 
 	let debounceTimer: ReturnType<typeof setTimeout>;
@@ -59,7 +50,7 @@
 	}
 
 	function select(hit: (typeof results)[number]) {
-		onselect({ id: hit.global_id ?? hit.objectID, name: hit.name });
+		onselect({ id: hit.id, name: hit.name });
 		query = '';
 		results = [];
 		showDropdown = false;
