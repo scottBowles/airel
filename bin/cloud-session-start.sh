@@ -1,7 +1,7 @@
 #!/bin/bash
 # SessionStart hook (.claude/settings.json). Cloud sessions only; exits at once anywhere else.
 # Starts Postgres and Redis, writes placeholder .env files, installs api/ and web/ dependencies
-# when their manifests changed, migrates and seeds the database, and downloads Chromium. System tools come from bin/cloud-setup.sh.
+# when their manifests changed, migrates and seeds the database, and checks headless Chromium. System tools come from bin/cloud-setup.sh.
 # Its stdout reaches the agent's context, so it ends with a one-line status; details go to $LOG.
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/..}" || exit 1
@@ -43,6 +43,11 @@ if [ ! -f web/.env ]; then
 PUBLIC_GRAPHQL_ENDPOINT=http://127.0.0.1:8000/graphql/
 EOF
 fi
+# The search UI throws without these, so every page 500s. Also added to a web/.env from an
+# earlier session. (Remove with Algolia, #54.)
+for key in PUBLIC_ALGOLIA_APP_ID PUBLIC_ALGOLIA_SEARCH_API_KEY; do
+	grep -q "^$key=" web/.env || echo "$key=placeholder" >>web/.env || log "web/.env $key failed"
+done
 
 # api/ dependencies, reinstalled only when the requirements or this script change.
 api_hash=$(hash_of api/requirements.txt api/requirements-dev.txt "$0")
@@ -57,10 +62,13 @@ if [ "$(cat api/.venv/.deps-hash 2>/dev/null)" != "$api_hash" ]; then
 	fi
 fi
 
-# NLTK data that rag_chat loads at import time (same set as api/Dockerfile).
-[ -d "$HOME/nltk_data/corpora/stopwords" ] ||
-	api/.venv/bin/python -m nltk.downloader -q -d "$HOME/nltk_data" punkt punkt_tab averaged_perceptron_tagger averaged_perceptron_tagger_eng stopwords 2>/dev/null ||
-	log "nltk data download failed"
+# NLTK data that rag_chat loads at import time (same set as api/Dockerfile). NLTK refuses to
+# download through a proxy unless NLTK_ALLOW_PROXIED_URLOPEN is set, and the downloader can
+# exit 0 without the data, so check the directory afterwards.
+if [ ! -d "$HOME/nltk_data/corpora/stopwords" ]; then
+	NLTK_ALLOW_PROXIED_URLOPEN=1 api/.venv/bin/python -m nltk.downloader -q -d "$HOME/nltk_data" punkt punkt_tab averaged_perceptron_tagger averaged_perceptron_tagger_eng stopwords
+	[ -d "$HOME/nltk_data/corpora/stopwords" ] || log "nltk data download failed"
+fi
 
 # web/ dependencies, same rule.
 web_hash=$(hash_of web/package.json web/pnpm-lock.yaml "$0")
@@ -80,14 +88,20 @@ fi
 # Sign-in users dm and player plus a small world (the verify-ui skill).
 (cd api && .venv/bin/python manage.py seed_dev) || log "seed_dev failed"
 
-# Headless Chromium for web/scripts/browse.ts; a no-op once downloaded.
-(cd web && vp exec playwright install chromium --only-shell >/dev/null) || log "chromium download failed"
+# Headless Chromium for web/scripts/browse.ts. The proxy blocks Playwright's download host, so
+# browse.ts uses the Chromium preinstalled under $PLAYWRIGHT_BROWSERS_PATH; check it launches.
+(cd web && node scripts/browse.ts --check-browser) || log "chromium check failed (node web/scripts/browse.ts --check-browser)"
+
+# bin/cloud-setup.sh falls back to Postgres 16 when the PGDG repo is unreachable; production is 18.
+pg_version=$(as_pg "psql -tAc 'SHOW server_version_num'" 2>/dev/null | cut -c1-2)
+pg_note=
+[ "$pg_version" = 18 ] || pg_note=" (not 18 as in production: bin/cloud-setup.sh fell back)"
 
 # Houdini's generated runtime ($houdini), which vp check needs; vp dev/build/test also regenerate it.
 (cd web && vp exec houdini generate) || log "houdini generate failed"
 
 if [ ${#failed[@]} -eq 0 ]; then
-	echo "Cloud session ready: Postgres + pgvector, Redis, api/.venv, web/node_modules, migrations, seed users dm/player, Chromium, \$houdini runtime. To check UI, use the verify-ui skill. .env files hold placeholder keys only." >&3
+	echo "Cloud session ready: Postgres ${pg_version:-?}${pg_note} + pgvector, Redis, api/.venv, web/node_modules, migrations, seed users dm/player, Chromium, \$houdini runtime. To check UI, use the verify-ui skill. .env files hold placeholder keys only." >&3
 else
 	printf 'Cloud session setup had failures (details in %s):\n' "$LOG" >&3
 	printf -- '- %s\n' "${failed[@]}" >&3

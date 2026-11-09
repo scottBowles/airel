@@ -36,7 +36,9 @@ The web app renews the 5-minute access token from the refresh token (7 days), so
 node scripts/browse.ts /database/characters --as dm --out /tmp/characters.png
 ```
 
-It signs in, loads the page, saves a screenshot and prints status, title, console errors, failed requests and visible text. Options: `--as dm|player|anon`, `--width 390` for phone width, `--full-page`, `--max-text`. Read the screenshot to look at it. If Chromium is missing: `vp exec playwright install chromium --only-shell`.
+It signs in, loads the page, saves a screenshot and prints status, title, console errors, failed requests and visible text. Options: `--as dm|player|anon`, `--width 390` for phone width, `--full-page`, `--max-text`. Read the screenshot to look at it.
+
+Chromium: it uses Playwright's own browser when installed, else `$BROWSE_CHROMIUM_PATH`, else a Chromium preinstalled under `$PLAYWRIGHT_BROWSERS_PATH` (default `/opt/pw-browsers`; cloud sessions use this, since the proxy blocks Playwright's download host). `node scripts/browse.ts --check-browser` prints which one launches. Locally, if none is found: `vp exec playwright install chromium --only-shell`.
 
 ## 4. Report
 

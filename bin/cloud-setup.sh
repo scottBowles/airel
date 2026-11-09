@@ -23,7 +23,8 @@ install_postgres() {
 }
 
 # System libraries for headless Chromium (web/scripts/browse.ts, the verify-ui skill). The
-# session hook downloads the browser itself; keep this version equal to web/package.json's.
+# browser itself is preinstalled in the cloud image (see web/scripts/browse.ts); keep this
+# version equal to web/package.json's.
 install_chromium_deps() {
 	npx -y playwright@1.64.1 install-deps chromium >/dev/null || echo "cloud-setup: chromium deps install failed" >&2
 }
@@ -34,8 +35,16 @@ install_chromium_deps() {
 # Vite+ (vp) toolchain for web/. The session hook pins it to the lockfile's version.
 npm install -g --silent vite-plus || echo "cloud-setup: vite-plus install failed" >&2 &
 
-# Python for api/ (see api/runtime.txt).
-uv python install 3.14 || echo "cloud-setup: python 3.14 install failed" >&2 &
+# Python for api/ (see api/runtime.txt). Retried: the download has timed out (504) before.
+install_python() {
+	for attempt in 1 2 3; do
+		uv python install 3.14 && return
+		echo "cloud-setup: python 3.14 install attempt $attempt failed" >&2
+		sleep $((attempt * 5))
+	done
+	echo "cloud-setup: python 3.14 install failed" >&2
+}
+install_python &
 
 wait
 exit 0
