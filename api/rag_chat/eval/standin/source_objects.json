@@ -1,0 +1,49 @@
+[
+  {
+    "model": "nucleus.gamelog",
+    "pk": 101,
+    "fields": {
+      "title": "Stand-in log 2019-04-04",
+      "url": "https://example.invalid/eval/standin/2019-04-04",
+      "google_id": "eval-standin-2019-04-04",
+      "game_date": "2019-04-04T00:00:00Z",
+      "session_number": 1,
+      "summary": "Stand-in summary of the 2019-04-04 session.",
+      "full_text": "When everyone sees Carlos, Carlos’ skin cycles until landing on a beautiful lady with mocha skin. Izar: “Do we still call you Carlos?” Carlos: “Hmm. You can call me… Ego.”\n\nIzar has the egg stone and parchment. Ego recognizes it! It is from the diagram of the Solar Cannon in the Codex. It’s one of the nine power cells needed to charge the Cannon.\n\nHrothulf learned about his family. “I learned my family has somewhat been reduced.”\n\nEgo tries to communicate with Atchi. “Atchi, how are things going out there?” “Ah, well, I got Scruffy in check like three or four different times.”"
+    }
+  },
+  {
+    "model": "nucleus.gamelog",
+    "pk": 102,
+    "fields": {
+      "title": "Stand-in log 2022-12-19",
+      "url": "https://example.invalid/eval/standin/2022-12-19",
+      "google_id": "eval-standin-2022-12-19",
+      "game_date": "2022-12-19T00:00:00Z",
+      "session_number": 2,
+      "summary": "Stand-in summary of the 2022-12-19 session.",
+      "full_text": "We are in the Thestal Halls of Heorot(!) There are two floors. In the middle is a courtyard that is also a balcony at the higher level.\n\nWe start in room 1 (though DM is adamant that the number system is arbitrary and just for us, and has no hidden meaning). Inside is an elegant bathhouse and spa."
+    }
+  },
+  {
+    "model": "nucleus.gamelog",
+    "pk": 103,
+    "fields": {
+      "title": "Stand-in log 2023-06-05",
+      "url": "https://example.invalid/eval/standin/2023-06-05",
+      "google_id": "eval-standin-2023-06-05",
+      "game_date": "2023-06-05T00:00:00Z",
+      "session_number": 3,
+      "summary": "Stand-in summary of the 2023-06-05 session.",
+      "full_text": "The scene as it stands: bots encroaching seemingly nonstop, 3 bombs placed and armed, obnoxious buzzing of the island.\n\nHrothulf rage-attacks the nearest bot between himself and Izar with Watermelon’s Wail, and the bot is obliterated."
+    }
+  },
+  {
+    "model": "character.character",
+    "pk": 101,
+    "fields": {
+      "name": "Ego",
+      "description": "A Slaad who once went by Carlos."
+    }
+  }
+]

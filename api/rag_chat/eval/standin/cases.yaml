@@ -1,0 +1,91 @@
+# Stand-in eval cases: hand-written, not generated.
+#
+# These run against standin/chunks.json, a few lines taken from the example
+# logs with small fake vectors in place of real embeddings. They prove the
+# harness (loading, retrieval through RAGService.semantic_search, context
+# assembly, expected failures) without an OpenAI key, so they always run in CI.
+# They say nothing about real retrieval quality; ../cases.yaml does that.
+#
+# Vector axes: [lore, family, location, combat, Ego, Atchi, (unused)]. The
+# loader zero-pads them to 1536 dimensions, which leaves cosine similarity as is.
+#
+# Source ids: gamelog 101, 102, 103 are the 2019-04-04, 2022-12-19 and
+# 2023-06-05 logs; character 101 is Ego. The shared id 101 is on purpose:
+# matching must go by content type as well as id.
+
+cases:
+  - id: standin-solar-cannon
+    query: What is the glowing egg stone Izar found?
+    query_embedding: [1, 0, 0, 0, 0, 0]
+    expected_source_content_type: gamelog
+    expected_source_ids: [101]
+    eval_type: retrieval
+    difficulty: easy
+    notes: Lore extraction. A single chunk is clearly the best match.
+
+  - id: standin-alias-carlos
+    query: Who is Carlos now?
+    query_embedding: [0, 0, 0, 0, 1, 0]
+    expected_source_content_type: character
+    expected_source_ids: [101]
+    eval_type: retrieval
+    difficulty: medium
+    notes: >-
+      Alias resolution. The Ego character must be retrieved, not only the log
+      with the same id 101.
+
+  - id: standin-hrothulf-across-sessions
+    query: What has Hrothulf been through across our sessions?
+    query_embedding: [0, 1, 0, 0.5, 0, 0]
+    expected_source_content_type: gamelog
+    expected_source_ids: [101, 103]
+    eval_type: retrieval
+    difficulty: hard
+    notes: Cross-session thread. Both logs must be in the top 5.
+
+  - id: standin-nothing-matches
+    query: What did the party learn about the dragon queen of the moon?
+    query_embedding: [0, 0, 0, 0, 0, 0, 1]
+    expected_source_content_type: gamelog
+    expected_source_ids: []
+    eval_type: retrieval
+    difficulty: easy
+    notes: Negative case. The query is orthogonal to every chunk, so nothing passes the similarity threshold.
+    max_top_similarity: 0.1
+
+  - id: standin-thestal-halls
+    query: What are the Thestal Halls of Heorot like?
+    query_embedding: [0, 0, 1, 0, 0, 0]
+    expected_source_content_type: gamelog
+    expected_source_ids: [102]
+    eval_type: context_assembly
+    difficulty: easy
+    notes: Location exploration. The full log text reaches the context.
+    expected_content:
+      - Thestal Halls of Heorot
+
+  - id: standin-ego-and-atchi
+    query: How do Ego and Atchi talk to each other?
+    query_embedding: [0, 0, 0, 0, 0.5, 1]
+    expected_source_content_type: gamelog
+    expected_source_ids: [101]
+    eval_type: context_assembly
+    difficulty: medium
+    notes: Character relationship.
+    expected_content:
+      - Atchi, how are things going out there?
+
+  - id: standin-room-1-without-dm-notes
+    query: What happened in room 1?
+    query_embedding: [0, 0, 0.9, 0, 0, 0]
+    expected_source_content_type: gamelog
+    expected_source_ids: [102]
+    eval_type: context_assembly
+    difficulty: hard
+    notes: >-
+      OOC filtering. The log is retrieved, but its full text, DM aside
+      included, goes into the context, so the forbidden text is there: a known
+      gap, run as an expected failure.
+    forbidden_content:
+      - DM is adamant
+    known_gap: true

@@ -1,0 +1,126 @@
+# Retrieval eval cases over the three example logs in .ideas/example_logs/.
+#
+# Source ids are fixed by LOGS in generate_fixtures.py:
+#   gamelog 1 = 2019-04-04, gamelog 2 = 2022-12-19, gamelog 3 = 2023-06-05.
+#
+# query_embedding is written by generate_fixtures.py; a new case starts as
+# `query_embedding: null`. Until every case has one and fixtures/ exists, the
+# tests over these cases skip. Edit anything else by hand.
+#
+# Keys beyond the spec's case shape (all optional):
+#   expected_content    substrings the assembled context must contain
+#   forbidden_content   substrings the assembled context must not contain
+#   max_top_similarity  every top-5 chunk must score at or below this
+#   known_gap           true runs the case as an expected failure: the pipeline
+#                       is known to fail it today. When it starts passing, the
+#                       test fails as an unexpected success; drop the flag then.
+
+cases:
+  - id: solar-cannon-power-cell
+    query: What did Ego say the glowing egg stone was?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [1]
+    eval_type: retrieval
+    difficulty: easy
+    notes: >-
+      Lore extraction. In the 2019-04-04 log Ego recognizes the egg stone as one
+      of the nine power cells needed to charge the Solar Cannon.
+
+  - id: carlos-becomes-ego
+    query: What happened when Carlos showed his true form?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [1]
+    eval_type: retrieval
+    difficulty: medium
+    notes: >-
+      Alias resolution. Carlos reveals a Slaad form and asks to be called Ego
+      (2019-04-04); later logs only say Ego.
+
+  - id: hrothulf-family
+    query: What did Hrothulf learn about his family?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [1]
+    eval_type: retrieval
+    difficulty: medium
+    notes: >-
+      Entity state. Hrothulf says his family "has somewhat been reduced"
+      (2019-04-04). Hrothulf is in all three logs, so the name alone is no help.
+
+  - id: thestal-halls-of-heorot
+    query: What are the Thestal Halls of Heorot like?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [2]
+    eval_type: context_assembly
+    difficulty: easy
+    notes: >-
+      Location exploration. The 2022-12-19 log opens in the Halls and walks
+      through their rooms.
+    expected_content:
+      - Thestal Halls of Heorot
+
+  - id: island-bot-fight
+    query: How did the fight against the bots on the island go?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [3]
+    eval_type: retrieval
+    difficulty: easy
+    notes: Combat recall. The 2023-06-05 log is one long fight with bots on an island.
+
+  - id: hrothulf-across-sessions
+    query: What has Hrothulf been doing across our sessions?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [1, 2, 3]
+    eval_type: retrieval
+    difficulty: hard
+    notes: >-
+      Cross-session thread. The spec's example is the Solar Cannon across logs,
+      but these three logs name it only once (2019-04-04), so this follows
+      Hrothulf, who is in all three, instead.
+
+  - id: ego-and-atchi
+    query: How do Ego and Atchi keep in touch while apart?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [1]
+    eval_type: context_assembly
+    difficulty: medium
+    notes: >-
+      Character relationship. Ego checks in on Atchi, who is outside, by
+      sending a message (2019-04-04).
+    expected_content:
+      - Atchi, how are things going out there?
+
+  - id: room-1-without-dm-notes
+    query: What happened in room 1?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: [2]
+    eval_type: context_assembly
+    difficulty: hard
+    notes: >-
+      OOC filtering. Room 1 of the Halls is the spa (2022-12-19). The same
+      sentence has a DM aside about room numbers, which should stay out of the
+      context. Whole logs go into the context today, aside included, so this is
+      a known gap.
+    forbidden_content:
+      - DM is adamant
+    known_gap: true
+
+  - id: dragon-queen-does-not-exist
+    query: What did the party learn about the dragon queen Valtheria of the moon?
+    query_embedding: null
+    expected_source_content_type: gamelog
+    expected_source_ids: []
+    eval_type: retrieval
+    difficulty: hard
+    notes: >-
+      Negative case. Nothing in the logs is about this, so no chunk should
+      score high. The bound is a first guess; set it from the scores the first
+      generated run reports.
+    max_top_similarity: 0.45
