@@ -17,7 +17,7 @@ from .models import ContentChunk, EmbeddingRevision
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True, max_retries=3, rate_limit="30/m")
 def process_content(
     self, content_type: str, object_id: str, force_reprocess: bool = False
 ):

@@ -19,6 +19,7 @@ from item.models import Artifact, Item
 from nucleus.models import Alias, GameLog
 from place.models import Place
 from race.models import Race
+from rag_chat.signals import disconnect_embedding_signals
 
 SEED_LOG_URL_PREFIX = "https://seed.airel.invalid/logs/"
 
@@ -105,7 +106,8 @@ class Command(BaseCommand):
         if not settings.DEBUG:
             raise CommandError("seed_dev only runs with DEBUG on (development).")
 
-        with transaction.atomic():
+        # The embedding signals would queue a process_content task per saved row.
+        with disconnect_embedding_signals(), transaction.atomic():
             self.seed_users()
             other_logs = GameLog.objects.exclude(url__startswith=SEED_LOG_URL_PREFIX)
             if other_logs.exists() and not world:
