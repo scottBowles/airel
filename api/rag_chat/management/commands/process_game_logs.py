@@ -176,7 +176,7 @@ class Command(BaseCommand):
 
                     status_style = (
                         self.style.SUCCESS
-                        if result["status"] == "success"
+                        if result["status"] == "processed"
                         else self.style.WARNING
                     )
                     self.stdout.write(
