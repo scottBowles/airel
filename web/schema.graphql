@@ -1155,6 +1155,7 @@ type GameLog implements Lockable & Node {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): RaceConnection!
+  sessionNumber: Int
   synopsis: String
   title: String
   url: String!

@@ -74,6 +74,7 @@ class GameLog(Lockable, relay.Node):
     title: auto
     google_id: auto
     game_date: auto
+    session_number: auto
     brief: auto
     synopsis: auto
     # summary: auto
