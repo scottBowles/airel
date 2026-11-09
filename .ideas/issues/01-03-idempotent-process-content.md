@@ -11,13 +11,13 @@ Integrate the `EmbeddingRevision` model and `compute_source_hash` into the exist
 
 ## Acceptance Criteria
 
-- [ ] At the start of `process_content`, compute the current source hash via the processor's `compute_source_hash(obj)`.
-- [ ] Look up `EmbeddingRevision` for the `(content_type, object_id)` pair.
-- [ ] If `EmbeddingRevision.source_hash` matches and `force_reprocess=False`: return early with `{"status": "skipped", "reason": "hash_unchanged"}`. Do not delete or recreate chunks.
-- [ ] Remove (or keep as fallback) the existing `existing_chunks.exists()` skip check — the hash check supersedes it.
-- [ ] After successful chunk creation: upsert `EmbeddingRevision` with the new hash (using `update_or_create`).
-- [ ] `force_reprocess=True` bypasses the hash check entirely (existing behavior preserved).
-- [ ] Integration tests (mock `get_embedding` to return a fixed vector):
+- [x] At the start of `process_content`, compute the current source hash via the processor's `compute_source_hash(obj)`.
+- [x] Look up `EmbeddingRevision` for the `(content_type, object_id)` pair.
+- [x] If `EmbeddingRevision.source_hash` matches and `force_reprocess=False`: return early with `{"status": "skipped", "reason": "hash_unchanged"}`. Do not delete or recreate chunks.
+- [x] Remove (or keep as fallback) the existing `existing_chunks.exists()` skip check — the hash check supersedes it.
+- [x] After successful chunk creation: upsert `EmbeddingRevision` with the new hash (using `update_or_create`).
+- [x] `force_reprocess=True` bypasses the hash check entirely (existing behavior preserved).
+- [x] Integration tests (mock `get_embedding` to return a fixed vector):
   - First call: creates chunks + `EmbeddingRevision`. Returns `"status": "processed"`.
   - Second call (same content): returns `"status": "skipped", "reason": "hash_unchanged"`. No new chunks.
   - Change a tracked field, call again: deletes old chunks, creates new ones, updates hash.

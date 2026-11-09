@@ -27,7 +27,11 @@ def process_content(
     Args:
         content_type: Type of content (gamelog, character, place, etc.)
         object_id: ID of the object to process
-        force_reprocess: If True, delete existing chunks and reprocess
+        force_reprocess: If True, reprocess even if the source hash is unchanged
+
+    Skips with {"status": "skipped", "reason": "hash_unchanged"} when the
+    object's source hash matches its EmbeddingRevision. Otherwise replaces the
+    object's chunks and records the new hash.
     """
     try:
         # Get the appropriate model and processor
@@ -49,25 +53,26 @@ def process_content(
             f"Processing {content_type}: {getattr(obj, 'name', getattr(obj, 'title', object_id))}"
         )
 
-        # Check if already processed (unless forcing reprocess)
-        existing_chunks = ContentChunk.objects.filter(
+        # Skip if the source content hasn't changed since it was last embedded.
+        # The hash covers exactly the fields the processor embeds, so an
+        # unchanged hash means re-embedding would produce the same chunks.
+        source_hash = processor.compute_source_hash(obj)
+        revision = EmbeddingRevision.objects.filter(
             content_type=content_type_obj, object_id=object_id
-        )
+        ).first()
 
-        if not force_reprocess and existing_chunks.exists():
-            logger.info(f"{content_type} {object_id} already processed. Skipping.")
+        if (
+            not force_reprocess
+            and revision is not None
+            and revision.source_hash == source_hash
+        ):
+            logger.info(f"{content_type} {object_id} unchanged. Skipping.")
             return {
                 "status": "skipped",
+                "reason": "hash_unchanged",
                 "content_type": content_type,
                 "object_id": object_id,
-                "message": "Already processed",
             }
-
-        # If forcing reprocess, delete existing chunks
-        if force_reprocess:
-            deleted_count = existing_chunks.count()
-            existing_chunks.delete()
-            logger.info(f"Deleted {deleted_count} existing chunks for reprocessing")
 
         # Process the content
         try:
@@ -91,43 +96,77 @@ def process_content(
                 "message": f"Content processing failed: {str(e)}",
             }
 
-        # Create chunks with embeddings
-        created_chunks = []
+        # Embed every chunk before touching the database, so the old chunks stay
+        # in place while the (slow) embedding calls run.
         total_chunks = len(chunk_data)
-
+        embedded_chunks = []
         for i, (chunk_text, metadata) in enumerate(chunk_data):
             try:
-                # Get embedding
                 embedding = get_embedding(chunk_text)
-
-                # Create the chunk record
-                with transaction.atomic():
-                    chunk_obj = ContentChunk.objects.create(
-                        content_type=content_type_obj,
-                        object_id=object_id,
-                        chunk_text=chunk_text,
-                        chunk_index=i,
-                        embedding=embedding,
-                        metadata=metadata,
-                    )
-                    created_chunks.append(chunk_obj.id)
-
-                logger.info(
-                    f"Created chunk {i+1}/{total_chunks} for {content_type} {object_id}"
-                )
-
             except ai.APIError as e:
                 logger.error(
                     f"Failed to create chunk {i} for {content_type} {object_id}: {str(e)}"
                 )
                 continue
+            embedded_chunks.append((i, chunk_text, metadata, embedding))
+            logger.info(
+                f"Embedded chunk {i+1}/{total_chunks} for {content_type} {object_id}"
+            )
+
+        if not embedded_chunks:
+            # Every embedding call failed: keep the old chunks rather than
+            # replacing them with nothing.
+            return {
+                "status": "error",
+                "content_type": content_type,
+                "object_id": object_id,
+                "message": "Embedding failed for every chunk",
+            }
+
+        all_chunks_embedded = len(embedded_chunks) == total_chunks
+
+        # Swap the old chunks for the new ones in one transaction.
+        with transaction.atomic():
+            deleted_count, _ = ContentChunk.objects.filter(
+                content_type=content_type_obj, object_id=object_id
+            ).delete()
+            if deleted_count:
+                logger.info(
+                    f"Deleted {deleted_count} existing chunks for {content_type} {object_id}"
+                )
+
+            created_chunks = [
+                ContentChunk.objects.create(
+                    content_type=content_type_obj,
+                    object_id=object_id,
+                    chunk_text=chunk_text,
+                    chunk_index=i,
+                    embedding=embedding,
+                    metadata=metadata,
+                ).id
+                for i, chunk_text, metadata, embedding in embedded_chunks
+            ]
+
+            # Only record the hash when every chunk was embedded. After a partial
+            # failure the next run must not skip this object.
+            if all_chunks_embedded:
+                EmbeddingRevision.objects.update_or_create(
+                    content_type=content_type_obj,
+                    object_id=object_id,
+                    defaults={"source_hash": source_hash},
+                )
+            elif revision is not None:
+                EmbeddingRevision.objects.filter(pk=revision.pk).update(
+                    source_hash=None
+                )
 
         logger.info(
-            f"Successfully processed {content_type} {object_id}: {len(created_chunks)} chunks created"
+            f"Processed {content_type} {object_id}: "
+            f"{len(created_chunks)}/{total_chunks} chunks created"
         )
 
         return {
-            "status": "success",
+            "status": "processed",
             "content_type": content_type,
             "object_id": object_id,
             "chunks_created": len(created_chunks),
