@@ -4,15 +4,20 @@
 // and a screenshot. For agents without a browser pane (cloud sessions); see the
 // verify-ui skill. Needs the api and web dev servers, `manage.py seed_dev`, and Chromium
 // (`vp exec playwright install chromium --only-shell`, or --with-deps on a bare Linux box).
+// When Playwright's own browser isn't installed (cloud sessions, where its download host is
+// blocked), it uses $BROWSE_CHROMIUM_PATH or a Chromium preinstalled under
+// $PLAYWRIGHT_BROWSERS_PATH (default /opt/pw-browsers).
 //
 //   node scripts/browse.ts /database/characters
 //   node scripts/browse.ts /chronicle --as player --out /tmp/chronicle.png --width 390
 //   node scripts/browse.ts / --as anon
+//   node scripts/browse.ts --check-browser   # launch Chromium, print its path, exit
 import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { chromium } from 'playwright';
+import { chromium, type Browser } from 'playwright';
 
 const { values, positionals } = parseArgs({
 	allowPositionals: true,
@@ -22,7 +27,8 @@ const { values, positionals } = parseArgs({
 		width: { type: 'string', default: '1280' },
 		height: { type: 'string', default: '800' },
 		'full-page': { type: 'boolean', default: false },
-		'max-text': { type: 'string', default: '4000' }
+		'max-text': { type: 'string', default: '4000' },
+		'check-browser': { type: 'boolean', default: false }
 	}
 });
 
@@ -39,7 +45,43 @@ function devLoginTokens(username: string): { access_token: string; refresh_token
 	return JSON.parse(output.trim().split('\n').at(-1) ?? '');
 }
 
-const browser = await chromium.launch();
+// Preinstalled Chromium builds, newest first: headless shells, then full Chromium.
+function preinstalledChromium(): string[] {
+	const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
+	if (!existsSync(root)) return [];
+	const builds = (prefix: string, binary: string) =>
+		readdirSync(root)
+			.filter((name) => new RegExp(`^${prefix}-\\d+$`).test(name))
+			.sort((a, b) => Number(b.split('-').at(-1)) - Number(a.split('-').at(-1)))
+			.map((name) => resolve(root, name, binary))
+			.filter((path) => existsSync(path));
+	return [
+		...builds('chromium_headless_shell', 'chrome-headless-shell-linux64/chrome-headless-shell'),
+		...builds('chromium', 'chrome-linux64/chrome')
+	];
+}
+
+// $BROWSE_CHROMIUM_PATH, else Playwright's own browser, else a preinstalled one.
+async function launchChromium(): Promise<{ browser: Browser; executable: string }> {
+	const override = process.env.BROWSE_CHROMIUM_PATH;
+	if (override)
+		return { browser: await chromium.launch({ executablePath: override }), executable: override };
+	try {
+		return { browser: await chromium.launch(), executable: 'playwright default' };
+	} catch (error) {
+		if (!String(error).includes("Executable doesn't exist")) throw error;
+		const executable = preinstalledChromium()[0];
+		if (!executable) throw error;
+		return { browser: await chromium.launch({ executablePath: executable }), executable };
+	}
+}
+
+const { browser, executable } = await launchChromium();
+if (values['check-browser']) {
+	console.log(`chromium: ${executable} (${browser.version()})`);
+	await browser.close();
+	process.exit(0);
+}
 const context = await browser.newContext({
 	viewport: { width: Number(values.width), height: Number(values.height) }
 });
