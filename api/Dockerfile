@@ -22,7 +22,8 @@ RUN apt-get update && apt-get install -y \
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Install Python dependencies
+# Install Python dependencies. requirements.txt is a full lockfile compiled from
+# requirements.in (see AGENTS.md), so this installs exactly the pinned set.
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt

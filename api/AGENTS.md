@@ -23,6 +23,16 @@ Each app exposes `Query`/`Mutation` classes from its `types/` package (or `types
 
 All OpenAI calls go through `nucleus/ai.py` (`transcribe`, `chat_completion`, `chat_completion_text`, `embed`); don't construct `OpenAI(...)` elsewhere. The client is built on first use. Catch `ai.APIError` around calls, not `Exception`. In tests, patch `nucleus.ai` functions or inject a fake (e.g. `TranscriptionService(transcriber=...)`); `nucleus/test_ai.py` checks the module against an autospec of the SDK.
 
+## Dependencies
+
+Direct dependencies live in `requirements.in` (the app) and `requirements-dev.in` (dev tools). `requirements.txt` and `requirements-dev.txt` are lockfiles generated from them by `./lock-requirements.sh` (`uv pip compile`): every package, transitive ones included, is pinned. Don't edit the `.txt` files by hand; CI reruns the script and fails if they differ.
+
+- **Add:** put the package in the right `.in` file (no version unless you need a bound, and then say why in a comment), run `./lock-requirements.sh`, then `uv pip sync --python .venv/bin/python requirements.txt requirements-dev.txt`.
+- **Upgrade one package:** `./lock-requirements.sh --upgrade-package <name>` (repeatable), then sync. `--upgrade` upgrades everything; keep that to its own change.
+- **Remove:** delete it from the `.in` file, rerun the script, then sync (sync also uninstalls what the lockfiles no longer list).
+
+Commit the `.in` and `.txt` changes together.
+
 ## Formatting
 
 black, default settings.

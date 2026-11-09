@@ -42,10 +42,12 @@ jobs:
         with:
           python-version: "3.14" # api/runtime.txt
           enable-cache: true
-          cache-dependency-glob: api/requirements*.txt
+          cache-dependency-glob: api/requirements*.txt # the lockfiles
       # ffmpeg for transcription's audio splitting (pydub).
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
-      - run: uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt -r requirements-dev.txt
+      # The .txt files are lockfiles compiled from requirements*.in: fail if they're stale.
+      - run: ./lock-requirements.sh && git diff --exit-code requirements.txt requirements-dev.txt
+      - run: uv venv .venv && uv pip sync --python .venv/bin/python requirements.txt requirements-dev.txt
       # NLTK data that rag_chat loads at import time (same set as api/Dockerfile).
       - run: .venv/bin/python -m nltk.downloader -q -d "$HOME/nltk_data" punkt punkt_tab averaged_perceptron_tagger averaged_perceptron_tagger_eng stopwords
       - run: .venv/bin/python manage.py check
