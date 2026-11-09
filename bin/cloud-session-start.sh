@@ -1,7 +1,7 @@
 #!/bin/bash
 # SessionStart hook (.claude/settings.json). Cloud sessions only; exits at once anywhere else.
 # Starts Postgres and Redis, writes placeholder .env files, installs api/ and web/ dependencies
-# when their manifests changed, and migrates the database. System tools come from bin/cloud-setup.sh.
+# when their manifests changed, migrates and seeds the database, and downloads Chromium. System tools come from bin/cloud-setup.sh.
 # Its stdout reaches the agent's context, so it ends with a one-line status; details go to $LOG.
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/..}" || exit 1
@@ -77,12 +77,17 @@ if [ "$(cat web/node_modules/.deps-hash 2>/dev/null)" != "$web_hash" ]; then
 fi
 
 (cd api && .venv/bin/python manage.py migrate --noinput -v0) || log "migrate failed"
+# Sign-in users dm and player plus a small world (the verify-ui skill).
+(cd api && .venv/bin/python manage.py seed_dev) || log "seed_dev failed"
+
+# Headless Chromium for web/scripts/browse.ts; a no-op once downloaded.
+(cd web && vp exec playwright install chromium --only-shell >/dev/null) || log "chromium download failed"
 
 # Houdini's generated runtime ($houdini), which vp check needs; vp dev/build/test also regenerate it.
 (cd web && vp exec houdini generate) || log "houdini generate failed"
 
 if [ ${#failed[@]} -eq 0 ]; then
-	echo "Cloud session ready: Postgres + pgvector, Redis, api/.venv, web/node_modules, migrations, \$houdini runtime. .env files hold placeholder keys only." >&3
+	echo "Cloud session ready: Postgres + pgvector, Redis, api/.venv, web/node_modules, migrations, seed users dm/player, Chromium, \$houdini runtime. To check UI, use the verify-ui skill. .env files hold placeholder keys only." >&3
 else
 	printf 'Cloud session setup had failures (details in %s):\n' "$LOG" >&3
 	printf -- '- %s\n' "${failed[@]}" >&3
