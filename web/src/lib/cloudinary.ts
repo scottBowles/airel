@@ -8,7 +8,11 @@ let cld: Cloudinary | null = null;
 function getCloudinary() {
 	if (!cld) {
 		cld = new Cloudinary({
-			cloud: { cloudName: env.PUBLIC_CLOUDINARY_CLOUD_NAME }
+			cloud: { cloudName: env.PUBLIC_CLOUDINARY_CLOUD_NAME },
+			// The SDK's `_a` analytics param encodes the runtime (Node on the server, the
+			// browser on the client), so URLs differed between SSR and hydration and Svelte
+			// warned `hydration_attribute_changed` on every <img src>. See #62.
+			url: { analytics: false }
 		});
 	}
 	return cld;
