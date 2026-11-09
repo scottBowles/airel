@@ -1,0 +1,9 @@
+query SearchEntities($query: String!, $types: [EntityType!], $limit: Int!) {
+	search(query: $query, types: $types, limit: $limit) {
+		id
+		name
+		type
+		description
+		thumbnail
+	}
+}

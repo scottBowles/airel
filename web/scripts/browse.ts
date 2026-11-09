@@ -1,7 +1,7 @@
 /// <reference types="node" />
 // Open a page of the running web app in headless Chromium, signed in as a dev user, and
-// report what loaded: status, title, visible text, console and page errors, failed requests,
-// and a screenshot. For agents without a browser pane (cloud sessions); see the
+// report what loaded: status, title, visible text, console errors and warnings, page errors,
+// failed requests, and a screenshot. For agents without a browser pane (cloud sessions); see the
 // verify-ui skill. Needs the api and web dev servers, `manage.py seed_dev`, and Chromium
 // (`vp exec playwright install chromium --only-shell`, or --with-deps on a bare Linux box).
 // When Playwright's own browser isn't installed (cloud sessions, where its download host is
@@ -101,9 +101,11 @@ if (values.as !== 'anon') {
 
 const page = await context.newPage();
 const consoleErrors: string[] = [];
+const consoleWarnings: string[] = [];
 const failedRequests: string[] = [];
 page.on('console', (message) => {
 	if (message.type() === 'error') consoleErrors.push(message.text());
+	if (message.type() === 'warning') consoleWarnings.push(message.text());
 });
 page.on('pageerror', (error) => consoleErrors.push(`pageerror: ${error.message}`));
 page.on('requestfailed', (request) =>
@@ -129,6 +131,8 @@ console.log(
 		`screenshot: ${out}`,
 		`console errors (${consoleErrors.length}):`,
 		...consoleErrors.map((line) => `  ${line}`),
+		`console warnings (${consoleWarnings.length}):`,
+		...consoleWarnings.map((line) => `  ${line}`),
 		`failed requests (${failedRequests.length}):`,
 		...failedRequests.map((line) => `  ${line}`),
 		`text${text.length > maxText ? ` (first ${maxText} of ${text.length} chars)` : ''}:`,

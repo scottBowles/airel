@@ -35,9 +35,6 @@ jobs:
       # Placeholder values only, as in bin/cloud-session-start.sh: no real keys reach CI.
       DATABASE_URL: postgres://airel@127.0.0.1:5432/airel
       SECRET_KEY: ci-only
-      ALGOLIA_APPLICATION_ID: placeholder
-      ALGOLIA_API_KEY: placeholder
-      ALGOLIA_AUTO_INDEXING: "false"
       OPENAI_API_KEY: placeholder
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

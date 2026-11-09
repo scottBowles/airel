@@ -6,10 +6,8 @@ logs and so on) is skipped when the database already holds game logs that aren't
 logs, such as a copy of production, unless --world is passed.
 """
 
-from contextlib import nullcontext
 from datetime import datetime, timezone
 
-from algoliasearch_django.decorators import disable_auto_indexing
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -108,15 +106,8 @@ class Command(BaseCommand):
         if not settings.DEBUG:
             raise CommandError("seed_dev only runs with DEBUG on (development).")
 
-        # disable_auto_indexing reconnects Algolia's signals on exit, so it would switch
-        # indexing on where it was off (tests, keyless environments). Use it only when on.
-        indexing_off = (
-            disable_auto_indexing()
-            if settings.ALGOLIA.get("AUTO_INDEXING", True)
-            else nullcontext()
-        )
         # The embedding signals would queue a process_content task per saved row.
-        with indexing_off, disconnect_embedding_signals(), transaction.atomic():
+        with disconnect_embedding_signals(), transaction.atomic():
             self.seed_users()
             other_logs = GameLog.objects.exclude(url__startswith=SEED_LOG_URL_PREFIX)
             if other_logs.exists() and not world:

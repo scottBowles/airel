@@ -10,11 +10,10 @@ Each app exposes `Query`/`Mutation` classes from its `types/` package (or `types
 
 ## Tests
 
-`ALGOLIA_AUTO_INDEXING=false .venv/bin/python manage.py test [app]` (Django's unittest runner; needs local Postgres).
+`.venv/bin/python manage.py test [app]` (Django's unittest runner; needs local Postgres).
 
-- **Algolia:** models in each app's `index.py` are registered with Algolia, so with indexing on, every model save calls the Algolia API. `ALGOLIA_AUTO_INDEXING=false` turns that off; cloud sessions set it in their `.env`.
 - **Known failures:** none. The suite passes on `main`, so treat any failure as yours. (`test_safe_save_json_file_permission_error` is skipped when running as root, as cloud sessions do.)
-- **Style:** test behavior through public entry points (the `/graphql/` endpoint, service methods, Celery tasks) and mock only real boundaries: OpenAI (`nucleus.ai`), Algolia, R2 and Google. `association/tests.py` shows how to call GraphQL as a logged-in user.
+- **Style:** test behavior through public entry points (the `/graphql/` endpoint, service methods, Celery tasks) and mock only real boundaries: OpenAI (`nucleus.ai`), R2 and Google. `association/tests.py` shows how to call GraphQL as a logged-in user.
 
 ## Cloud sessions
 
