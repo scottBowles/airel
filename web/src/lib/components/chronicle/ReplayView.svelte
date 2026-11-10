@@ -7,8 +7,7 @@
 	import SkipForward from '@lucide/svelte/icons/skip-forward';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import {
-		buildPlaceTree,
-		colourByOrder,
+		worldColours,
 		pad,
 		primaryStop,
 		shortDate,
@@ -20,7 +19,7 @@
 
 	const DWELL_MS = 8000;
 
-	let colours = $derived(colourByOrder(buildPlaceTree(sessions).roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 	let index = $state(0);
 	let at = $derived(Math.min(index, sessions.length - 1));
 	let session = $derived(sessions[at]);

@@ -6,7 +6,7 @@
 	import {
 		buildPlaceTree,
 		buildThreads,
-		colourByOrder,
+		worldColours,
 		daysBetween,
 		pad,
 		primaryStop,
@@ -18,7 +18,7 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	let tree = $derived(buildPlaceTree(sessions));
-	let colours = $derived(colourByOrder(tree.roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 	let latest = $derived(sessions.at(-1) ?? null);
 	let latestStop = $derived(latest ? primaryStop(latest) : null);
 	let count = $derived(sessions.length);

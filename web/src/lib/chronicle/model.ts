@@ -69,26 +69,54 @@ function toStop(place: RawPlace): PlaceStop {
 	return { id: place.id, name: place.name, type: place.placeType ?? null, path, star };
 }
 
-/** Sessions in play order (oldest first; undated logs last), numbered from 1. */
-export function toSessions(edges: ReadonlyArray<{ node: RawLog }> | null | undefined): Session[] {
-	const logs = (edges ?? []).map((e) => e.node);
+function toSession(log: RawLog, n: number): Session {
+	return {
+		id: log.id,
+		n,
+		title: stripSessionPrefix(log.title) || 'Untitled log',
+		brief: log.brief ?? '',
+		synopsis: log.synopsis ?? '',
+		date: log.gameDate ? new Date(log.gameDate) : null,
+		url: log.url,
+		stops: nodes(log.placesSetIn).map(toStop),
+		characters: refs(log.characters),
+		associations: refs(log.associations),
+		items: refs(log.items),
+		artifacts: refs(log.artifacts)
+	};
+}
+
+/** The logs as a voyage: numbered sessions, and whatever came before the crew set out. */
+export type Chronicle = {
+	/** Sessions in play order (oldest first; undated logs last), numbered from 1. */
+	sessions: Session[];
+	/**
+	 * Logs before the first one set anywhere, such as a world primer dated before play began.
+	 * They are not sessions: they have `n` 0 and only the story views show them.
+	 */
+	prologue: Session[];
+};
+
+export function toChronicle(edges: ReadonlyArray<{ node: RawLog }> | null | undefined): Chronicle {
 	const time = (log: RawLog) => (log.gameDate ? new Date(log.gameDate).getTime() : Infinity);
-	return [...logs]
+	const logs = (edges ?? []).map((e) => e.node).sort((a, b) => time(a) - time(b));
+	// The voyage starts at the first log with a recorded place. When no log has one, the
+	// campaign doesn't tag places at all, and every log is a session.
+	const first = logs.findIndex((log) => nodes(log.placesSetIn).length > 0);
+	const start = Math.max(0, first);
+	return {
+		prologue: logs.slice(0, start).map((log) => toSession(log, 0)),
+		sessions: logs.slice(start).map((log, i) => toSession(log, i + 1))
+	};
+}
+
+/** Sessions in play order, numbered from 1, without splitting off a prologue. */
+export function toSessions(edges: ReadonlyArray<{ node: RawLog }> | null | undefined): Session[] {
+	const time = (log: RawLog) => (log.gameDate ? new Date(log.gameDate).getTime() : Infinity);
+	return (edges ?? [])
+		.map((e) => e.node)
 		.sort((a, b) => time(a) - time(b))
-		.map((log, i) => ({
-			id: log.id,
-			n: i + 1,
-			title: stripSessionPrefix(log.title) || 'Untitled log',
-			brief: log.brief ?? '',
-			synopsis: log.synopsis ?? '',
-			date: log.gameDate ? new Date(log.gameDate) : null,
-			url: log.url,
-			stops: nodes(log.placesSetIn).map(toStop),
-			characters: refs(log.characters),
-			associations: refs(log.associations),
-			items: refs(log.items),
-			artifacts: refs(log.artifacts)
-		}));
+		.map((log, i) => toSession(log, i + 1));
 }
 
 /** "Session 12: Archive of Echoes" -> "Archive of Echoes". Views show the number themselves. */
@@ -204,18 +232,151 @@ const HUES = [
 	'#e8e04d'
 ];
 
-/** A stable accent colour for a name, e.g. one per star system. */
-export function hueFor(key: string): string {
-	let hash = 0;
-	for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-	return HUES[hash % HUES.length];
+/** Colour for places with no world of their own, and for sessions with no recorded place. */
+export const NEUTRAL = '#8a7e60';
+/** Colour for worlds visited too rarely to get one of the distinct hues. */
+export const MINOR = '#a8997a';
+
+/** The world a session is mainly set on: the top of its main stop's path. */
+export function sessionWorld(session: Session): (Ref & { type: string | null }) | null {
+	return primaryStop(session)?.path[0] ?? null;
 }
 
-/** Colours assigned in order of appearance, so the first systems get the house colours. */
+/**
+ * One colour per world. The most-visited worlds get the distinct hues, in order of first
+ * visit, so the house amber goes to where the voyage began; worlds visited once or twice
+ * share a muted tone instead of repeating a hue the main worlds already use.
+ */
+export function worldColours(sessions: Session[]): Map<string, string> {
+	const visits = new Map<string, number>();
+	const firstSeen: string[] = [];
+	for (const session of sessions) {
+		const main = sessionWorld(session)?.id;
+		for (const stop of session.stops) {
+			const id = stop.path[0].id;
+			if (!visits.has(id)) {
+				visits.set(id, 0);
+				firstSeen.push(id);
+			}
+		}
+		if (main) visits.set(main, (visits.get(main) ?? 0) + 1);
+	}
+	const major = new Set(
+		[...visits.entries()]
+			.filter(([, count]) => count > 0)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, HUES.length)
+			.map(([id]) => id)
+	);
+	const colours = new Map<string, string>();
+	for (const id of firstSeen) {
+		colours.set(
+			id,
+			major.has(id) ? HUES[[...colours.values()].filter((c) => c !== MINOR).length] : MINOR
+		);
+	}
+	return colours;
+}
+
+/** How many sessions are mainly set on each world. */
+export function worldSessionCounts(sessions: Session[]): Map<string, number> {
+	const counts = new Map<string, number>();
+	for (const session of sessions) {
+		const world = sessionWorld(session);
+		if (world) counts.set(world.id, (counts.get(world.id) ?? 0) + 1);
+	}
+	return counts;
+}
+
+/** A session's colour: that of the world it is mainly set on. */
+export function sessionColour(session: Session, colours: Map<string, string>): string {
+	const world = sessionWorld(session);
+	return world ? (colours.get(world.id) ?? NEUTRAL) : NEUTRAL;
+}
+
+/** Colours assigned in order of appearance. */
 export function colourByOrder(keys: string[]): Map<string, string> {
 	const map = new Map<string, string>();
 	for (const key of keys) if (!map.has(key)) map.set(key, HUES[map.size % HUES.length]);
 	return map;
+}
+
+/** A stay on one world: a run of consecutive sessions mainly set there. */
+export type Arc = {
+	/** 1-based position among the arcs. */
+	n: number;
+	/** The world, or null for a run of sessions with no recorded place. */
+	world: (Ref & { type: string | null }) | null;
+	sessions: Session[];
+	/** Index of the arc's first session in the full list. */
+	start: number;
+	colour: string;
+};
+
+/**
+ * The voyage as stays on worlds: a new arc starts each time the main world changes. A session
+ * with no recorded place stays in the arc it falls in, since nothing says the crew moved.
+ */
+export function buildArcs(sessions: Session[], colours = worldColours(sessions)): Arc[] {
+	const arcs: Arc[] = [];
+	sessions.forEach((session, i) => {
+		const world = sessionWorld(session);
+		const last = arcs.at(-1);
+		if (last && (!world || last.world?.id === world.id)) {
+			last.sessions.push(session);
+			return;
+		}
+		if (last && !last.world && world) {
+			// A leading run with no place joins the first world the crew is seen on.
+			last.world = world;
+			last.colour = colours.get(world.id) ?? NEUTRAL;
+			last.sessions.push(session);
+			return;
+		}
+		arcs.push({
+			n: arcs.length + 1,
+			world,
+			sessions: [session],
+			start: i,
+			colour: world ? (colours.get(world.id) ?? NEUTRAL) : NEUTRAL
+		});
+	});
+	return arcs;
+}
+
+/** Arc lookup by session id. */
+export function arcBySession(arcs: Arc[]): Map<string, Arc> {
+	const map = new Map<string, Arc>();
+	for (const arc of arcs) for (const session of arc.sessions) map.set(session.id, arc);
+	return map;
+}
+
+const ROMAN: Array<[number, string]> = [
+	[1000, 'M'],
+	[900, 'CM'],
+	[500, 'D'],
+	[400, 'CD'],
+	[100, 'C'],
+	[90, 'XC'],
+	[50, 'L'],
+	[40, 'XL'],
+	[10, 'X'],
+	[9, 'IX'],
+	[5, 'V'],
+	[4, 'IV'],
+	[1, 'I']
+];
+
+/** 14 -> "XIV", for part numbers. */
+export function roman(n: number): string {
+	let out = '';
+	for (const [value, numeral] of ROMAN) {
+		while (n >= value) {
+			out += numeral;
+			n -= value;
+		}
+	}
+	return out;
 }
 
 /** One row of the Threads matrix: an entity and the sessions (by index) it appears in. */

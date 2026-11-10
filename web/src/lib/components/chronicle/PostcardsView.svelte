@@ -3,7 +3,7 @@
 	// place it is set in. A place keeps its skyline across visits; a system keeps its colour.
 	import {
 		buildPlaceTree,
-		colourByOrder,
+		worldColours,
 		pad,
 		primaryStop,
 		shortDate,
@@ -14,7 +14,7 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	let tree = $derived(buildPlaceTree(sessions));
-	let colours = $derived(colourByOrder(tree.roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 	let systemId = $state<string | null>(null);
 
 	let cards = $derived(

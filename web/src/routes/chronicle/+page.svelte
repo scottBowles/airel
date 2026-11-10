@@ -7,7 +7,7 @@
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
 	import LoadingState from '$lib/components/LoadingState.svelte';
-	import { toSessions } from '$lib/chronicle/model';
+	import { toChronicle } from '$lib/chronicle/model';
 	import ViewSwitcher from '$lib/components/chronicle/ViewSwitcher.svelte';
 	import ClassicView from '$lib/components/chronicle/ClassicView.svelte';
 	import ViewDeck from '$lib/components/chronicle/ViewDeck.svelte';
@@ -34,8 +34,11 @@
 	let store = $derived(listStore ?? journeyStore);
 	let fetching = $derived(store?.fetching ?? true);
 	let logs = $derived(listStore?.data?.gameLogs?.edges ?? []);
-	let sessions = $derived(toSessions(journeyStore?.data?.gameLogs?.edges));
-	let recordCount = $derived(view === 'classic' ? logs.length : sessions.length);
+	let chronicle = $derived(toChronicle(journeyStore?.data?.gameLogs?.edges));
+	let sessions = $derived(chronicle.sessions);
+	let recordCount = $derived(
+		view === 'classic' ? logs.length : sessions.length + chronicle.prologue.length
+	);
 
 	const getUser = getUserContext();
 	let isStaff = $derived(!!getUser()?.isStaff);
@@ -166,7 +169,7 @@
 	{:else if view === 'timeline'}
 		<TimelineView {sessions} />
 	{:else if view === 'saga'}
-		<SagaView {sessions} />
+		<SagaView {sessions} prologue={chronicle.prologue} />
 	{:else if view === 'replay'}
 		<ReplayView {sessions} />
 	{:else if view === 'threads'}

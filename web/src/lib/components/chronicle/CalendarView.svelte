@@ -2,8 +2,7 @@
 	// Calendar: when the group played. A small month grid per month of the campaign, with
 	// game nights lit, plus the rhythm of play (gaps, busiest month).
 	import {
-		buildPlaceTree,
-		colourByOrder,
+		worldColours,
 		dayKey,
 		daysBetween,
 		monthLabel,
@@ -17,7 +16,7 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	let dated = $derived(sessions.filter((s): s is Session & { date: Date } => !!s.date));
-	let colours = $derived(colourByOrder(buildPlaceTree(sessions).roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 	let byDay = $derived(sessionsByDay(dated));
 
 	// Every month from the first session to the last, including months with no play.

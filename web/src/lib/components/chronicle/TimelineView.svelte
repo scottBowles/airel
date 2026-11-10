@@ -6,8 +6,7 @@
 	import Users from '@lucide/svelte/icons/users';
 	import Gem from '@lucide/svelte/icons/gem';
 	import {
-		buildPlaceTree,
-		colourByOrder,
+		worldColours,
 		daysBetween,
 		monthLabel,
 		pad,
@@ -19,7 +18,7 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	let newestFirst = $state(false);
-	let colours = $derived(colourByOrder(buildPlaceTree(sessions).roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 
 	// Each entry knows how it relates to the session played before it.
 	let entries = $derived.by(() => {

@@ -3,7 +3,7 @@
 	// with how often they were there and which sessions happened there.
 	import {
 		buildPlaceTree,
-		colourByOrder,
+		worldColours,
 		pad,
 		shortDate,
 		type PlaceNode,
@@ -13,7 +13,7 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	let tree = $derived(buildPlaceTree(sessions));
-	let colours = $derived(colourByOrder(tree.roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 	let uncharted = $derived(sessions.filter((s) => !s.stops.length));
 
 	type Row = { node: PlaceNode; rootId: string };

@@ -3,7 +3,7 @@
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import {
 		buildPlaceTree,
-		colourByOrder,
+		worldColours,
 		monthLabel,
 		orderedStops,
 		pad,
@@ -23,7 +23,7 @@
 	type Lane = { id: string; name: string; type: string | null; depth: number; rootId: string; visits: number };
 
 	let tree = $derived(buildPlaceTree(sessions));
-	let colours = $derived(colourByOrder(tree.roots.map((r) => r.id)));
+	let colours = $derived(worldColours(sessions));
 
 	// Lanes are the place tree flattened depth-first, so a town sits under its world.
 	let lanes = $derived.by(() => {
