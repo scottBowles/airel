@@ -134,7 +134,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-2 border-b border-border-dim px-3 py-1.5">
 			<span class="machine-text text-[9px] text-text-muted">NAV-03 // STAR CHART</span>
 			<span class="machine-text text-[9px] text-text-muted">
-				{tree.roots.length} SYSTEMS · {tree.byId.size} PLACES · LEG {pad(at + 1)}/{pad(legs.length)}
+				{tree.roots.length} WORLDS · {tree.byId.size} PLACES · LEG {pad(at + 1)}/{pad(legs.length)}
 			</span>
 		</div>
 

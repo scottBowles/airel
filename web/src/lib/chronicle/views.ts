@@ -29,7 +29,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'NAV',
 		tagline: 'A navigable map of the route',
 		description:
-			'Systems, worlds and ports drawn as a chart, with the route plotted across them. Scrub or play the voyage.'
+			'Worlds and their ports drawn as a chart, with the route plotted across them. Scrub or play the voyage.'
 	},
 	{
 		id: 'timeline',
@@ -61,7 +61,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'PCD',
 		tagline: 'A wall of places visited',
 		description:
-			'One card per session with a small landscape drawn from where it is set. Filter by star system.'
+			'One card per session with a small landscape drawn from where it is set. Filter by world.'
 	},
 	{
 		id: 'threads',
@@ -77,7 +77,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'ATL',
 		tagline: 'The story by location',
 		description:
-			'Every place the crew has been, nested by system and world, with the sessions that happened there.'
+			'Every place the crew has been, nested by world, with the sessions that happened there.'
 	},
 	{
 		id: 'calendar',

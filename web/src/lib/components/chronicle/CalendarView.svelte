@@ -32,10 +32,12 @@
 			const start = new Date(Date.UTC(y, m, 1));
 			const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
 			const cells = Array.from({ length: days }, (_, d) => ({ day: d + 1, sessions: byDay.get(dayKey(y, m, d + 1)) ?? [] }));
-			out.push({ label: monthLabel(start), offset: start.getUTCDay(), cells, count: cells.reduce((n, c) => n + c.sessions.length, 0) });
+			out.push({ year: y, label: monthLabel(start), offset: start.getUTCDay(), cells, count: cells.reduce((n, c) => n + c.sessions.length, 0) });
 			if (++m > 11) { m = 0; y++; }
 		}
-		return out;
+		// Years with no play at all (a stray old document, a long hiatus) are left out.
+		const played = out.filter((m) => m.count).map((m) => m.year);
+		return out.filter((m) => played.includes(m.year));
 	});
 
 	let gaps = $derived(dated.slice(1).map((s, i) => ({ days: daysBetween(dated[i].date, s.date) ?? 0, before: s })));
@@ -103,6 +105,6 @@
 
 {#if longest}
 	<p class="machine-text text-[10px] text-text-faint">
-		LONGEST GAP: {longest.days} DAYS BEFORE SESSION {pad(longest.before.n)} ({shortDate(longest.before.date)}) · SQUARES ARE COLOURED BY STAR SYSTEM
+		LONGEST GAP: {longest.days} DAYS BEFORE SESSION {pad(longest.before.n)} ({shortDate(longest.before.date)}) · SQUARES ARE COLOURED BY WORLD
 	</p>
 {/if}

@@ -34,7 +34,7 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-1.5 border border-border-dim bg-hull px-3 py-2">
-	<span class="mr-1 machine-text text-[9px] text-text-muted">SYSTEM</span>
+	<span class="mr-1 machine-text text-[9px] text-text-muted">WORLD</span>
 	<button type="button" class="chip {systemId === null ? 'chip-on' : ''}" onclick={() => (systemId = null)}>All · {cards.length}</button>
 	{#each tree.roots as root (root.id)}
 		<button

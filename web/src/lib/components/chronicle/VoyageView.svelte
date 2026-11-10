@@ -99,7 +99,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-2 border-b border-border-dim px-3 py-1.5">
 		<span class="machine-text text-[9px] text-text-muted">NAV-02 // FLIGHT PATH</span>
 		<span class="machine-text text-[9px] text-text-muted">
-			{sessions.length} SESSIONS · {tree.byId.size} PLACES · {jumps} SYSTEM JUMPS
+			{sessions.length} SESSIONS · {tree.byId.size} PLACES · {jumps} WORLD CHANGES
 		</span>
 	</div>
 
@@ -205,7 +205,7 @@
 	<div class="flex flex-wrap gap-x-4 gap-y-1 border-t border-border-dim px-3 py-1.5 machine-text text-[9px] text-text-muted">
 		<span>● MAIN SETTING</span>
 		<span>○ ALSO VISITED</span>
-		<span>┄ JUMP BETWEEN SYSTEMS</span>
+		<span>┄ TRAVEL BETWEEN WORLDS</span>
 	</div>
 </div>
 

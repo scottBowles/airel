@@ -4,8 +4,10 @@ export type Ref = { id: string; name: string };
 
 export type PlaceStop = Ref & {
 	type: string | null;
-	/** Ancestors from the outermost place (a star, usually) down to this place, inclusive. */
+	/** From the world (the planet, or a place with nothing above it) down to this place. */
 	path: Array<Ref & { type: string | null }>;
+	/** The star the world orbits, when it has one. */
+	star: string | null;
 };
 
 export type Session = {
@@ -57,7 +59,14 @@ function toStop(place: RawPlace): PlaceStop {
 	for (let p: RawPlace | null | undefined = place; p; p = p.parent) {
 		path.unshift({ id: p.id, name: p.name, type: p.placeType ?? null });
 	}
-	return { id: place.id, name: place.name, type: place.placeType ?? null, path };
+	// The campaign moves world to world, so a path starts at the world (the planet, or a
+	// place with nothing above it). The star above a world is kept only as a label.
+	let star: string | null = null;
+	if (path.length > 1 && path[0].type === 'STAR') {
+		star = path[0].name;
+		path.shift();
+	}
+	return { id: place.id, name: place.name, type: place.placeType ?? null, path, star };
 }
 
 /** Sessions in play order (oldest first; undated logs last), numbered from 1. */
@@ -108,10 +117,9 @@ export function daysBetween(a: Date | null, b: Date | null): number | null {
 
 /** "Port Veil · Calder · Ostra": the place, then what it is inside. */
 export function wherePath(stop: PlaceStop): string {
-	return [...stop.path]
-		.reverse()
-		.map((p) => p.name)
-		.join(' · ');
+	const names = [...stop.path].reverse().map((p) => p.name);
+	if (stop.star) names.push(stop.star);
+	return names.join(' · ');
 }
 
 /** The place a session is mainly set in: its most specific stop. */

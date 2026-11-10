@@ -94,7 +94,7 @@
 	{/if}
 
 	<section class="grid grid-cols-2 gap-px border border-border-dim bg-border-dim">
-		{#each [['SESSIONS', count], ['SYSTEMS', tree.roots.length], ['PLACES', tree.byId.size], ['CAST', cast.length], ['DAYS UNDER WAY', span ?? '—'], ['RELICS & ITEMS', cargo.length]] as [label, value] (label)}
+		{#each [['SESSIONS', count], ['WORLDS', tree.roots.length], ['PLACES', tree.byId.size], ['CAST', cast.length], ['DAYS UNDER WAY', span ?? '—'], ['RELICS & ITEMS', cargo.length]] as [label, value] (label)}
 			<div class="bg-hull px-3 py-2.5">
 				<p class="machine-text text-[9px] text-text-muted">{label}</p>
 				<p class="mt-0.5 font-display text-lg text-accent-amber">{value}</p>

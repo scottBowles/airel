@@ -17,7 +17,10 @@
 
 	let kindId = $state<(typeof KINDS)[number]['id']>('cast');
 	let kind = $derived(KINDS.find((k) => k.id === kindId) ?? KINDS[0]);
-	let byCount = $state(false);
+	let byCount = $state(true);
+	// Long campaigns have hundreds of threads: show the top ones until asked for all.
+	const TOP = 40;
+	let showAll = $state(false);
 
 	let threads = $derived.by(() => {
 		const list = buildThreads(sessions, kind.pick);
@@ -32,7 +35,7 @@
 	let panelWidth = $state(0);
 	// A narrower name column on phones leaves room for the marks.
 	let LABEL_W = $derived(panelWidth && panelWidth < 520 ? 132 : 200);
-	let CELL = $derived(Math.max(MIN_CELL, sessions.length ? Math.floor((panelWidth - LABEL_W) / sessions.length) : MIN_CELL));
+	let CELL = $derived(Math.max(sessions.length > 60 ? 8 : MIN_CELL, sessions.length ? Math.floor((panelWidth - LABEL_W) / sessions.length) : MIN_CELL));
 	let width = $derived(sessions.length * CELL);
 </script>
 
@@ -73,12 +76,12 @@
 							title="{session.title} · {shortDate(session.date)}"
 							onmouseenter={() => (hoverCol = i)}
 						>
-							{pad(session.n)}
+							{CELL >= 20 || session.n % 10 === 0 ? pad(session.n) : ''}
 						</a>
 					{/each}
 				</div>
 
-				{#each threads as thread (thread.ref.id)}
+				{#each showAll ? threads : threads.slice(0, TOP) as thread (thread.ref.id)}
 					<div class="flex {hoverRow === thread.ref.id ? 'bg-panel-hover' : ''}" role="presentation" onmouseenter={() => (hoverRow = thread.ref.id)}>
 						<div class="sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r border-border-dim px-3 {hoverRow === thread.ref.id ? 'bg-panel-hover' : 'bg-hull'}" style:width="{LABEL_W}px" style:height="{MIN_CELL}px">
 							<a href="/database/{kind.route}/{thread.ref.id}" class="min-w-0 flex-1 truncate text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent-amber">
@@ -93,7 +96,7 @@
 							{#each sessions as session, i (session.id)}
 								<div class="relative flex shrink-0 items-center justify-center {hoverCol === i ? 'bg-accent-amber/[0.07]' : ''}" style:width="{CELL}px" role="presentation" onmouseenter={() => (hoverCol = i)}>
 									{#if thread.hits.has(i)}
-										<a href="/chronicle/{session.id}" class="block h-3 w-3 transition-transform hover:scale-150" style:background={kind.colour}
+										<a href="/chronicle/{session.id}" class="block h-3 transition-transform hover:scale-150" style:width="{Math.min(12, CELL - 2)}px" style:background={kind.colour}
 											style:box-shadow="0 0 6px {kind.colour}" aria-label="{thread.ref.name} in session {session.n}: {session.title}"></a>
 									{/if}
 								</div>
@@ -103,6 +106,11 @@
 				{/each}
 			</div>
 		</div>
+		{#if threads.length > TOP}
+			<button type="button" class="w-full border-t border-border-dim px-3 py-2 text-left machine-text text-[10px] text-accent-amber hover:bg-panel-hover" onclick={() => (showAll = !showAll)}>
+				{showAll ? `SHOW TOP ${TOP}` : `SHOW ALL ${threads.length}`}
+			</button>
+		{/if}
 	{:else}
 		<p class="px-4 py-8 text-center machine-text text-text-muted">NO {kind.label.toUpperCase()} LINKED TO ANY SESSION YET</p>
 	{/if}

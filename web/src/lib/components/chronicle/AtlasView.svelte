@@ -54,7 +54,7 @@
 		<section class="border border-border-dim bg-hull" style:border-top-color={colour} style:border-top-width="2px">
 			<header class="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-dim px-3 py-2.5">
 				<div>
-					<p class="machine-text text-[9px] text-text-muted">{typeLabel(root.type)} SYSTEM</p>
+					<p class="machine-text text-[9px] text-text-muted">{typeLabel(root.type)}</p>
 					<a href="/database/places/{root.id}" class="font-display text-base uppercase tracking-widest hover:underline" style:color={colour}>{root.name}</a>
 				</div>
 				<p class="text-right machine-text text-[9px] text-text-muted">
@@ -70,7 +70,7 @@
 						<div class="flex items-center gap-2">
 							{#if node.depth > 1}<span class="text-text-faint">└</span>{/if}
 							<a href="/database/places/{node.id}" class="truncate text-xs font-bold uppercase tracking-wider hover:text-accent-amber {node.sessions.length ? 'text-text-primary' : 'text-text-muted'}">
-								{node.depth === 0 ? `${node.name} (in orbit)` : node.name}
+								{node.depth === 0 ? `${node.name} (general)` : node.name}
 							</a>
 							<span class="machine-text text-[9px] text-text-faint">{typeLabel(node.type)}</span>
 							<span class="ml-auto h-1.5 w-24 shrink-0 bg-void">

@@ -74,7 +74,7 @@
 					<span class="relative inline-flex flex-wrap items-center gap-1.5 bg-void px-2 text-[10px] uppercase tracking-wider" style:color={entry.colour}>
 						{#if entry.moved}
 							<Rocket class="h-3 w-3" />
-							{entry.jumped ? `Jump to the ${entry.system?.name} system` : `Course set for ${entry.stop?.name}`}
+							{entry.jumped ? `Course set for ${entry.system?.name}` : `Course set for ${entry.stop?.name}`}
 						{/if}
 						{#if (entry.gap ?? 0) > 21}
 							<span class="text-text-faint">{entry.moved ? '· ' : ''}{entry.gap} days between sessions</span>
