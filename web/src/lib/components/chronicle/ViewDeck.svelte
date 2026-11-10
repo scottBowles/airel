@@ -4,6 +4,7 @@
 	import { CHRONICLE_VIEWS, viewHref } from '$lib/chronicle/views';
 	import { buildPlaceTree, shortDate, type Session } from '$lib/chronicle/model';
 	import { VIEW_ICONS } from './viewIcons';
+	import ViewPreview from './ViewPreview.svelte';
 
 	let { sessions }: { sessions: Session[] } = $props();
 
@@ -22,14 +23,15 @@
 	{/each}
 </div>
 
-<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 	{#each CHRONICLE_VIEWS as view, i (view.id)}
 		{@const Icon = VIEW_ICONS[view.id]}
 		<a
 			href={viewHref(view.id)}
 			class="group relative flex flex-col border border-border-dim bg-panel p-4 transition-all hover:border-accent-amber/40 hover:bg-panel-hover"
 		>
-			<div class="flex items-start justify-between">
+			<ViewPreview view={view.id} />
+			<div class="mt-3 flex items-start justify-between">
 				<span
 					class="flex h-10 w-10 items-center justify-center border border-border-subtle bg-void text-accent-amber transition-shadow group-hover:shadow-glow-amber"
 				>

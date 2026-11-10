@@ -8,10 +8,14 @@ import Waypoints from '@lucide/svelte/icons/waypoints';
 import Map from '@lucide/svelte/icons/map';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+import Gauge from '@lucide/svelte/icons/gauge';
+import Images from '@lucide/svelte/icons/images';
 import type { ChronicleViewId } from '$lib/chronicle/views';
 
 export const VIEW_ICONS: Record<ChronicleViewId, typeof List> = {
 	classic: List,
+	control: Gauge,
+	postcards: Images,
 	voyage: Route,
 	starchart: Orbit,
 	timeline: Milestone,

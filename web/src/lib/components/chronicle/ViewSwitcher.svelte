@@ -1,34 +1,38 @@
 <script lang="ts">
 	// The strip of Chronicle views. Each tab is a link, so a view can be bookmarked and shared.
+	// Tabs wrap onto a second row on wide screens and scroll sideways on phones.
 	import { CHRONICLE_VIEWS, viewHref, type ChronicleViewId } from '$lib/chronicle/views';
 	import { VIEW_ICONS } from './viewIcons';
 
 	let { current }: { current: ChronicleViewId } = $props();
 
 	const DeckIcon = VIEW_ICONS.deck;
+
+	// On a phone the strip scrolls, so bring the selected tab into view.
+	let strip: HTMLElement | undefined = $state();
+	$effect(() => {
+		const tab = strip?.querySelector<HTMLElement>(`[data-view="${current}"]`);
+		if (strip && tab) strip.scrollLeft = tab.offsetLeft - strip.clientWidth / 2 + tab.clientWidth / 2;
+	});
 </script>
 
 <nav aria-label="Chronicle views" class="flex items-stretch border border-border-dim bg-hull">
-	<span
-		class="hidden shrink-0 items-center border-r border-border-dim px-3 machine-text text-[9px] text-text-muted sm:flex"
-	>
-		VIEW MODE
-	</span>
-	<div class="flex min-w-0 flex-1 overflow-x-auto">
+	<div bind:this={strip} class="relative flex min-w-0 flex-1 gap-px overflow-x-auto bg-border-dim md:flex-wrap md:overflow-visible">
 		{#each CHRONICLE_VIEWS as view (view.id)}
 			{@const Icon = VIEW_ICONS[view.id]}
 			{@const active = current === view.id}
 			<a
 				href={viewHref(view.id)}
+				data-view={view.id}
 				data-sveltekit-noscroll
 				aria-current={active ? 'page' : undefined}
 				title={view.tagline}
-				class="group flex shrink-0 items-center gap-1.5 border-r border-border-dim px-3 py-2.5 text-[11px] uppercase tracking-wider transition-colors
+				class="flex shrink-0 items-center gap-1.5 px-2.5 py-2.5 text-[11px] uppercase tracking-wider transition-colors md:grow
 					{active
-					? 'bg-accent-amber/10 text-accent-amber shadow-[inset_0_-2px_0_var(--color-accent-amber)]'
-					: 'text-text-secondary hover:bg-panel-hover hover:text-accent-amber'}"
+					? 'bg-[#1c1608] text-accent-amber shadow-[inset_0_-2px_0_var(--color-accent-amber)]'
+					: 'bg-hull text-text-secondary hover:bg-panel-hover hover:text-accent-amber'}"
 			>
-				<Icon class="h-3.5 w-3.5" />
+				<Icon class="h-3.5 w-3.5 shrink-0" />
 				{view.label}
 			</a>
 		{/each}

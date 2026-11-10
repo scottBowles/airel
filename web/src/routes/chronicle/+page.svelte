@@ -11,6 +11,8 @@
 	import ViewSwitcher from '$lib/components/chronicle/ViewSwitcher.svelte';
 	import ClassicView from '$lib/components/chronicle/ClassicView.svelte';
 	import ViewDeck from '$lib/components/chronicle/ViewDeck.svelte';
+	import ControlView from '$lib/components/chronicle/ControlView.svelte';
+	import PostcardsView from '$lib/components/chronicle/PostcardsView.svelte';
 	import VoyageView from '$lib/components/chronicle/VoyageView.svelte';
 	import StarChartView from '$lib/components/chronicle/StarChartView.svelte';
 	import TimelineView from '$lib/components/chronicle/TimelineView.svelte';
@@ -153,6 +155,10 @@
 			<p class="machine-text text-text-muted">NO LOGS RECORDED</p>
 			<p class="machine-text text-[10px] text-text-faint mt-1">IMPORT A SESSION TO BEGIN</p>
 		</div>
+	{:else if view === 'control'}
+		<ControlView {sessions} />
+	{:else if view === 'postcards'}
+		<PostcardsView {sessions} />
 	{:else if view === 'voyage'}
 		<VoyageView {sessions} />
 	{:else if view === 'starchart'}

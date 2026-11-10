@@ -8,6 +8,14 @@ export const CHRONICLE_VIEWS = [
 		description: 'Newest first, one row per session with its date and brief. Unchanged.'
 	},
 	{
+		id: 'control',
+		label: 'Mission Control',
+		code: 'CTL',
+		tagline: 'Everything on one screen',
+		description:
+			'Several views combined: the last session, the course so far, crew, cargo, ports of call and who has gone quiet.'
+	},
+	{
 		id: 'voyage',
 		label: 'Flight Path',
 		code: 'FLT',
@@ -46,6 +54,14 @@ export const CHRONICLE_VIEWS = [
 		tagline: 'A viewscreen recap',
 		description:
 			'One session fills the screen at a time. Auto-plays like a recap before game night; arrow keys step through.'
+	},
+	{
+		id: 'postcards',
+		label: 'Postcards',
+		code: 'PCD',
+		tagline: 'A wall of places visited',
+		description:
+			'One card per session with a small landscape drawn from where it is set. Filter by star system.'
 	},
 	{
 		id: 'threads',
