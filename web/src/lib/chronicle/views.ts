@@ -68,7 +68,8 @@ export const CHRONICLE_VIEWS = [
 		label: 'Calendar',
 		code: 'CAL',
 		tagline: 'Game nights at a glance',
-		description: 'Month-by-month record of when the group played, with streaks and gaps.'
+		description:
+			'A month-by-month record of when the group played, with the usual and longest gaps.'
 	}
 ] as const;
 

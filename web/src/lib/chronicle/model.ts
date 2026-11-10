@@ -209,3 +209,34 @@ export function colourByOrder(keys: string[]): Map<string, string> {
 	for (const key of keys) if (!map.has(key)) map.set(key, HUES[map.size % HUES.length]);
 	return map;
 }
+
+/** One row of the Threads matrix: an entity and the sessions (by index) it appears in. */
+export type Thread = { ref: Ref; hits: Set<number>; first: number; last: number; count: number };
+
+export function buildThreads(sessions: Session[], pick: (session: Session) => Ref[]): Thread[] {
+	const map = new Map<string, { ref: Ref; hits: Set<number> }>();
+	sessions.forEach((session, i) => {
+		for (const ref of pick(session)) {
+			let thread = map.get(ref.id);
+			if (!thread) map.set(ref.id, (thread = { ref, hits: new Set() }));
+			thread.hits.add(i);
+		}
+	});
+	return [...map.values()].map((t) => {
+		const order = [...t.hits].sort((a, b) => a - b);
+		return { ...t, first: order[0], last: order.at(-1) ?? order[0], count: order.length };
+	});
+}
+
+export const dayKey = (y: number, m: number, d: number) => `${y}-${m}-${d}`;
+
+/** Sessions keyed by the UTC day they were played. */
+export function sessionsByDay(sessions: Session[]): Map<string, Session[]> {
+	const map = new Map<string, Session[]>();
+	for (const s of sessions) {
+		if (!s.date) continue;
+		const k = dayKey(s.date.getUTCFullYear(), s.date.getUTCMonth(), s.date.getUTCDate());
+		map.set(k, [...(map.get(k) ?? []), s]);
+	}
+	return map;
+}

@@ -17,7 +17,6 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	const ROW = 30;
-	const LABEL_W = 208;
 	const MIN_COL = 48;
 	const UNCHARTED = '__uncharted__';
 
@@ -106,13 +105,13 @@
 
 	<div class="flex">
 		<!-- Place lanes -->
-		<div class="shrink-0 border-r border-border-dim" style:width="{LABEL_W}px">
+		<div class="w-36 shrink-0 border-r border-border-dim sm:w-52">
 			<div class="h-7 border-b border-border-dim px-3 machine-text text-[9px] leading-7 text-text-faint">PLACE</div>
 			{#each lanes as lane (lane.id)}
 				<div
 					class="flex items-center gap-1.5 overflow-hidden whitespace-nowrap px-3 text-[11px]"
 					style:height="{ROW}px"
-					style:padding-left="{12 + lane.depth * 12}px"
+					style:padding-left="{10 + lane.depth * 8}px"
 				>
 					<span class="status-dot shrink-0" style:color={colourOf(lane.rootId)} style:opacity={lane.depth === 0 ? 1 : 0.45}></span>
 					{#if lane.id === UNCHARTED}
