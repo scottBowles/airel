@@ -17,7 +17,7 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	const ROW = 30;
-	const MIN_COL = 48;
+	const MIN_COL = 16;
 	const UNCHARTED = '__uncharted__';
 
 	type Lane = { id: string; name: string; type: string | null; depth: number; rootId: string; visits: number };
