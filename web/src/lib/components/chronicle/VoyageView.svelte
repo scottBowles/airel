@@ -1,5 +1,6 @@
 <script lang="ts">
-	// Flight Path: a lane per place, a column per session, and one line tracing the journey.
+	// Flight Path: a lane per world (or per place), a column per session, and one line tracing
+	// the journey. With many places it starts at the world level, so the whole voyage fits.
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import {
 		buildPlaceTree,
@@ -10,27 +11,38 @@
 		primaryStop,
 		shortDate,
 		wherePath,
+		worldSessionCounts,
 		type PlaceNode,
+		type PlaceStop,
 		type Session
 	} from '$lib/chronicle/model';
 
 	let { sessions }: { sessions: Session[] } = $props();
 
 	const ROW = 30;
-	const MIN_COL = 16;
 	const UNCHARTED = '__uncharted__';
+	/** Above this many places, the chart opens at the world level. */
+	const WORLDS_FIRST_ABOVE = 20;
 
 	type Lane = { id: string; name: string; type: string | null; depth: number; rootId: string; visits: number };
 
 	let tree = $derived(buildPlaceTree(sessions));
 	let colours = $derived(worldColours(sessions));
+	let worldVisits = $derived(worldSessionCounts(sessions));
+
+	let chosenLevel = $state<'worlds' | 'places' | null>(null);
+	let level = $derived(chosenLevel ?? (tree.byId.size > WORLDS_FIRST_ABOVE ? 'worlds' : 'places'));
+	let worlds = $derived(level === 'worlds');
+	/** The lane a stop is drawn in: its world, or the place itself. */
+	const laneOf = (stop: PlaceStop) => (worlds ? stop.path[0].id : stop.id);
 
 	// Lanes are the place tree flattened depth-first, so a town sits under its world.
 	let lanes = $derived.by(() => {
 		const out: Lane[] = [];
 		const walk = (node: PlaceNode, rootId: string) => {
-			out.push({ id: node.id, name: node.name, type: node.type, depth: node.depth, rootId, visits: node.sessions.length });
-			node.children.forEach((child) => walk(child, rootId));
+			const visits = worlds ? (worldVisits.get(node.id) ?? 0) : node.sessions.length;
+			out.push({ id: node.id, name: node.name, type: node.type, depth: node.depth, rootId, visits });
+			if (!worlds) node.children.forEach((child) => walk(child, rootId));
 		};
 		tree.roots.forEach((root) => walk(root, root.id));
 		if (sessions.some((s) => !s.stops.length)) {
@@ -41,7 +53,10 @@
 	let laneIndex = $derived(new Map(lanes.map((lane, i) => [lane.id, i])));
 
 	let chartWidth = $state(0);
-	let col = $derived(Math.max(MIN_COL, sessions.length ? chartWidth / sessions.length : MIN_COL));
+	// Worlds: columns shrink until the whole voyage fits. Places: wider columns, and it scrolls.
+	let minCol = $derived(worlds ? 5 : 16);
+	let col = $derived(Math.max(minCol, sessions.length ? chartWidth / sessions.length : minCol));
+	let dot = $derived(Math.min(5, Math.max(2.5, col * 0.38)));
 	let width = $derived(col * sessions.length);
 	let height = $derived(lanes.length * ROW);
 
@@ -52,15 +67,22 @@
 	// Each session's marks, and the lane its journey line passes through.
 	let columns = $derived(
 		sessions.map((session, i) => {
-			const stops = orderedStops(session);
 			const main = primaryStop(session);
+			// One mark per lane: in world mode, several places on one world share a mark.
+			const stops = orderedStops(session).filter(
+				(stop, k, all) => all.findIndex((other) => laneOf(other) === laneOf(stop)) === k
+			);
 			return {
 				session,
 				x: x(i),
-				mainY: y(main?.id ?? UNCHARTED),
+				mainY: y(main ? laneOf(main) : UNCHARTED),
 				rootId: main?.path[0]?.id ?? UNCHARTED,
 				marks: stops.length
-					? stops.map((stop) => ({ y: y(stop.id), rootId: stop.path[0]?.id ?? UNCHARTED, main: stop.id === main?.id }))
+					? stops.map((stop) => ({
+							y: y(laneOf(stop)),
+							rootId: stop.path[0]?.id ?? UNCHARTED,
+							main: !!main && laneOf(stop) === laneOf(main)
+						}))
 					: [{ y: y(UNCHARTED), rootId: UNCHARTED, main: true }]
 			};
 		})
@@ -80,12 +102,15 @@
 		})
 	);
 
+	// Month ticks when there's room for them, year ticks otherwise.
+	let byYear = $derived(col < 40);
 	let monthTicks = $derived(
 		sessions.flatMap((session, i) => {
 			if (!session.date) return [];
 			const prev = sessions[i - 1]?.date;
-			const changed = !prev || monthLabel(prev) !== monthLabel(session.date);
-			return changed ? [{ x: col * i, label: monthLabel(session.date) }] : [];
+			const label = byYear ? String(session.date.getUTCFullYear()) : monthLabel(session.date);
+			const changed = !prev || (byYear ? String(prev.getUTCFullYear()) : monthLabel(prev)) !== label;
+			return changed ? [{ x: col * i, label }] : [];
 		})
 	);
 
@@ -98,8 +123,20 @@
 <div class="border border-border-dim bg-hull">
 	<div class="flex flex-wrap items-center justify-between gap-2 border-b border-border-dim px-3 py-1.5">
 		<span class="machine-text text-[9px] text-text-muted">NAV-02 // FLIGHT PATH</span>
-		<span class="machine-text text-[9px] text-text-muted">
-			{sessions.length} SESSIONS · {tree.byId.size} PLACES · {jumps} WORLD CHANGES
+		<span class="flex flex-wrap items-center gap-3 machine-text text-[9px] text-text-muted">
+			{sessions.length} SESSIONS · {tree.roots.length} WORLDS · {tree.byId.size} PLACES · {jumps} WORLD CHANGES
+			<span class="flex border border-border-subtle" role="group" aria-label="Lanes">
+				{#each [['worlds', 'Worlds'], ['places', 'All places']] as [value, label] (value)}
+					<button
+						type="button"
+						class="px-2 py-0.5 text-[9px] uppercase tracking-wider {level === value ? 'bg-accent-amber/15 text-accent-amber' : 'text-text-muted hover:text-text-primary'}"
+						aria-pressed={level === value}
+						onclick={() => (chosenLevel = value as 'worlds' | 'places')}
+					>
+						{label}
+					</button>
+				{/each}
+			</span>
 		</span>
 	</div>
 
@@ -152,7 +189,7 @@
 							onmouseenter={() => (selectedId = session.id)}
 							onfocus={() => (selectedId = session.id)}
 						>
-							{pad(session.n)}
+							{col >= 18 || session.n === 1 || session.n % 10 === 0 ? pad(session.n) : ''}
 						</button>
 					{/each}
 				</div>
@@ -177,12 +214,12 @@
 								stroke={colourOf(column.rootId)} stroke-opacity="0.5" />
 						{/if}
 						{#each column.marks as mark, j (j)}
-							<circle cx={column.x} cy={mark.y} r={mark.main ? 5 : 3.5}
+							<circle cx={column.x} cy={mark.y} r={mark.main ? dot : dot * 0.7}
 								fill={mark.main ? colourOf(mark.rootId) : 'var(--color-hull)'}
-								stroke={colourOf(mark.rootId)} stroke-width="1.5" />
+								stroke={colourOf(mark.rootId)} stroke-width={col < 10 ? 1 : 1.5} />
 						{/each}
 						{#if column.session.id === selected?.id}
-							<circle cx={column.x} cy={column.mainY} r="10" fill="none" stroke="var(--color-accent-amber)" stroke-width="1.5" />
+							<circle cx={column.x} cy={column.mainY} r={dot + 5} fill="none" stroke="var(--color-accent-amber)" stroke-width="1.5" />
 						{/if}
 						<rect x={column.x - col / 2} y="0" width={col} {height} fill="transparent" class="cursor-pointer"
 							role="presentation"

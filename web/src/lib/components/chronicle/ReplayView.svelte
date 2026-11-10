@@ -1,12 +1,16 @@
 <script lang="ts">
-	// Holo-Replay: one session fills the viewscreen at a time, like a "previously on" recap.
-	// Auto-plays; arrow keys step and space pauses.
+	// Holo-Replay: one session fills the viewscreen at a time, like a recap before game night.
+	// It opens on the last few sessions ("previously on…"); it can also start from the top of
+	// the current arc or from the very beginning. Arrow keys step and space plays or pauses.
 	import Play from '@lucide/svelte/icons/play';
 	import Pause from '@lucide/svelte/icons/pause';
 	import SkipBack from '@lucide/svelte/icons/skip-back';
 	import SkipForward from '@lucide/svelte/icons/skip-forward';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import {
+		arcBySession,
+		buildArcs,
+		roman,
 		worldColours,
 		pad,
 		primaryStop,
@@ -18,13 +22,32 @@
 	let { sessions }: { sessions: Session[] } = $props();
 
 	const DWELL_MS = 8000;
+	/** How many sessions "previously on…" covers. */
+	const RECAP = 8;
 
 	let colours = $derived(worldColours(sessions));
-	let index = $state(0);
-	let at = $derived(Math.min(index, sessions.length - 1));
+	let arcs = $derived(buildArcs(sessions, colours));
+	let arcOf = $derived(arcBySession(arcs));
+	let recapStart = $derived(Math.max(0, sessions.length - RECAP));
+	let index = $state<number | null>(null);
+	let at = $derived(Math.min(index ?? recapStart, sessions.length - 1));
 	let session = $derived(sessions[at]);
 	let stop = $derived(session ? primaryStop(session) : null);
 	let colour = $derived(stop ? (colours.get(stop.path[0].id) ?? '#ffb000') : '#ffb000');
+	let arc = $derived(session ? arcOf.get(session.id) : undefined);
+	let currentArcStart = $derived(arcs.at(-1)?.start ?? 0);
+
+	/** Start points for a replay: the recap, the top of the current arc, the beginning. */
+	let starts = $derived([
+		{ label: 'Previously on…', from: recapStart },
+		{ label: `This arc: ${arcs.at(-1)?.world?.name ?? '—'}`, from: currentArcStart },
+		{ label: 'From the beginning', from: 0 }
+	]);
+
+	function startFrom(from: number) {
+		index = from;
+		playing = true;
+	}
 
 	let playing = $state(false);
 	$effect(() => {
@@ -64,9 +87,22 @@
 
 {#if session}
 	<div class="border border-border-dim bg-hull">
-		<div class="flex items-center justify-between border-b border-border-dim px-3 py-1.5">
+		<div class="flex flex-wrap items-center justify-between gap-2 border-b border-border-dim px-3 py-1.5">
 			<span class="machine-text text-[9px] text-text-muted">VIS-05 // HOLO-REPLAY</span>
-			<span class="machine-text text-[9px] text-text-muted">← → STEP · SPACE {playing ? 'PAUSE' : 'PLAY'}</span>
+			<div class="flex flex-wrap items-center gap-1.5">
+				{#each starts as start (start.label)}
+					<button
+						type="button"
+						class="border px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors {index === start.from || (index === null && start.from === recapStart)
+							? 'border-accent-amber/60 text-accent-amber'
+							: 'border-border-subtle text-text-muted hover:text-text-primary'}"
+						onclick={() => startFrom(start.from)}
+					>
+						▶ {start.label}
+					</button>
+				{/each}
+				<span class="ml-2 hidden machine-text text-[9px] text-text-faint sm:inline">← → STEP · SPACE {playing ? 'PAUSE' : 'PLAY'}</span>
+			</div>
 		</div>
 
 		<div class="screen relative overflow-hidden" style:--tone={colour}>
@@ -81,6 +117,11 @@
 					<div class="flex flex-wrap items-baseline justify-between gap-2">
 						<p class="font-display text-xs tracking-[0.3em] text-text-secondary">
 							SESSION <span class="text-accent-amber">{pad(session.n)}</span> / {pad(sessions.length)}
+							{#if arc}
+								<span class="ml-3 text-[10px] tracking-[0.2em]" style:color={arc.colour}>
+									PART {roman(arc.n)} · {arc.sessions.indexOf(session) + 1} OF {arc.sessions.length} ON {(arc.world?.name ?? 'UNRECORDED').toUpperCase()}
+								</span>
+							{/if}
 						</p>
 						<p class="machine-text text-[11px] text-text-secondary">{shortDate(session.date)}</p>
 					</div>
@@ -112,13 +153,14 @@
 			{/key}
 		</div>
 
-		<!-- One segment per session -->
-		<div class="flex gap-0.5 border-t border-border-dim px-3 pt-2.5">
+		<!-- One segment per session, tinted by the world of its arc -->
+		<div class="flex gap-px border-t border-border-dim px-3 pt-2.5">
 			{#each sessions as item, i (item.id)}
+				{@const tone = arcOf.get(item.id)?.colour ?? '#ffb000'}
 				<button type="button" class="group h-4 min-w-0 flex-1" aria-label="Session {item.n}: {item.title}" title="{pad(item.n)} · {item.title}" onclick={() => go(i)}>
-					<span class="block h-1 overflow-hidden bg-panel-light group-hover:bg-accent-amber/40">
+					<span class="block h-1 overflow-hidden group-hover:brightness-150" style:background="color-mix(in srgb, {tone} 22%, var(--color-panel-light))">
 						{#if i < at}
-							<span class="block h-full bg-accent-amber/70"></span>
+							<span class="block h-full" style:background={tone} style:opacity="0.75"></span>
 						{:else if i === at}
 							{#key `${item.id}-${playing}`}
 								<span class="block h-full bg-accent-amber {playing ? 'fill' : ''}" style:--dwell="{DWELL_MS}ms"></span>
@@ -130,7 +172,7 @@
 		</div>
 		<div class="flex items-center gap-2 px-3 pb-2.5">
 			<button type="button" class="ctl" aria-label="Previous session" disabled={at === 0} onclick={() => go(at - 1)}><SkipBack class="h-3.5 w-3.5" /></button>
-			<button type="button" class="ctl ctl-main" aria-label={playing ? 'Pause' : 'Play'} onclick={() => { if (!playing && at >= sessions.length - 1) index = 0; playing = !playing; }}>
+			<button type="button" class="ctl ctl-main" aria-label={playing ? 'Pause' : 'Play'} onclick={() => { if (!playing && at >= sessions.length - 1) index = recapStart; playing = !playing; }}>
 				{#if playing}<Pause class="h-3.5 w-3.5" />{:else}<Play class="h-3.5 w-3.5" />{/if}
 			</button>
 			<button type="button" class="ctl" aria-label="Next session" disabled={at >= sessions.length - 1} onclick={() => go(at + 1)}><SkipForward class="h-3.5 w-3.5" /></button>
