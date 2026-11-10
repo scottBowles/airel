@@ -1,22 +1,39 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { fromStore } from 'svelte/store';
-	import { formatGameDate } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
-	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Plus from '@lucide/svelte/icons/plus';
 	import X from '@lucide/svelte/icons/x';
 	import { graphql } from '$houdini';
 	import Button from '$lib/components/Button.svelte';
 	import LoadingState from '$lib/components/LoadingState.svelte';
-	import Tooltip from '$lib/components/Tooltip.svelte';
+	import { toSessions } from '$lib/chronicle/model';
+	import ViewSwitcher from '$lib/components/chronicle/ViewSwitcher.svelte';
+	import ClassicView from '$lib/components/chronicle/ClassicView.svelte';
+	import ViewDeck from '$lib/components/chronicle/ViewDeck.svelte';
+	import VoyageView from '$lib/components/chronicle/VoyageView.svelte';
+	import StarChartView from '$lib/components/chronicle/StarChartView.svelte';
+	import TimelineView from '$lib/components/chronicle/TimelineView.svelte';
+	import SagaView from '$lib/components/chronicle/SagaView.svelte';
+	import ReplayView from '$lib/components/chronicle/ReplayView.svelte';
+	import ThreadsView from '$lib/components/chronicle/ThreadsView.svelte';
+	import AtlasView from '$lib/components/chronicle/AtlasView.svelte';
+	import CalendarView from '$lib/components/chronicle/CalendarView.svelte';
 	import { getUserContext } from '$lib/auth';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
-	let store = $derived(fromStore(data.GameLogList).current);
+	let view = $derived(data.view);
+	// The classic list reads GameLogList; every other view reads ChronicleJourney.
+	let listStore = $derived('GameLogList' in data ? fromStore(data.GameLogList).current : null);
+	let journeyStore = $derived(
+		'ChronicleJourney' in data ? fromStore(data.ChronicleJourney).current : null
+	);
+	let store = $derived(listStore ?? journeyStore);
 	let fetching = $derived(store?.fetching ?? true);
-	let logs = $derived(store?.data?.gameLogs?.edges ?? []);
+	let logs = $derived(listStore?.data?.gameLogs?.edges ?? []);
+	let sessions = $derived(toSessions(journeyStore?.data?.gameLogs?.edges));
+	let recordCount = $derived(view === 'classic' ? logs.length : sessions.length);
 
 	const getUser = getUserContext();
 	let isStaff = $derived(!!getUser()?.isStaff);
@@ -83,7 +100,7 @@
 				<span class="status-dot text-accent-green"></span>
 				<span class="machine-text text-[9px] text-text-muted">LOG-01 // CHRONICLE</span>
 			</div>
-			<span class="machine-text text-[9px] text-text-muted">{fetching && !logs.length ? '...' : logs.length} RECORDS</span>
+			<span class="machine-text text-[9px] text-text-muted">{fetching && !recordCount ? '...' : recordCount} RECORDS</span>
 		</div>
 		<div class="flex items-center justify-between px-3 py-3">
 			<div>
@@ -121,65 +138,37 @@
 		</form>
 	{/if}
 
-	<!-- Log list -->
-	{#if fetching && !logs.length}
+	<ViewSwitcher current={view} />
+
+	<!-- The selected view -->
+	{#if fetching && !recordCount}
 		<LoadingState message="RETRIEVING LOG ENTRIES" />
 	{:else}
-	<div class="space-y-px">
-		{#each logs as edge, i}
-			{@const log = edge.node}
-			<div class="flex border border-border-dim transition-all hover:border-accent-amber/20">
-				<!-- Main clickable area -->
-				<a
-					href="/chronicle/{log.id}"
-					class="group flex flex-1 flex-col gap-2 bg-panel px-3 py-3 transition-all hover:bg-panel-hover sm:flex-row sm:items-start sm:gap-4"
-				>
-					<!-- Date -->
-					<div class="shrink-0 sm:w-24">
-						<span class="machine-text text-[10px] text-accent-amber">{formatGameDate(log.gameDate)}</span>
-					</div>
-
-					<!-- Content -->
-					<div class="min-w-0 flex-1">
-						<h2 class="text-xs font-bold text-text-primary uppercase tracking-wider group-hover:text-accent-amber transition-colors">
-							{log.title ?? 'UNTITLED LOG'}
-						</h2>
-						{#if log.brief}
-							<p class="mt-1 line-clamp-2 text-xs text-text-secondary leading-relaxed">
-								{log.brief}
-							</p>
-						{/if}
-					</div>
-
-					<!-- Record number -->
-					<span class="hidden machine-text text-[9px] text-text-faint sm:block">
-						#{String(i + 1).padStart(3, '0')}
-					</span>
-				</a>
-
-				<!-- External link gutter -->
-				{#if log.url}
-					<Tooltip text="Open Google Doc" side="left">
-						{#snippet children(props)}
-							<a
-								{...props}
-								href={log.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="flex items-center border-l border-border-dim bg-panel px-2.5 text-text-muted transition-colors hover:bg-accent-amber/5 hover:text-accent-amber"
-							>
-								<ExternalLink class="h-3.5 w-3.5" />
-							</a>
-						{/snippet}
-					</Tooltip>
-				{/if}
-			</div>
-		{:else}
-			<div class="border border-border-dim bg-panel px-4 py-8 text-center">
-				<p class="machine-text text-text-muted">NO LOGS RECORDED</p>
-				<p class="machine-text text-[10px] text-text-faint mt-1">IMPORT A SESSION TO BEGIN</p>
-			</div>
-		{/each}
-	</div>
+	{#if view === 'classic'}
+		<ClassicView {logs} />
+	{:else if view === 'deck'}
+		<ViewDeck {sessions} />
+	{:else if !sessions.length}
+		<div class="border border-border-dim bg-panel px-4 py-8 text-center">
+			<p class="machine-text text-text-muted">NO LOGS RECORDED</p>
+			<p class="machine-text text-[10px] text-text-faint mt-1">IMPORT A SESSION TO BEGIN</p>
+		</div>
+	{:else if view === 'voyage'}
+		<VoyageView {sessions} />
+	{:else if view === 'starchart'}
+		<StarChartView {sessions} />
+	{:else if view === 'timeline'}
+		<TimelineView {sessions} />
+	{:else if view === 'saga'}
+		<SagaView {sessions} />
+	{:else if view === 'replay'}
+		<ReplayView {sessions} />
+	{:else if view === 'threads'}
+		<ThreadsView {sessions} />
+	{:else if view === 'atlas'}
+		<AtlasView {sessions} />
+	{:else if view === 'calendar'}
+		<CalendarView {sessions} />
+	{/if}
 	{/if}
 </div>
