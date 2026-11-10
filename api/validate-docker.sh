@@ -8,7 +8,7 @@ echo "=================================="
 
 # Check if required files exist
 echo "📋 Checking required files..."
-files=(".dockerignore" "Dockerfile" "docker-compose.yml" "requirements.txt" ".env.template")
+files=(".dockerignore" "Dockerfile" "docker-compose.yml" "pyproject.toml" "uv.lock" ".env.template")
 for file in "${files[@]}"; do
     if [ -f "$file" ]; then
         echo "✅ $file exists"
@@ -76,27 +76,27 @@ else
     echo "❌ Flower monitoring missing"
 fi
 
-# Validate requirements.txt
-echo -e "\n📋 Validating requirements.txt..."
-if grep -q "celery==" requirements.txt; then
+# Validate uv.lock
+echo -e "\n📋 Validating uv.lock..."
+if grep -q '^name = "celery"$' uv.lock; then
     echo "✅ Celery dependency present"
 else
     echo "❌ Celery dependency missing"
 fi
 
-if grep -q "redis==" requirements.txt; then
+if grep -q '^name = "redis"$' uv.lock; then
     echo "✅ Redis dependency present"
 else
     echo "❌ Redis dependency missing"
 fi
 
-if grep -q "flower==" requirements.txt; then
+if grep -q '^name = "flower"$' uv.lock; then
     echo "✅ Flower dependency present"
 else
     echo "❌ Flower dependency missing"
 fi
 
-if grep -q "gunicorn==" requirements.txt; then
+if grep -q '^name = "gunicorn"$' uv.lock; then
     echo "✅ Gunicorn dependency present"
 else
     echo "❌ Gunicorn dependency missing"
