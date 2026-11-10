@@ -3,7 +3,8 @@ import { isChronicleView } from '$lib/chronicle/views';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async (event) => {
-	const param = event.url.searchParams.get('view');
+	// The view named in the link, else the one chosen last (see +page.server.ts), else Classic.
+	const param = event.url.searchParams.get('view') ?? event.data.savedView;
 	const view = isChronicleView(param) ? param : 'classic';
 
 	// The classic list keeps its light query. Every other view reads the journey query,

@@ -1,9 +1,13 @@
 <script lang="ts">
-	// Postcards: a wall of cards, one per session, each with a small landscape drawn from the
-	// place it is set in. A place keeps its skyline across visits; a system keeps its colour.
+	// Postcards: an album of cards, one per session, each with a small landscape drawn from the
+	// place it is set in, grouped into a section per arc. A place keeps its skyline across
+	// visits and a world keeps its colour. Filter to one world's stays.
 	import {
+		buildArcs,
 		buildPlaceTree,
+		roman,
 		worldColours,
+		worldSessionCounts,
 		pad,
 		primaryStop,
 		shortDate,
@@ -15,6 +19,8 @@
 
 	let tree = $derived(buildPlaceTree(sessions));
 	let colours = $derived(worldColours(sessions));
+	let worldVisits = $derived(worldSessionCounts(sessions));
+	let arcs = $derived(buildArcs(sessions, colours));
 	let systemId = $state<string | null>(null);
 
 	let cards = $derived(
@@ -30,13 +36,14 @@
 			};
 		})
 	);
-	let shown = $derived(systemId ? cards.filter((card) => card.system?.id === systemId) : cards);
+	let cardFor = $derived(new Map(cards.map((card) => [card.session.id, card])));
+	let shownArcs = $derived(systemId ? arcs.filter((arc) => arc.world?.id === systemId) : arcs);
 </script>
 
 <div class="flex flex-wrap items-center gap-1.5 border border-border-dim bg-hull px-3 py-2">
 	<span class="mr-1 machine-text text-[9px] text-text-muted">WORLD</span>
 	<button type="button" class="chip {systemId === null ? 'chip-on' : ''}" onclick={() => (systemId = null)}>All · {cards.length}</button>
-	{#each tree.roots as root (root.id)}
+	{#each tree.roots.filter((root) => worldVisits.get(root.id)) as root (root.id)}
 		<button
 			type="button"
 			class="chip {systemId === root.id ? 'chip-on' : ''}"
@@ -44,20 +51,28 @@
 			onclick={() => (systemId = systemId === root.id ? null : root.id)}
 		>
 			<span class="status-dot" style:color={colours.get(root.id)}></span>
-			{root.name} · {root.allSessions.length}
+			{root.name} · {worldVisits.get(root.id)}
 		</button>
 	{/each}
 </div>
 
 <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-	{#each shown as card (card.session.id)}
+	{#each shownArcs as arc (arc.n)}
+	<header class="col-span-full mt-2 flex flex-wrap items-baseline gap-x-3 border-b pb-1.5" style:border-color="color-mix(in srgb, {arc.colour} 40%, transparent)">
+		<span class="font-display text-[10px] tracking-[0.3em] text-text-muted">PART {roman(arc.n)}</span>
+		<h2 class="font-display text-sm uppercase tracking-[0.2em]" style:color={arc.colour}>{arc.world?.name ?? 'Unrecorded'}</h2>
+		<span class="ml-auto machine-text text-[9px] text-text-muted">
+			{arc.sessions.length} POSTCARD{arc.sessions.length > 1 ? 'S' : ''} · {shortDate(arc.sessions[0].date)}{arc.sessions.length > 1 ? ` – ${shortDate(arc.sessions.at(-1)?.date ?? null)}` : ''}
+		</span>
+	</header>
+	{#each arc.sessions.map((s) => cardFor.get(s.id)).filter((c) => !!c) as card (card.session.id)}
 		{@const session = card.session}
 		<a href="/chronicle/{session.id}" class="card group relative block overflow-hidden border border-border-dim bg-panel" style:--tone={card.tone}>
 			<svg viewBox="0 0 {CARD_W} {CARD_H}" class="block w-full" aria-hidden="true">
 				<defs>
 					<linearGradient id="sky-{session.n}" x1="0" y1="0" x2="0" y2="1">
 						<stop offset="0%" stop-color="#040407" />
-						<stop offset="100%" stop-color={card.tone} stop-opacity="0.35" />
+						<stop offset="100%" stop-color={card.tone} stop-opacity={card.art.glow} />
 					</linearGradient>
 				</defs>
 				<rect width={CARD_W} height={CARD_H} fill="#040407" />
@@ -66,7 +81,7 @@
 					<circle cx={star.x} cy={star.y} r={star.r} fill="#d4c5a0" opacity={star.o} />
 				{/each}
 				<circle cx={card.art.orb.x} cy={card.art.orb.y} r={card.art.orb.r} fill={card.tone} opacity="0.85" />
-				<circle cx={card.art.orb.x + card.art.orb.r * 0.35} cy={card.art.orb.y - card.art.orb.r * 0.2} r={card.art.orb.r} fill="#040407" opacity="0.45" />
+				<circle cx={card.art.orb.x + card.art.orb.r * card.art.orb.phase * 0.9} cy={card.art.orb.y - card.art.orb.r * 0.15} r={card.art.orb.r} fill="#040407" opacity="0.5" />
 				{#if card.art.orb.ringed}
 					<ellipse cx={card.art.orb.x} cy={card.art.orb.y} rx={card.art.orb.r * 1.7} ry={card.art.orb.r * 0.35} fill="none" stroke={card.tone} stroke-opacity="0.7" />
 				{/if}
@@ -83,6 +98,7 @@
 				<p class="mt-1 line-clamp-3 text-[11px] leading-relaxed text-text-secondary">{session.brief}</p>
 			</div>
 		</a>
+	{/each}
 	{/each}
 </div>
 

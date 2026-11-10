@@ -18,8 +18,10 @@ function hash(text: string): number {
 
 export type Postcard = {
 	stars: Array<{ x: number; y: number; r: number; o: number }>;
-	/** The sun, moon or world hanging in the sky. */
-	orb: { x: number; y: number; r: number; ringed: boolean };
+	/** The sun, moon or world hanging in the sky; `phase` shifts its shadow (-1 to 1). */
+	orb: { x: number; y: number; r: number; ringed: boolean; phase: number };
+	/** How strongly the sky glows with the world's colour (0 to 1). */
+	glow: number;
 	/** Far and near ground silhouettes as SVG path data, in a 200x120 box. */
 	far: string;
 	near: string;
@@ -28,7 +30,10 @@ export type Postcard = {
 export const CARD_W = 200;
 export const CARD_H = 120;
 
-/** `placeKey` decides the landscape (so a place looks the same each visit); `type` its style. */
+/**
+ * `placeKey` decides the ground, so a place keeps its skyline across visits; `type` its style.
+ * `variant` (the session) decides the sky, so each night there looks different.
+ */
 export function postcard(placeKey: string, type: string | null, variant: number): Postcard {
 	const place = mulberry32(hash(placeKey));
 	const sky = mulberry32(hash(`${placeKey}#${variant}`));
@@ -42,10 +47,11 @@ export function postcard(placeKey: string, type: string | null, variant: number)
 
 	const big = type === 'PLANET' || type === 'STAR' || type === 'MOON';
 	const orb = {
-		x: 40 + place() * 120,
-		y: 22 + place() * 30,
-		r: big ? 20 + place() * 16 : 8 + place() * 10,
-		ringed: place() > 0.6
+		x: 24 + sky() * 152,
+		y: 18 + sky() * 34,
+		r: (big ? 12 : 7) + sky() * (big ? 22 : 12),
+		ringed: sky() > 0.7,
+		phase: sky() * 2 - 1
 	};
 
 	// Built-up places get a skyline; everywhere else gets hills or crags.
@@ -63,6 +69,7 @@ export function postcard(placeKey: string, type: string | null, variant: number)
 	return {
 		stars,
 		orb,
+		glow: 0.15 + sky() * 0.35,
 		far: ridge(86, built ? 34 : 22, built ? 16 : 9, built),
 		near: ridge(104, built ? 16 : 14, built ? 11 : 6, built && place() > 0.3)
 	};

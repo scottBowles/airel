@@ -47,7 +47,7 @@
 	{/each}
 </div>
 
-<div class="grid gap-3 xl:grid-cols-2">
+<div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
 	{#each tree.roots as root (root.id)}
 		{@const colour = colours.get(root.id) ?? '#8a7e60'}
 		{@const span = root.allSessions}

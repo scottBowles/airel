@@ -13,15 +13,15 @@ export const CHRONICLE_VIEWS = [
 		code: 'CTL',
 		tagline: 'Everything on one screen',
 		description:
-			'Several views combined: the last session, the course so far, crew, cargo, ports of call and who has gone quiet.'
+			'The latest session and the arc it belongs to, the course so far world by world, the crew, cargo, ports of call and who has gone quiet.'
 	},
 	{
 		id: 'voyage',
 		label: 'Flight Path',
 		code: 'FLT',
-		tagline: 'The journey, place to place',
+		tagline: 'The journey, world to world',
 		description:
-			'Every place gets a lane and every session a column. One line traces where the crew went, session by session.'
+			'A lane per world and a column per session: the whole voyage on one screen. Switch to every place for the detail within each world.'
 	},
 	{
 		id: 'starchart',
@@ -29,7 +29,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'NAV',
 		tagline: 'A navigable map of the route',
 		description:
-			'Worlds and their ports drawn as a chart, with the route plotted across them. Scrub or play the voyage.'
+			'Each sun with its worlds in orbit and the routes the crew flew between them, thicker for the ones flown often. Scrub or play the voyage.'
 	},
 	{
 		id: 'timeline',
@@ -37,7 +37,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'TML',
 		tagline: 'Sessions on a spine of time',
 		description:
-			'A vertical timeline with course changes called out between sessions and the gaps between game nights.'
+			'Each world the crew reaches opens an arc; moves, long breaks and new years are marked. Fold it down to the arcs alone.'
 	},
 	{
 		id: 'saga',
@@ -45,7 +45,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'SGA',
 		tagline: 'Read it as one story',
 		description:
-			'The whole campaign as a book: one chapter per session, a contents rail and a reading-progress bar.'
+			'The campaign as a book: a part per world, a chapter per session, opening with the prologue.'
 	},
 	{
 		id: 'replay',
@@ -53,15 +53,15 @@ export const CHRONICLE_VIEWS = [
 		code: 'RPL',
 		tagline: 'A viewscreen recap',
 		description:
-			'One session fills the screen at a time. Auto-plays like a recap before game night; arrow keys step through.'
+			'One session fills the screen at a time. Opens on the last few sessions for a recap before game night, or plays the arc or the whole voyage.'
 	},
 	{
 		id: 'postcards',
 		label: 'Postcards',
 		code: 'PCD',
-		tagline: 'A wall of places visited',
+		tagline: 'An album of places visited',
 		description:
-			'One card per session with a small landscape drawn from where it is set. Filter by world.'
+			'A card per session with a small landscape drawn from where it is set, a section per arc. Filter to one world.'
 	},
 	{
 		id: 'threads',
@@ -69,7 +69,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'THR',
 		tagline: 'Who and what appears when',
 		description:
-			'A matrix of characters, places, items and factions against sessions. Follow a thread through the story.'
+			'Characters, places, items, artifacts and factions against sessions, most-seen first. Follow a thread through the story.'
 	},
 	{
 		id: 'atlas',
@@ -85,7 +85,7 @@ export const CHRONICLE_VIEWS = [
 		code: 'CAL',
 		tagline: 'Game nights at a glance',
 		description:
-			'A month-by-month record of when the group played, with the usual and longest gaps.'
+			'A strip per year with each game night lit in the colour of its world, plus the usual gap and the longest break.'
 	}
 ] as const;
 
@@ -95,6 +95,7 @@ export function isChronicleView(value: string | null | undefined): value is Chro
 	return value === 'deck' || CHRONICLE_VIEWS.some((view) => view.id === value);
 }
 
+/** A view's link. Every view, Classic included, names itself, so choosing it is remembered. */
 export function viewHref(id: ChronicleViewId): string {
-	return id === 'classic' ? '/chronicle' : `/chronicle?view=${id}`;
+	return `/chronicle?view=${id}`;
 }

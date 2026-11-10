@@ -63,7 +63,7 @@
 	});
 </script>
 
-<div class="grid gap-4 lg:grid-cols-[250px_minmax(0,1fr)]">
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-[250px_minmax(0,1fr)]">
 	<!-- Contents: every part, with the chapters of the part being read -->
 	<aside class="hidden lg:block">
 		<div class="sticky top-0 border border-border-dim bg-hull">
@@ -122,7 +122,7 @@
 	</aside>
 
 	<!-- The story -->
-	<article class="border border-border-dim bg-hull">
+	<article class="min-w-0 border border-border-dim bg-hull">
 		<div class="sticky top-0 z-10 border-b border-border-dim bg-hull lg:hidden">
 			<div class="h-0.5 bg-void"><div class="h-full bg-accent-amber transition-all" style:width="{progress}%"></div></div>
 			<label class="flex items-center gap-2 px-3 py-1.5 machine-text text-[9px] text-text-muted">

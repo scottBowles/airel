@@ -85,21 +85,22 @@
 			{/each}
 		{/each}
 	{:else if view === 'atlas'}
-		{#each [[8, A], [84, C]] as [x, tone] (x)}
-			<rect {x} y="6" width="68" height="52" fill="none" stroke={DIM} />
-			<line x1={x} x2={Number(x) + 68} y1="6" y2="6" stroke={tone} stroke-width="2" />
-			<rect x={Number(x) + 5} y="12" width="26" height="4" fill={tone} />
+		{#each [{ x: 8, tone: A }, { x: 84, tone: C }] as box (box.x)}
+			<rect x={box.x} y="6" width="68" height="52" fill="none" stroke={DIM} />
+			<line x1={box.x} x2={box.x + 68} y1="6" y2="6" stroke={box.tone} stroke-width="2" />
+			<rect x={box.x + 5} y="12" width="26" height="4" fill={box.tone} />
 			{#each [24, 34, 44] as y, i (y)}
-				<rect x={Number(x) + 5 + i * 5} {y} width="22" height="3" fill="#d4c5a0" opacity="0.7" />
-				<rect x={Number(x) + 44} {y} width={20 - i * 6} height="3" fill={tone} />
+				<rect x={box.x + 5 + i * 5} {y} width="22" height="3" fill="#d4c5a0" opacity="0.7" />
+				<rect x={box.x + 44} {y} width={20 - i * 6} height="3" fill={box.tone} />
 			{/each}
 		{/each}
 	{:else if view === 'calendar'}
-		{#each [0, 1, 2] as m (m)}
-			{#each [0, 1, 2, 3] as row (row)}
-				{#each [0, 1, 2, 3, 4, 5] as col (col)}
-					{@const lit = (m * 7 + row * 5 + col) % 9 === 0}
-					<rect x={8 + m * 50 + col * 7} y={12 + row * 11} width="5.5" height="8" fill={lit ? [A, C, P][m] : DIM} opacity={lit ? 1 : 0.5} />
+		{#each [0, 1, 2] as year (year)}
+			<rect x="6" y={8 + year * 18} width="14" height="4" fill={DIM} />
+			{#each { length: 26 } as _, col (col)}
+				{#each [0, 1] as row (row)}
+					{@const lit = (col * 7 + row * 3 + year * 5) % 6 === 0}
+					<rect x={26 + col * 5} y={6 + year * 18 + row * 5} width="4" height="4" fill={lit ? [A, C, P][(col >> 3) % 3] : DIM} opacity={lit ? 1 : 0.45} />
 				{/each}
 			{/each}
 		{/each}

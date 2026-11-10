@@ -4,12 +4,14 @@
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import { viewHref } from '$lib/chronicle/views';
 	import {
+		buildArcs,
 		buildPlaceTree,
 		buildThreads,
 		worldColours,
 		daysBetween,
 		pad,
 		primaryStop,
+		roman,
 		shortDate,
 		wherePath,
 		type Session
@@ -22,6 +24,7 @@
 	let latest = $derived(sessions.at(-1) ?? null);
 	let latestStop = $derived(latest ? primaryStop(latest) : null);
 	let count = $derived(sessions.length);
+	let currentArc = $derived(buildArcs(sessions, colours).at(-1));
 
 	const toneOf = (session: Session) => {
 		const stop = primaryStop(session);
@@ -79,6 +82,11 @@
 			</div>
 			{#if latestStop}
 				<p class="mt-3 text-[11px] uppercase tracking-[0.2em]" style:color={toneOf(latest)}>▸ {wherePath(latestStop)}</p>
+			{/if}
+			{#if currentArc?.world}
+				<p class="mt-0.5 machine-text text-[9px] text-text-muted">
+					PART {roman(currentArc.n)} · {currentArc.sessions.length} SESSION{currentArc.sessions.length > 1 ? 'S' : ''} ON {currentArc.world.name.toUpperCase()} SINCE {shortDate(currentArc.sessions[0].date).slice(3)}
+				</p>
 			{/if}
 			<h2 class="mt-1 font-display text-2xl uppercase leading-tight text-text-primary text-glow-amber">{latest.title}</h2>
 			<p class="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">{latest.brief}</p>

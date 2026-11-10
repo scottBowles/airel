@@ -110,15 +110,6 @@ export function toChronicle(edges: ReadonlyArray<{ node: RawLog }> | null | unde
 	};
 }
 
-/** Sessions in play order, numbered from 1, without splitting off a prologue. */
-export function toSessions(edges: ReadonlyArray<{ node: RawLog }> | null | undefined): Session[] {
-	const time = (log: RawLog) => (log.gameDate ? new Date(log.gameDate).getTime() : Infinity);
-	return (edges ?? [])
-		.map((e) => e.node)
-		.sort((a, b) => time(a) - time(b))
-		.map((log, i) => toSession(log, i + 1));
-}
-
 /** "Session 12: Archive of Echoes" -> "Archive of Echoes". Views show the number themselves. */
 export function stripSessionPrefix(title: string | null | undefined): string {
 	return (title ?? '').replace(/^\s*session\s*\d+\s*[:.\-–—]\s*/i, '').trim();
@@ -292,13 +283,6 @@ export function worldSessionCounts(sessions: Session[]): Map<string, number> {
 export function sessionColour(session: Session, colours: Map<string, string>): string {
 	const world = sessionWorld(session);
 	return world ? (colours.get(world.id) ?? NEUTRAL) : NEUTRAL;
-}
-
-/** Colours assigned in order of appearance. */
-export function colourByOrder(keys: string[]): Map<string, string> {
-	const map = new Map<string, string>();
-	for (const key of keys) if (!map.has(key)) map.set(key, HUES[map.size % HUES.length]);
-	return map;
 }
 
 /** A stay on one world: a run of consecutive sessions mainly set there. */
