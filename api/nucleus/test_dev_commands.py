@@ -1,5 +1,6 @@
 import json
 from io import StringIO
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
@@ -40,6 +41,13 @@ class SeedDevTests(TestCase):
         logs = GameLog.objects.order_by("session_number")
         self.assertEqual(logs[2].last_game_log, logs[1])
         self.assertEqual(Place.objects.get(name="Port Veil").parent.name, "Calder")
+
+    @patch("rag_chat.signals.process_content.delay")
+    def test_queues_no_embedding_tasks(self, delay):
+        with self.captureOnCommitCallbacks(execute=True):
+            run("seed_dev")
+        self.assertTrue(Character.objects.exists())
+        delay.assert_not_called()
 
     def test_skips_world_when_database_has_other_logs(self):
         GameLog.objects.bulk_create([GameLog(url="https://docs.example/real-log")])
