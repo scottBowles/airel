@@ -10,6 +10,7 @@
 			readonly title: string | null;
 			readonly brief: string | null;
 			readonly gameDate: Date | string | null;
+			readonly sessionNumber: number | null;
 			readonly url: string;
 		};
 	};
@@ -18,7 +19,7 @@
 </script>
 
 <div class="space-y-px">
-	{#each logs as edge, i}
+	{#each logs as edge}
 		{@const log = edge.node}
 		<div class="flex border border-border-dim transition-all hover:border-accent-amber/20">
 			<!-- Main clickable area -->
@@ -43,10 +44,12 @@
 					{/if}
 				</div>
 
-				<!-- Record number -->
-				<span class="hidden machine-text text-[9px] text-text-faint sm:block">
-					#{String(i + 1).padStart(3, '0')}
-				</span>
+				<!-- Session number: left out when the log has none -->
+				{#if log.sessionNumber != null}
+					<span class="hidden machine-text text-[9px] text-text-faint sm:block">
+						#{String(log.sessionNumber).padStart(3, '0')}
+					</span>
+				{/if}
 			</a>
 
 			<!-- External link gutter -->
