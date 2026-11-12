@@ -24,16 +24,13 @@ as_pg "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='airel'\"" | grep -q 1 |
 as_pg "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='airel'\"" | grep -q 1 ||
 	as_pg "createdb -O airel airel" || log "createdb failed"
 
-# Placeholder env files. No real keys: Algolia indexing is off, and OpenAI/R2/Google calls fail.
+# Placeholder env files. No real keys: OpenAI/R2/Google calls fail.
 if [ ! -f api/.env ]; then
 	cat >api/.env <<'EOF'
 # Written by bin/cloud-session-start.sh for cloud sessions. Placeholder values only.
 DATABASE_URL=postgres://airel:airel@127.0.0.1:5432/airel
 REDIS_URL=redis://127.0.0.1:6379/0
 SECRET_KEY=cloud-session-only
-ALGOLIA_APPLICATION_ID=placeholder
-ALGOLIA_API_KEY=placeholder
-ALGOLIA_AUTO_INDEXING=false
 OPENAI_API_KEY=placeholder
 EOF
 fi
@@ -43,11 +40,6 @@ if [ ! -f web/.env ]; then
 PUBLIC_GRAPHQL_ENDPOINT=http://127.0.0.1:8000/graphql/
 EOF
 fi
-# The search UI throws without these, so every page 500s. Also added to a web/.env from an
-# earlier session. (Remove with Algolia, #54.)
-for key in PUBLIC_ALGOLIA_APP_ID PUBLIC_ALGOLIA_SEARCH_API_KEY; do
-	grep -q "^$key=" web/.env || echo "$key=placeholder" >>web/.env || log "web/.env $key failed"
-done
 
 # api/ dependencies, reinstalled only when the requirements or this script change.
 api_hash=$(hash_of api/requirements.txt api/requirements-dev.txt "$0")

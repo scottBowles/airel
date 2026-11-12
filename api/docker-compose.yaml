@@ -23,7 +23,7 @@ services:
         build: .
         expose:
             - "8000" # Coolify will handle external routing
-        command: sh start-web.sh # migrate, reindex unless ALGOLIA_AUTO_INDEXING=false, serve
+        command: sh start-web.sh # migrate, collect static, serve
         # environment:
         #     - DJANGO_SETTINGS_MODULE=website.settings
         #     - PYTHONPATH=/app
@@ -40,8 +40,6 @@ services:
         #     - CLOUDFLARE_R2_SECRET_ACCESS_KEY=${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
         #     - CLOUDFLARE_R2_BUCKET_NAME=${CLOUDFLARE_R2_BUCKET_NAME}
         #     - CLOUDFLARE_R2_ACCOUNT_ID=${CLOUDFLARE_R2_ACCOUNT_ID}
-        #     - ALGOLIA_APPLICATION_ID=${ALGOLIA_APPLICATION_ID}
-        #     - ALGOLIA_API_KEY=${ALGOLIA_API_KEY}
         # depends_on:
         #     redis:
         #         condition: service_healthy

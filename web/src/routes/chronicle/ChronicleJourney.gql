@@ -1,0 +1,76 @@
+# Every log with the entities it touches, for the Chronicle journey views.
+query ChronicleJourney($order: GameLogOrder) {
+	gameLogs(order: $order) {
+		edges {
+			node {
+				id
+				title
+				brief
+				synopsis
+				gameDate
+				url
+				placesSetIn(first: 20) {
+					edges {
+						node {
+							id
+							name
+							placeType
+							parent {
+								id
+								name
+								placeType
+								parent {
+									id
+									name
+									placeType
+									parent {
+										id
+										name
+										placeType
+										parent {
+											id
+											name
+											placeType
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				characters(first: 50) {
+					edges {
+						node {
+							id
+							name
+						}
+					}
+				}
+				associations(first: 30) {
+					edges {
+						node {
+							id
+							name
+						}
+					}
+				}
+				items(first: 30) {
+					edges {
+						node {
+							id
+							name
+						}
+					}
+				}
+				artifacts(first: 30) {
+					edges {
+						node {
+							id
+							name
+						}
+					}
+				}
+			}
+		}
+	}
+}
