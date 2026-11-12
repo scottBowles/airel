@@ -22,7 +22,7 @@ This application now supports background task processing using Celery with Redis
 
 ### Quick Start
 
-1. **Install dependencies**: `pip install -r requirements.txt`
+1. **Install dependencies**: `uv sync` (creates `.venv` from `uv.lock`; see `AGENTS.md`)
 2. **Start Redis**: `brew install redis && brew services start redis` (Mac) or `docker-compose up -d redis` (Docker)
 3. **Test setup**: `python manage.py test_celery`
 4. **Start worker**: `celery -A website worker --loglevel=info`

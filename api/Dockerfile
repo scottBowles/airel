@@ -22,10 +22,18 @@ RUN apt-get update && apt-get install -y \
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with uv, exactly as pinned in uv.lock (no dev group). The
+# venv lives outside /app so the chown below doesn't copy it, and is root-owned as the
+# system site-packages were. It goes first on PATH, so python, gunicorn and celery are its.
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /bin/
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON_DOWNLOADS=0 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_NO_CACHE=1
+ENV PATH="/opt/venv/bin:$PATH"
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --locked --no-dev
 
 # Install NLTK data required for query expansion
 # RUN python -m nltk.downloader punkt punkt_tab averaged_perceptron_tagger stopwords

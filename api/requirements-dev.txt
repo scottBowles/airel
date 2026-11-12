@@ -1,4 +1,0 @@
-# Development-only tools. Install with: pip install -r requirements-dev.txt
-honcho==2.0.0
-black==26.10.1
-PyYAML==6.0.3 # rag_chat/eval reads its cases from YAML

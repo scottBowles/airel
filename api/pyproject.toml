@@ -1,0 +1,64 @@
+# api/ is a Django app, not a library: uv manages its dependencies and lockfile (uv.lock)
+# but never builds or installs it as a package. See AGENTS.md ("Dependencies").
+[project]
+name = "airel-api"
+version = "0"
+requires-python = ">=3.14,<3.15" # .python-version
+dependencies = [
+    "boto3", # django-storages' S3 backend (R2)
+    "celery",
+    "dj-database-url",
+    "Django",
+    "django-celery-beat",
+    "django-choices-field",
+    "django-cors-headers",
+    "django-debug-toolbar",
+    "django-extensions",
+    "django-storages",
+    "factory_boy",
+    "flower",
+    "google-api-python-client",
+    "google-auth",
+    "graphql-relay",
+    "gunicorn",
+    "httpx",
+    "nltk",
+    "numpy",
+    "openai",
+    "pgvector",
+    "psycopg[binary,pool]",
+    "pydub",
+    # pydub imports audioop, which Python 3.13 removed from the standard library.
+    "audioop-lts",
+    "python-dotenv",
+    "redis",
+    "strawberry-django-auth",
+    "strawberry-graphql",
+    "strawberry-graphql-django",
+    "tiktoken",
+    "tqdm",
+    "webrtcvad-wheels",
+    "whitenoise",
+    # Newer than google-auth requires, for security fixes. No Intel-Mac wheels since 49:
+    # building it there needs a current Rust (rustup update stable).
+    "cryptography>=50.0.2",
+    # Nothing in api/ imports these four. They were pinned in the old hand-written
+    # requirements.txt (setuptools for the Dockerfile; the rest as dependencies of older
+    # google-auth releases) and are kept so the move to a lockfile installs the same set.
+    # Candidates for removal.
+    "cachetools",
+    "Pillow",
+    "rsa",
+    "setuptools",
+]
+
+[dependency-groups]
+# Development-only tools. `uv sync` installs them; `uv sync --no-dev` (the Dockerfile) doesn't.
+dev = [
+    "black",
+    "honcho",
+    "PyYAML", # rag_chat/eval reads its cases from YAML
+]
+
+[tool.uv]
+package = false

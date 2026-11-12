@@ -12,13 +12,11 @@ This guide explains how to set up and use Celery with Redis for background task 
 
 ### 1. Install Dependencies
 
-Dependencies are already included in `requirements.txt`:
-- `celery==5.3.4`
-- `redis==5.0.1`
+Celery, Redis and Flower are already dependencies in `pyproject.toml` (versions pinned in `uv.lock`).
 
 Install all dependencies:
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. Start Redis
@@ -217,8 +215,7 @@ celery -A website inspect stats
 
 ### Flower (Celery Monitoring Tool)
 ```bash
-# Install Flower
-pip install flower
+# Flower is already a dependency (uv sync installs it)
 
 # Start Flower
 celery -A website flower
@@ -316,10 +313,7 @@ To verify everything is working:
 **4. "ImportError: No module named 'celery'"**
 ```bash
 # Reinstall dependencies
-pip install -r requirements.txt
-
-# Or install directly
-pip install celery redis
+uv sync
 ```
 
 ### Logs and Debugging

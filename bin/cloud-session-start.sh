@@ -41,13 +41,12 @@ PUBLIC_GRAPHQL_ENDPOINT=http://127.0.0.1:8000/graphql/
 EOF
 fi
 
-# api/ dependencies, reinstalled only when the requirements or this script change.
-api_hash=$(hash_of api/requirements.txt api/requirements-dev.txt "$0")
+# api/ dependencies, reinstalled only when the lock, the project or this script change.
+# uv sync installs the dev group too, removes packages uv.lock no longer lists, and
+# recreates api/.venv when it's on another Python than api/.python-version.
+api_hash=$(hash_of api/uv.lock api/pyproject.toml api/.python-version "$0")
 if [ "$(cat api/.venv/.deps-hash 2>/dev/null)" != "$api_hash" ]; then
-	# Recreate the venv when it is missing or on another Python (see api/runtime.txt).
-	api/.venv/bin/python -c 'import sys; sys.exit(sys.version_info[:2] != (3, 14))' 2>/dev/null ||
-		uv venv -q --clear --python 3.14 api/.venv
-	if uv pip install -q --python api/.venv/bin/python -r api/requirements.txt -r api/requirements-dev.txt; then
+	if (cd api && uv sync -q --locked); then
 		echo "$api_hash" >api/.venv/.deps-hash
 	else
 		log "api dependency install failed"

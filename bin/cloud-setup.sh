@@ -35,7 +35,7 @@ install_chromium_deps() {
 # Vite+ (vp) toolchain for web/. The session hook pins it to the lockfile's version.
 npm install -g --silent vite-plus || echo "cloud-setup: vite-plus install failed" >&2 &
 
-# Python for api/ (see api/runtime.txt). Retried: the download has timed out (504) before.
+# Python for api/ (see api/.python-version). Retried: the download has timed out (504) before.
 install_python() {
 	for attempt in 1 2 3; do
 		uv python install 3.14 && return
