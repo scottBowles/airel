@@ -1,7 +1,7 @@
 # Airel
 
 Campaign companion for a long-running tabletop RPG: a searchable database of
-characters, places, items and session logs, plus a RAG chat that answers
+characters, places, items, session logs and more, plus a RAG chat that answers
 questions about the campaign. Live at https://airel.vip.
 
 | Folder    | What                                                                    |
