@@ -116,6 +116,35 @@ against 0.1 for the rest, left over from an older model.
   models, compress them (`@threlte/gltf --transform` / gltf-transform: Draco or
   meshopt + KTX2/WebP textures), and maybe host them outside the repo.
 
+## Making planets with Blender in a cloud session
+
+Cloud sessions on this environment have **Blender 5.3.0** at `/usr/local/bin/blender`,
+installed by `bin/cloud-setup.sh` (official build from `download.blender.org`, which is
+on the network allowlist). It runs headless on CPU (Cycles); there is no GPU.
+
+`bake_planet.py` (next to this file) is a tested end-to-end example, about 30 s per run:
+
+```sh
+blender -b --factory-startup -P .ideas/projects/solar-system-3d/bake_planet.py -- /tmp/out
+```
+
+It builds a procedural Earth-like "Terran" (noise into colour ramp, roughness and land-only
+bump), renders a preview, bakes **diffuse, roughness and tangent-space normal** maps
+(2048×1024), swaps them in for the procedural nodes, exports `Terran.glb` (0.6 MB, WebP
+textures), then re-imports that `.glb` in a fresh scene and renders it. Agents can view the
+PNGs to judge and iterate.
+
+Pitfalls found:
+- In Blender 5.x the Bump node's **Distance defaults to 0.001** (it was 1.0 in 4.x). Leave it
+  and the bump and the baked normal map come out flat. Set it explicitly.
+- Bake normal/roughness into images with colorspace `Non-Color`.
+- A UV sphere with equirectangular UVs streaks near the poles in the baked maps. Use an
+  icosphere or cube-sphere with better UVs, or hide the poles, if it shows.
+- Importing `.glb` needs numpy. The official build bundles it; Ubuntu's apt `blender`
+  (4.0) doesn't, and it also lacks the OpenImageDenoise denoiser.
+- The existing planets were exported from Blender 4.1. Their `.blend` files (on the user's
+  machine) should open in 5.3.
+
 ## Open decisions for the user
 
 1. Keep building in `solars`, or move the work into `web/` (e.g. a 3D mode of the
