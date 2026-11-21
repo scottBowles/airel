@@ -87,12 +87,12 @@ export const GONHIRRIM_MOONS: Record<string, BodyLook> = {
 	}
 };
 
-// The rain world: islands under a heavy grey deck, city lights showing through the gaps at night.
+// The rain world: white rain bands over a thin overcast; city lights show through the gaps at night.
 export const HYANG_WAN: BodyLook = {
 	name: 'Hyang Wan',
 	radius: 1.4,
 	glow: 7,
-	clouds: { color: [0.52, 0.55, 0.58], opacity: 0.82, drift: 0.003 },
+	clouds: { color: [0.93, 0.94, 0.96], opacity: 1, drift: 0.003 },
 	atmosphere: { color: [0.55, 0.7, 0.85], strength: 0.85 }
 };
 

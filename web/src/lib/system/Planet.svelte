@@ -89,6 +89,21 @@
 				metalness: 0
 			})
 		: null;
+	// Thin cloud should vanish before thick cloud does, as it does when you descend through
+	// weather: raising the alpha map to a power > 1 clears the thin parts and keeps the cores.
+	const cloudPow = { value: 1 };
+	if (cloudMaterial) {
+		cloudMaterial.onBeforeCompile = (shader) => {
+			shader.uniforms.uCloudPow = cloudPow;
+			shader.fragmentShader = shader.fragmentShader
+				.replace('#include <common>', '#include <common>\nuniform float uCloudPow;')
+				.replace(
+					'#include <alphamap_fragment>',
+					'diffuseColor.a *= pow(texture2D(alphaMap, vAlphaMapUv).g, uCloudPow);'
+				);
+		};
+		cloudMaterial.customProgramCacheKey = () => 'cloud-pow';
+	}
 	const sunPosition = new THREE.Vector3();
 	// svelte-ignore state_referenced_locally
 	const airMaterial = atmosphere ? atmosphereMaterial(atmosphere, sunPosition) : null;
@@ -115,8 +130,10 @@
 			group.getWorldPosition(centre);
 			const d = camera.current.position.distanceTo(centre) / radius;
 			const t = Math.min(Math.max((d - 2) / 3, 0), 1);
+			const k = t * t * (3 - 2 * t);
 			const near = clouds?.near ?? 0.4;
-			cloudMaterial.opacity = (clouds?.opacity ?? 0.9) * (near + (1 - near) * t * t * (3 - 2 * t));
+			cloudMaterial.opacity = (clouds?.opacity ?? 0.9) * (near + (1 - near) * k);
+			cloudPow.value = 1 + 1.5 * (1 - k);
 		}
 		live.uniforms.uTime.value += delta;
 		const next = pins.map((pin) => {
