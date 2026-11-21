@@ -145,6 +145,22 @@ Pitfalls found:
 - The existing planets were exported from Blender 4.1. Their `.blend` files (on the user's
   machine) should open in 5.3.
 
+## Status (Nov 2026)
+
+Built so far, in this repo:
+
+- **`tools/planets/`**: generator that turns a planet's feature spec (landmarks at lat/long,
+  from the lore) into equirectangular textures and place pins. See its README.
+  **Magmus** is done: lava ocean with 12 Solidlands placed from the session logs, pins in
+  `web/static/system/magmus/pins.json` marked lore / layout / guess.
+- **`web/src/lib/system/`**: Threlte 8 components. `Sun.svelte` + `sunShader.ts` (animated
+  shader suns with coronas; `YELLOW_SUN` calm and golden-white, `RED_SUN` deep red, wild,
+  flaring). `Planet.svelte` (textured planet, spin, clickable place pins on the visible
+  side). `geo.ts` (lat/lon → sphere position, tested).
+- **`/system/lab`**: preview page to look at each body and click Magmus's pins.
+
+Next: the other planets and moons (see `assets.md`), then the fly-through UI.
+
 ## Vision (from the user, Nov 2026)
 
 What the user wants this to become, nearest first:

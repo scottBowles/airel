@@ -1,0 +1,41 @@
+<script lang="ts">
+	import { T, useTask } from '@threlte/core';
+	import { onDestroy } from 'svelte';
+	import { sunCoronaMaterial, sunSurfaceMaterial, type SunLook } from './sunShader';
+
+	type Props = {
+		look: SunLook;
+		radius?: number;
+		position?: [number, number, number];
+		/** Strength of the light the sun casts on planets. */
+		intensity?: number;
+	};
+	let { look, radius = 1, position = [0, 0, 0], intensity = 3 }: Props = $props();
+
+	const CORONA = 3.2; // corona size, in sun radii
+	// The look is fixed for a sun's lifetime, so the materials are built once.
+	// svelte-ignore state_referenced_locally
+	const surface = sunSurfaceMaterial(look);
+	// svelte-ignore state_referenced_locally
+	const corona = sunCoronaMaterial(look, CORONA);
+
+	useTask((delta) => {
+		surface.uniforms.uTime.value += delta;
+		corona.uniforms.uTime.value += delta;
+	});
+
+	onDestroy(() => {
+		surface.dispose();
+		corona.dispose();
+	});
+</script>
+
+<T.Group {position}>
+	<T.Mesh scale={radius} material={surface}>
+		<T.SphereGeometry args={[1, 96, 48]} />
+	</T.Mesh>
+	<T.Mesh scale={radius * CORONA} material={corona} renderOrder={1}>
+		<T.PlaneGeometry args={[2, 2]} />
+	</T.Mesh>
+	<T.PointLight color={look.glow} {intensity} decay={0} />
+</T.Group>
