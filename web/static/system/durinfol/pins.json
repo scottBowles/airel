@@ -1,0 +1,23 @@
+{
+  "body": "Durinfol",
+  "pins": [
+    {
+      "name": "Ereb\u00f4r",
+      "lat": 18.5,
+      "lon": 30,
+      "confidence": "layout"
+    },
+    {
+      "name": "Temple of Thiton (Durinfol)",
+      "lat": 5.8,
+      "lon": 30,
+      "confidence": "layout"
+    },
+    {
+      "name": "Crystal Coral Lake",
+      "lat": 12,
+      "lon": 31.5,
+      "confidence": "guess"
+    }
+  ]
+}
