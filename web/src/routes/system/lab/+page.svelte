@@ -120,7 +120,9 @@
 		{:else if moon}
 			<T.AmbientLight intensity={0.06} />
 			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
-			<Planet
+			<!-- A planet loads its textures once, so switching moons needs a fresh one. -->
+			{#key focus}
+				<Planet
 				slug={focus!}
 				radius={moon.radius}
 				glow={moon.glow ?? 1}
@@ -132,6 +134,7 @@
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
 			/>
+			{/key}
 		{/if}
 	</Canvas>
 
