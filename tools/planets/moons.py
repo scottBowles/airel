@@ -185,7 +185,7 @@ MOONS: dict[str, dict] = {
     # Not one of Gonhirrim's: Hyang Wan's moon. Two logs see it set over Mulgogi; nothing else
     # is known, so it is airless and uninhabited: plain grey rock, heavily cratered.
     "hyang-wan-moon": dict(
-        name="Hyang Wan's moon",
+        name="Hyang Wan's Moon",
         seed=411,
         water=0.0,
         mountains=0.3,

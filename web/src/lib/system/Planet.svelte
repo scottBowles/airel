@@ -22,8 +22,11 @@
 		flicker?: number;
 		pins?: Pin[];
 		onpin?: (pin: Pin) => void;
-		/** A cloud layer from clouds.webp (white where cloudy), drifting slowly over the ground. */
-		clouds?: { color?: [number, number, number]; opacity?: number; drift?: number };
+		/**
+		 * A cloud layer from clouds.webp (white where cloudy), drifting slowly over the ground. It
+		 * thins as the camera comes close, to `near` × its opacity, so places can be seen.
+		 */
+		clouds?: { color?: [number, number, number]; opacity?: number; drift?: number; near?: number };
 		/** A glow around the rim, lit from `sun`. */
 		atmosphere?: AtmosphereLook;
 		/** World position of the light that lights the atmosphere. */
@@ -102,10 +105,19 @@
 	const world = new THREE.Vector3();
 	const normal = new THREE.Vector3();
 	const toCamera = new THREE.Vector3();
+	const centre = new THREE.Vector3();
 	useTask((delta) => {
 		if (!group) return;
 		group.rotation.y += spin * Math.PI * 2 * delta;
-		if (cloudMesh) cloudMesh.rotation.y += (clouds?.drift ?? 0.002) * Math.PI * 2 * delta;
+		if (cloudMesh && cloudMaterial) {
+			cloudMesh.rotation.y += (clouds?.drift ?? 0.002) * Math.PI * 2 * delta;
+			// Full cover from afar (5 radii out), thinning to `near` close in (2 radii).
+			group.getWorldPosition(centre);
+			const d = camera.current.position.distanceTo(centre) / radius;
+			const t = Math.min(Math.max((d - 2) / 3, 0), 1);
+			const near = clouds?.near ?? 0.4;
+			cloudMaterial.opacity = (clouds?.opacity ?? 0.9) * (near + (1 - near) * t * t * (3 - 2 * t));
+		}
 		live.uniforms.uTime.value += delta;
 		const next = pins.map((pin) => {
 			normal.set(...latLonToVector(pin.lat, pin.lon));

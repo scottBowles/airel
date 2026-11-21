@@ -224,7 +224,7 @@ def generate(width: int, out: Path) -> None:
     rgb = rgb * (1 - 0.25 * np.clip(lights, 0, 1)[..., None]) + 0.12 * np.clip(lights, 0, 1)[..., None]
     print(f"lights {time.time() - t0:.1f}s")
 
-    # Clouds: a near-global rain deck in bands, wound into a few cyclones, with gaps.
+    # Clouds: rain bands wound into a few cyclones, over a thin overcast.
     storms = []
     for i in range(4):
         hemi = 1 if i % 2 else -1
@@ -239,8 +239,13 @@ def generate(width: int, out: Path) -> None:
     cf = rank(fbm(n1, qc * 3.2 + cw * 1.6, octaves=8) + 0.3 * fbm(n2, qc * 18 + cw * 3, 5))
     # Heaviest along the rainy belts either side of the equator.
     belts = 0.12 * np.cos(np.radians(lat) * 5)
-    cover = 0.74
-    clouds = smoothstep(1 - cover - 0.2, 1 - cover + 0.35, cf + belts)
+    # Thick rain cells and bands over about half the planet...
+    cover = 0.48
+    thick = smoothstep(1 - cover - 0.1, 1 - cover + 0.2, cf + belts)
+    # ...over a thin grey overcast everywhere ("everything is greyed out"), which dulls the
+    # islands without hiding them.
+    veil = 0.3 + 0.2 * smoothstep(0.2, 0.8, rank(fbm(n3, qc * 2 + cw, 5)))
+    clouds = veil + (1 - veil) * thick
     print(f"clouds {time.time() - t0:.1f}s")
 
     # Water roughness: wind-varied, so the glint is broken; rain-pocked seas are rough.

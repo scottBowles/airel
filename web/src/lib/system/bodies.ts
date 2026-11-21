@@ -10,7 +10,7 @@ export type BodyLook = {
 	/** Emissive multiplier (lava, city lights, the giant's ember). */
 	glow?: number;
 	flicker?: number;
-	clouds?: { color?: [number, number, number]; opacity?: number; drift?: number };
+	clouds?: { color?: [number, number, number]; opacity?: number; drift?: number; near?: number };
 	atmosphere?: AtmosphereLook;
 	/** For a moon: distance from its planet's centre and seconds per orbit. */
 	orbit?: { distance: number; period: number; phase: number; tilt?: number };
@@ -96,9 +96,9 @@ export const HYANG_WAN: BodyLook = {
 	atmosphere: { color: [0.55, 0.7, 0.85], strength: 0.85 }
 };
 
-/** Two logs see it set over Mulgogi; it has no name yet. Airless grey rock. */
+/** Two logs see it set over Mulgogi. Airless grey rock. */
 export const HYANG_WAN_MOON: BodyLook = {
-	name: "Hyang Wan's moon",
+	name: "Hyang Wan's Moon",
 	radius: 0.3,
 	orbit: { distance: 4.6, period: 300, phase: 2.2, tilt: 4 }
 };
