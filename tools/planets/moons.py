@@ -59,7 +59,7 @@ MOONS: dict[str, dict] = {
         settlements=16,
         clouds=0.42,
         features=[
-            dict(kind="lake", lat=12, lon=30, ax=2.6, ay=6.2, colour=(0.10, 0.52, 0.52)),
+            dict(kind="lake", lat=12, lon=30, ax=3.2, ay=6.8, colour=(0.10, 0.52, 0.52)),
             dict(kind="town", lat=18.5, lon=30, r=1.3, bright=1.6),
             dict(kind="town", lat=5.8, lon=30, r=0.35, bright=0.8),
         ],
@@ -271,21 +271,38 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     u = u - pit_depth * 0.08
     print(f"  {slug}: craters+pits {time.time() - t0:.1f}s")
 
-    # Water fills the lowest ground; then lakes from the spec.
-    sea_level = np.quantile(u, m["water"]) if m["water"] > 0 else -1
-    water = smoothstep(sea_level + 0.004, sea_level - 0.004, u)
-    depth = np.clip((sea_level - u) / max(sea_level, 1e-3), 0, 1)
-    water_rgb = np.array(m["sea"][1], np.float32) * (1 - depth[..., None]) + np.array(m["sea"][0], np.float32) * depth[..., None]
+    # Lakes from the spec sit in raised basins, so land surrounds them; their shores follow
+    # the same noise as everything else instead of a drawn outline.
+    lakes = []
     for f in m["features"]:
         if f["kind"] == "lake":
-            d = ellipse(g, f["lat"], f["lon"], f["ax"], f["ay"])
-            d = d + 0.08 * fbm(n1, p * 30, 4)
-            lake = smoothstep(1.0, 0.94, d)
-            shallow = smoothstep(0.55, 1.0, d)
-            col = np.array(f["colour"], np.float32) * (0.75 + 0.35 * shallow[..., None])
-            water_rgb = water_rgb * (1 - lake[..., None]) + col * lake[..., None]
-            water = np.maximum(water, lake)
-            u = np.where(lake > 0.5, np.minimum(u, sea_level), u)
+            # Warp the ellipse's coordinates by a few degrees: bays, points and a ragged shore.
+            wl = 0.55 * f["ay"] * fbm(n3, p * 5 + warp * 0.8 + 2.0, 6)
+            wo = 0.55 * f["ax"] * fbm(n4, p * 5 + warp * 0.8 + 9.0, 6)
+            dlat = (np.degrees(g.lat) + wl - f["lat"]) / f["ay"]
+            dlon = ((np.degrees(g.lon) + wo - f["lon"] + 180) % 360 - 180) * np.cos(np.radians(f["lat"])) / f["ax"]
+            d = np.sqrt(dlat**2 + dlon**2)
+            lakes.append((f, d + 0.45 * fbm(n1, p * 9 + warp * 0.6, 5) + 0.1 * fbm(n2, p * 40, 3)))
+
+    # Water fills the lowest ground.
+    sea_level = np.quantile(u, m["water"]) if m["water"] > 0 else -1
+    for f, d in lakes:
+        basin = smoothstep(2.8, 1.7, d)
+        u = u * (1 - basin) + np.maximum(u, sea_level + 0.05) * basin
+    water = smoothstep(sea_level + 0.004, sea_level - 0.004, u)
+    depth = np.clip((sea_level - u) / max(sea_level, 1e-3), 0, 1)
+    sea_deep, sea_shallow = (np.array(c, np.float32) for c in (m["sea"][0], m["sea"][1]))
+    water_rgb = sea_shallow * (1 - depth[..., None]) + sea_deep * depth[..., None]
+    for f, d in lakes:
+        lake = smoothstep(1.0, 0.92, d)
+        ldepth = smoothstep(0.95, 0.2, d) * 0.6
+        col = sea_shallow * (1 - ldepth[..., None]) + sea_deep * ldepth[..., None]
+        # Coral shallows: a little of the lake's own colour near its shores.
+        shore = smoothstep(0.55, 0.95, d)[..., None] * 0.45
+        col = col * (1 - shore) + np.array(f["colour"], np.float32) * shore
+        water_rgb = water_rgb * (1 - lake[..., None]) + col * lake[..., None]
+        water = np.maximum(water, lake)
+        u = np.where(lake > 0.5, sea_level - 0.01, u)
 
     # Land colour: elevation above the water, two rock types blended by geology.
     e = np.clip((u - sea_level) / (1 - sea_level), 0, 1)
