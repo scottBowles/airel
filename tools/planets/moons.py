@@ -297,9 +297,9 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         lake = smoothstep(1.0, 0.92, d)
         ldepth = smoothstep(0.95, 0.2, d) * 0.6
         col = sea_shallow * (1 - ldepth[..., None]) + sea_deep * ldepth[..., None]
-        # Coral shallows: a little of the lake's own colour near its shores.
-        shore = smoothstep(0.55, 0.95, d)[..., None] * 0.45
-        col = col * (1 - shore) + np.array(f["colour"], np.float32) * shore
+        # Coral: a faint cast of the lake's own colour over all of it. A brighter rim reads
+        # as an outline, since the sea coasts have none.
+        col = col * 0.85 + np.array(f["colour"], np.float32) * 0.15
         water_rgb = water_rgb * (1 - lake[..., None]) + col * lake[..., None]
         water = np.maximum(water, lake)
         u = np.where(lake > 0.5, sea_level - 0.01, u)
