@@ -145,6 +145,36 @@ Pitfalls found:
 - The existing planets were exported from Blender 4.1. Their `.blend` files (on the user's
   machine) should open in 5.3.
 
+## Vision (from the user, Nov 2026)
+
+What the user wants this to become, nearest first:
+
+1. **Fly through the system in the crew's ship**, seeing the suns and planets.
+2. **Visit a planet and see its places from the database** as on a ship's display: names
+   on the planet or its map; click one to see that place's details (description, notes,
+   images, child places, sessions it appears in).
+3. **Navigation you can't get lost in**: a quick way to jump from one planet to another
+   (a list or HUD of destinations, autopilot), so you can't end up turned around in empty
+   space unable to find a planet.
+4. **Planets that are easy to click**: they currently orbit fast enough to miss. Slow
+   them down or add time controls (pause, speed), and give each one a bigger click target
+   and a label.
+5. **Very long term, maybe**: walk around inside the ship; land, or arrive as an away
+   team, and walk around a location. The user isn't sure the data exists for this: places
+   have text and images but no maps, layouts or terrain.
+
+Existing `.glb` models in `solars` are kept as they are: make new versions alongside them,
+never overwrite them.
+
+### What the data has and lacks
+
+`Place` (`api/place/models/place.py`, via `Entity` in `api/nucleus/models.py`) has `name`,
+`slug`, `description`, `markdown_notes`, `thumbnail_id`/`image_ids`, `place_type`,
+`parent`, `population`, related places, races, exports and associations, and the logs it
+appears in. It has **no position**: nothing says where a town is on its planet, or a
+planet's orbit, size or look. Those have to be added (in the DB or in front-end config
+keyed by slug) before places can be pinned on a planet.
+
 ## Open decisions for the user
 
 1. Keep building in `solars`, or move the work into `web/` (e.g. a 3D mode of the
