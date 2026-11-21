@@ -166,6 +166,19 @@ What the user wants this to become, nearest first:
 Existing `.glb` models in `solars` are kept as they are: make new versions alongside them,
 never overwrite them.
 
+### Reading the session logs
+
+Each `GameLog` has a `url` to its Google Doc. Public ones can be read as plain HTML at
+`https://docs.google.com/document/d/<id>/mobilebasic` (the `export?format=txt` link
+redirects to a `*.googleusercontent.com` host that the network allowlist can't cover).
+`docs.google.com` is on the Airel environment's allowlist. The production API
+(`https://api.airel.vip/graphql/`) answers read-only queries for places and logs without
+auth. `searchContent` needs a superuser.
+
+"On the Planets" (the world primer) matches the planets' `markdownNotes` almost word for
+word; it adds nothing new on geography. **Detailed geography is in the session logs**:
+mine the logs that mention a planet's places when writing its feature spec.
+
 ### What the data has and lacks
 
 `Place` (`api/place/models/place.py`, via `Entity` in `api/nucleus/models.py`) has `name`,

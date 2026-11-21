@@ -29,8 +29,9 @@ The existing `.glb`s (Blender and Sketchfab) stay as they are. New work goes in 
 | Didymus | Twin planets, broken from one; lots of sand, few waters | Two small bodies, one pale banded, one light blue | None | **New**: two small desert bodies with fractured faces, orbiting each other. Sand per the text; the image is only for mood |
 | Chromium | "The dark planet." No one has gone there; dragons are said to live there. Its delegates used to come to interplanetary meetings, then stopped. Figure-eight orbit around both suns | None | None (red sphere in `solars`) | **New**: near-black and unknown (see below) |
 
-Also needed, not bodies: **the crew's ship** (the Kontularien) for the fly-through, and
-**an asteroid belt** (where Hielo sits).
+Also needed, not bodies: **the crew's ship** (the Kontularien) for the fly-through,
+**an asteroid belt** (where Hielo sits), and **the gates** (Vostok, Galileo, Tiberius,
+Lizhi, Aryabhata) for fast travel between planets.
 
 ## Notes on the current Blender models
 
@@ -69,17 +70,18 @@ Also needed, not bodies: **the crew's ship** (the Kontularien) for the fly-throu
 
 ## System layout (user's sketch)
 
-[`system-sketch.jpg`](system-sketch.jpg) is the user's rough hand-drawn map, top-down:
+[`system-sketch.jpg`](system-sketch.jpg) is the user's rough hand-drawn map, top-down. The
+user says not to read much into it: it's rough.
 
-- **Yellow Sun** upper left, drawn small; **Red Sun** lower right, drawn much larger.
+- **Yellow Sun** upper left, **Red Sun** lower right. The Red Sun is drawn bigger, probably
+  to look closer. Nothing in the lore gives the suns different sizes, so make them similar.
 - **The asteroid belt** is a long arc between them, passing nearer the Yellow Sun.
-- Planets are numbered 1–10, with a legend: 1 Magmus, 2 Felucia, 3 Terran, 4 Hyang Wan,
+- Planets are numbered 1–10 with a legend: 1 Magmus, 2 Felucia, 3 Terran, 4 Hyang Wan,
   5 Gonhirrim, 6 Hielo, then 7–10 (the legend reads like Mystra?, Genussa, Janus,
-  Didymus).
-- Coloured diamonds, with a second legend: **Vostok, Galileo, Tiberius, Lizhi, Aryabhata**.
-  They sit along lines between the suns. What they are (stations? relays?) is unconfirmed.
-
-It's rough, so treat it as relative placement, not exact positions.
+  Didymus). The orbits in `solars` aren't concentric rings either; no need to change them.
+- **Coloured diamonds are the gates**: they let ships travel quickly between planets. Five
+  are named: **Vostok, Galileo, Tiberius, Lizhi, Aryabhata**. No DB entity has these names.
+  They're natural landmarks for the "can't get lost" navigation: jump from gate to gate.
 
 ## Specific geography: authored control maps, noise for detail
 
