@@ -113,6 +113,7 @@
 						glow={m.glow ?? 1}
 						clouds={m.clouds}
 						atmosphere={m.atmosphere}
+						nightLights
 						sun={GONHIRRIM_SUN}
 					/>
 				</Orbit>
@@ -128,6 +129,7 @@
 				glow={moon.glow ?? 1}
 				clouds={moon.clouds}
 				atmosphere={moon.atmosphere}
+					nightLights
 				sun={SUN_AT}
 				face={pins[0]?.lon ?? 0}
 				spin={0.003}

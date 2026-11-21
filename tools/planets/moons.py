@@ -60,7 +60,7 @@ MOONS: dict[str, dict] = {
         clouds=0.42,
         features=[
             dict(kind="lake", lat=12, lon=30, ax=3.2, ay=6.8, colour=(0.10, 0.52, 0.52)),
-            dict(kind="town", lat=18.5, lon=30, r=1.3, bright=1.6),
+            dict(kind="town", lat=18.5, lon=30, r=1.6, bright=0.9),
             dict(kind="town", lat=5.8, lon=30, r=0.35, bright=0.8),
         ],
         pins=[

@@ -28,6 +28,8 @@
 		atmosphere?: AtmosphereLook;
 		/** World position of the light that lights the atmosphere. */
 		sun?: [number, number, number];
+		/** The glow is city lights: show it only on the night side (away from `sun`). */
+		nightLights?: boolean;
 	};
 	let {
 		slug,
@@ -41,7 +43,8 @@
 		onpin,
 		clouds,
 		atmosphere,
-		sun = [0, 0, 0]
+		sun = [0, 0, 0],
+		nightLights = false
 	}: Props = $props();
 
 	const loader = new THREE.TextureLoader();
@@ -66,6 +69,8 @@
 	$effect(() => {
 		material.emissiveIntensity = glow;
 		live.uniforms.uAmount.value = flicker;
+		live.uniforms.uNightOnly.value = nightLights ? 1 : 0;
+		live.uniforms.uSun.value.set(...sun);
 	});
 
 	// Optional layers, also fixed for the planet's lifetime.
