@@ -178,6 +178,16 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 - **Restraint in motion.** The user found the Red Sun's churn and both coronas too much.
   Surfaces now move slowly; coronas are a modest halo with faint streamers.
 - **Tone mapping:** use `NeutralToneMapping`. ACES washed bright oranges to cream.
+- **No CRT overlay on the 3D pages.** The app's scanlines and grain dim fine detail and
+  shimmer over a moving scene; `/system` pages set `body.clear-view` to turn them off. HUD
+  panels keep their own ship-screen styling.
+- **Lighting varies with position, and that's wanted.** A planet's sunward face shows lit
+  crust and hot highlights; the far side shows only its own glow. Don't tune a planet's
+  textures to make one side look like the other. Emissive `glow` ~1.0 under Neutral tone
+  mapping (0.55 was a leftover from the ACES washout). A gentle bloom may come later, once
+  the whole scene is assembled.
+- **Judge crispness at retina resolution.** Screenshots at deviceScaleFactor 1 look softer
+  than the app does on a high-DPI screen.
 - **Judge motion at real speed.** Headless captures run slow; build GIFs from real frame
   timestamps (or say they're sped up).
 
