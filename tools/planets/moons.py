@@ -57,6 +57,7 @@ MOONS: dict[str, dict] = {
         craters=6,
         mine_pits=10,
         settlements=16,
+        settled=0.32,
         clouds=0.42,
         features=[
             dict(kind="lake", lat=12, lon=30, ax=3.2, ay=6.8, colour=(0.10, 0.52, 0.52)),
@@ -81,6 +82,7 @@ MOONS: dict[str, dict] = {
         craters=10,
         mine_pits=14,
         settlements=9,
+        settled=0.18,
         clouds=0.40,
         fog=0.75,
         features=[dict(kind="highland", lat=35, lon=-40, r=10, height=0.35)],
@@ -98,6 +100,7 @@ MOONS: dict[str, dict] = {
         craters=14,
         mine_pits=26,
         settlements=16,
+        settled=0.26,
         clouds=0.18,
         features=[
             dict(kind="mines", lat=-17, lon=63, r=5.0, pits=28),
@@ -137,6 +140,7 @@ MOONS: dict[str, dict] = {
         craters=12,
         mine_pits=16,
         settlements=30,
+        settled=0.38,
         light_boost=1.4,
         clouds=0.2,
         features=[],
@@ -173,6 +177,7 @@ MOONS: dict[str, dict] = {
         crater_contrast=1.8,
         mine_pits=16,
         settlements=10,
+        settled=0.14,
         clouds=0.14,
         features=[],
         pins=[],
@@ -333,16 +338,22 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     # Settlements: clusters of lights, on low ground near water or mines.
     emissive = np.zeros_like(rgb)
     lights = np.zeros_like(u)
-    slat, slon = random_points(rng, m["settlements"] * 4)
-    pick = []
-    for la, lo in zip(slat, slon):
-        i = int((90 - la) / 180 * g.height)
-        j = int((lo + 180) / 360 * width)
-        i, j = min(i, g.height - 1), min(j, width - 1)
-        if water[i, j] < 0.5 and ice[i, j] < 0.5 and e[i, j] < 0.6:
-            pick.append((la, lo, rng.uniform(0.4, 1.0), rng.uniform(0.5, 1.0)))
-        if len(pick) >= m["settlements"]:
-            break
+    # Towns (small sprawls) and many more villages (single specks), on habitable ground.
+    def habitable(n_want, tries, r_range, b_range):
+        out = []
+        la_, lo_ = random_points(rng, tries)
+        for la, lo in zip(la_, lo_):
+            i = min(int((90 - la) / 180 * g.height), g.height - 1)
+            j = min(int((lo + 180) / 360 * width), width - 1)
+            if water[i, j] < 0.5 and ice[i, j] < 0.5 and e[i, j] < 0.6:
+                out.append((la, lo, rng.uniform(*r_range), rng.uniform(*b_range)))
+            if len(out) >= n_want:
+                break
+        return out
+
+    n_towns = m["settlements"] * 3
+    pick = habitable(n_towns, n_towns * 6, (0.3, 0.8), (0.5, 1.0))
+    pick += habitable(n_towns * 3, n_towns * 18, (0.18, 0.35), (0.4, 0.8))
     pick += [(f["lat"], f["lon"], f["r"], f["bright"]) for f in m["features"] if f["kind"] == "town"]
     sprawl = fbm(n3, p * 220, 3)
     for la, lo, r, b in pick:
@@ -354,6 +365,12 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         t = angular_distance(g, la, lo) / r
         near = t < 1.4
         lights[near] += 0.35 * smoothstep(1.4, 0.8, t[near]) * smoothstep(0.1, 0.3, sprawl[near])
+    # Settled regions: a speckle of homesteads and roads over some of the low ground,
+    # thickest near coasts, so the night side reads as inhabited rather than a few dots.
+    region = smoothstep(1 - m.get("settled", 0.2), 1.0, rank(fbm(n6, p * 3.0 + warp * 0.8 + 5.5, 5)))
+    coast = smoothstep(0.35, 0.0, e)
+    speck = smoothstep(0.80, 0.93, rank(fbm(n2, p * 260 + 1.7, 2))) * (0.4 + 0.6 * smoothstep(0.4, 0.8, rank(fbm(n4, p * 50, 3))))
+    lights += 0.7 * region * (0.35 + 0.65 * coast) * speck
     lights = np.clip(lights * m.get("light_boost", 1.0), 0, 1.5) * (1 - water) * (1 - ice)
     emissive = LIGHT * lights[..., None] * 0.8
     rgb = rgb * (1 - 0.3 * np.clip(lights, 0, 1)[..., None]) + np.array([0.45, 0.42, 0.40], np.float32) * 0.3 * np.clip(lights, 0, 1)[..., None]
