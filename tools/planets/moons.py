@@ -182,6 +182,27 @@ MOONS: dict[str, dict] = {
         features=[],
         pins=[],
     ),
+    # Not one of Gonhirrim's: Hyang Wan's moon. Two logs see it set over Mulgogi; nothing else
+    # is known, so it is airless and uninhabited: plain grey rock, heavily cratered.
+    "hyang-wan-moon": dict(
+        name="Hyang Wan's moon",
+        seed=411,
+        water=0.0,
+        mountains=0.3,
+        rock=[(0, (0.20, 0.20, 0.21)), (0.4, (0.33, 0.33, 0.34)), (0.75, (0.46, 0.46, 0.46)), (1, (0.62, 0.62, 0.61))],
+        rock2=[(0, (0.16, 0.16, 0.17)), (0.5, (0.27, 0.27, 0.28)), (1, (0.44, 0.44, 0.45))],
+        sea=((0, 0, 0), (0, 0, 0)),
+        ice=99,
+        craters=320,
+        crater_max=13.0,
+        crater_contrast=2.0,
+        mine_pits=0,
+        settlements=0,
+        settled=0,
+        clouds=0,
+        features=[],
+        pins=[],
+    ),
 }
 
 LIGHT = np.array([1.0, 0.72, 0.40], np.float32)
@@ -367,10 +388,11 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         lights[near] += 0.35 * smoothstep(1.4, 0.8, t[near]) * smoothstep(0.1, 0.3, sprawl[near])
     # Settled regions: a speckle of homesteads and roads over some of the low ground,
     # thickest near coasts, so the night side reads as inhabited rather than a few dots.
-    region = smoothstep(1 - m.get("settled", 0.2), 1.0, rank(fbm(n6, p * 3.0 + warp * 0.8 + 5.5, 5)))
+    region = smoothstep(1 - m.get("settled", 0.2), 1.0001, rank(fbm(n6, p * 3.0 + warp * 0.8 + 5.5, 5)))
     coast = smoothstep(0.35, 0.0, e)
     speck = smoothstep(0.80, 0.93, rank(fbm(n2, p * 260 + 1.7, 2))) * (0.4 + 0.6 * smoothstep(0.4, 0.8, rank(fbm(n4, p * 50, 3))))
-    lights += 0.7 * region * (0.35 + 0.65 * coast) * speck
+    if m.get("settled", 0.2) > 0:
+        lights += 0.7 * region * (0.35 + 0.65 * coast) * speck
     lights = np.clip(lights * m.get("light_boost", 1.0), 0, 1.5) * (1 - water) * (1 - ice)
     emissive = LIGHT * lights[..., None] * 0.8
     rgb = rgb * (1 - 0.3 * np.clip(lights, 0, 1)[..., None]) + np.array([0.45, 0.42, 0.40], np.float32) * 0.3 * np.clip(lights, 0, 1)[..., None]

@@ -3,7 +3,7 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
-	import { GONHIRRIM, GONHIRRIM_MOONS } from '$lib/system/bodies';
+	import { GONHIRRIM, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -15,19 +15,22 @@
 		{ id: 'yellow', label: 'The Yellow Sun' },
 		{ id: 'red', label: 'The Red Sun' },
 		{ id: 'magmus', label: 'Magmus' },
+		{ id: 'hyang-wan', label: 'Hyang Wan' },
 		{ id: 'gonhirrim', label: 'Gonhirrim' }
 	];
 	const MOONS = Object.entries(GONHIRRIM_MOONS);
 
-	let view = $state('gonhirrim');
+	let view = $state('hyang-wan');
 	let showPins = $state(true);
 	let selected = $state<Pin | null>(null);
 	let pins = $state<Pin[]>([]);
 
 	/** The body whose places can be pinned in this view, if any. */
-	const focus = $derived(view === 'magmus' ? 'magmus' : view.startsWith('moon:') ? view.slice(5) : null);
-	const moon = $derived(focus && focus !== 'magmus' ? GONHIRRIM_MOONS[focus] : null);
-	const focusName = $derived(moon ? moon.name : 'Magmus');
+	const focus = $derived(
+		view === 'magmus' || view === 'hyang-wan' ? view : view.startsWith('moon:') ? view.slice(5) : null
+	);
+	const moon = $derived(focus && view.startsWith('moon:') ? GONHIRRIM_MOONS[focus] : null);
+	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : 'Magmus');
 	const inGonhirrim = $derived(view === 'gonhirrim' || view.startsWith('moon:'));
 
 	$effect(() => {
@@ -46,6 +49,8 @@
 			? { at: [0, 2, 14], min: 1.3 }
 			: view === 'gonhirrim'
 				? { at: [0, 7, 30], min: 5 }
+				: view === 'hyang-wan'
+					? { at: [0, 0.8, 5.4], min: 1.9 }
 				: moon
 					? { at: [0, 0.25, moon.radius * 3.6], min: moon.radius * 1.3 }
 					: { at: [0, 0.6, 3.4], min: 1.3 }
@@ -90,6 +95,31 @@
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
 			/>
+		{:else if view === 'hyang-wan'}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="hyang-wan"
+				radius={HYANG_WAN.radius}
+				glow={HYANG_WAN.glow}
+				clouds={HYANG_WAN.clouds}
+				atmosphere={HYANG_WAN.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={-24}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+			<Orbit period={HYANG_WAN_MOON.orbit!.period} phase={HYANG_WAN_MOON.orbit!.phase} tilt={HYANG_WAN_MOON.orbit!.tilt}>
+				<Planet
+					slug="hyang-wan-moon"
+					radius={HYANG_WAN_MOON.radius}
+					position={[HYANG_WAN_MOON.orbit!.distance, 0, 0]}
+					face={90}
+					sun={SUN_AT}
+				/>
+			</Orbit>
 		{:else if view === 'gonhirrim'}
 			<T.AmbientLight intensity={0.05} />
 			<Sun look={YELLOW_SUN} radius={3} position={GONHIRRIM_SUN} intensity={1.6} />

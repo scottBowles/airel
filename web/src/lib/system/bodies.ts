@@ -86,3 +86,19 @@ export const GONHIRRIM_MOONS: Record<string, BodyLook> = {
 		orbit: { distance: 16.6, period: 600, phase: 4.4, tilt: 1.5 }
 	}
 };
+
+// The rain world: islands under a heavy grey deck, city lights showing through the gaps at night.
+export const HYANG_WAN: BodyLook = {
+	name: 'Hyang Wan',
+	radius: 1.4,
+	glow: 3,
+	clouds: { color: [0.8, 0.82, 0.85], opacity: 0.9, drift: 0.003 },
+	atmosphere: { color: [0.55, 0.7, 0.85], strength: 0.85 }
+};
+
+/** Two logs see it set over Mulgogi; it has no name yet. Airless grey rock. */
+export const HYANG_WAN_MOON: BodyLook = {
+	name: "Hyang Wan's moon",
+	radius: 0.3,
+	orbit: { distance: 4.6, period: 300, phase: 2.2, tilt: 4 }
+};
