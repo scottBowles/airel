@@ -127,6 +127,15 @@
 		border-radius: 6px;
 		background: #0a0c16e6;
 		font: 13px/1.45 ui-monospace, monospace;
+		overflow: hidden;
+	}
+	/* The ship's computer keeps its screen look; the view of space behind it stays clear. */
+	.readout::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.22) 2px 4px);
 	}
 	.readout .kicker {
 		font-size: 11px;
