@@ -50,7 +50,7 @@
 			<Sun look={YELLOW_SUN} radius={1.2} position={[-26, 3, 14]} intensity={1.2} />
 			<Planet
 				slug="magmus"
-				glow={0.55}
+				glow={1.0}
 				face={0}
 				flicker={1}
 				spin={0.004}
