@@ -12,6 +12,14 @@ python3 tools/planets/magmus.py --width 1024 --out /tmp/m   # quick draft (~12 s
 python3 tools/planets/preview_map.py /tmp/m /tmp/m.png       # flat map with pins
 ```
 
+```sh
+python3 tools/planets/gonhirrim.py                  # the gas giant (~2 min)
+python3 tools/planets/moons.py [durinfol ironfist …] # Gonhirrim's moons, 2048×1024 (~75 s each)
+```
+
+Moons also write `clouds.webp` (white where cloudy) for the app's cloud layer. Their render
+settings (size, orbit, atmosphere and cloud colour) are in `web/src/lib/system/bodies.ts`.
+
 Needs Python 3 with `numpy` and `Pillow` (`apt-get install python3-numpy python3-pil`).
 
 ## Output (per planet, in `web/static/system/<slug>/`)

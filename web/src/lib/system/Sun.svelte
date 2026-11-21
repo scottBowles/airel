@@ -19,6 +19,10 @@
 	// svelte-ignore state_referenced_locally
 	const corona = sunCoronaMaterial(look, CORONA);
 
+	// Light falling on planets: the sun's hue, but mostly white, so it doesn't tint every surface.
+	// svelte-ignore state_referenced_locally
+	const light = look.glow.map((c) => 0.35 * c + 0.65) as [number, number, number];
+
 	useTask((delta) => {
 		surface.uniforms.uTime.value += delta;
 		corona.uniforms.uTime.value += delta;
@@ -37,5 +41,5 @@
 	<T.Mesh scale={radius * CORONA} material={corona} renderOrder={1}>
 		<T.PlaneGeometry args={[2, 2]} />
 	</T.Mesh>
-	<T.PointLight color={look.glow} {intensity} decay={0} />
+	<T.PointLight color={light} {intensity} decay={0} />
 </T.Group>
