@@ -3,6 +3,8 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
+	import { GONHIRRIM, GONHIRRIM_MOONS } from '$lib/system/bodies';
+	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
 	import type { Pin } from '$lib/system/geo';
@@ -12,20 +14,51 @@
 		{ id: 'suns', label: 'Both suns' },
 		{ id: 'yellow', label: 'The Yellow Sun' },
 		{ id: 'red', label: 'The Red Sun' },
-		{ id: 'magmus', label: 'Magmus' }
-	] as const;
-	type ViewId = (typeof VIEWS)[number]['id'];
+		{ id: 'magmus', label: 'Magmus' },
+		{ id: 'gonhirrim', label: 'Gonhirrim' }
+	];
+	const MOONS = Object.entries(GONHIRRIM_MOONS);
 
-	let view = $state<ViewId>('magmus');
+	let view = $state('gonhirrim');
 	let showPins = $state(true);
 	let selected = $state<Pin | null>(null);
 	let pins = $state<Pin[]>([]);
 
+	/** The body whose places can be pinned in this view, if any. */
+	const focus = $derived(view === 'magmus' ? 'magmus' : view.startsWith('moon:') ? view.slice(5) : null);
+	const moon = $derived(focus && focus !== 'magmus' ? GONHIRRIM_MOONS[focus] : null);
+	const focusName = $derived(moon ? moon.name : 'Magmus');
+	const inGonhirrim = $derived(view === 'gonhirrim' || view.startsWith('moon:'));
+
 	$effect(() => {
-		fetch('/system/magmus/pins.json')
+		pins = [];
+		const slug = focus;
+		if (!slug) return;
+		fetch(`/system/${slug}/pins.json`)
 			.then((r) => r.json())
-			.then((d) => (pins = d.pins));
+			.then((d) => {
+				if (slug === focus) pins = d.pins;
+			});
 	});
+
+	const camera = $derived(
+		view === 'suns'
+			? { at: [0, 2, 14], min: 1.3 }
+			: view === 'gonhirrim'
+				? { at: [0, 7, 30], min: 5 }
+				: moon
+					? { at: [0, 0.25, moon.radius * 3.6], min: moon.radius * 1.3 }
+					: { at: [0, 0.6, 3.4], min: 1.3 }
+	);
+
+	// The Yellow Sun, off to the side of whatever we're looking at.
+	const SUN_AT: [number, number, number] = [-26, 3, 14];
+	const GONHIRRIM_SUN: [number, number, number] = [-80, 8, 45];
+
+	function pick(id: string) {
+		view = id;
+		selected = null;
+	}
 </script>
 
 <svelte:head><title>System lab</title></svelte:head>
@@ -33,11 +66,11 @@
 <div class="lab">
 	<Canvas toneMapping={NeutralToneMapping}>
 		{#key view}
-			<T.PerspectiveCamera makeDefault position={view === 'suns' ? [0, 2, 14] : [0, 0.6, 3.4]} fov={45}>
-				<OrbitControls enableDamping minDistance={1.3} maxDistance={40} />
+			<T.PerspectiveCamera makeDefault position={camera.at as [number, number, number]} fov={45}>
+				<OrbitControls enableDamping minDistance={camera.min} maxDistance={90} />
 			</T.PerspectiveCamera>
 		{/key}
-		<Stars count={4000} radius={80} />
+		<Stars count={4000} radius={150} />
 		{#if view === 'suns'}
 			<Sun look={YELLOW_SUN} position={[-3, 0, 0]} />
 			<Sun look={RED_SUN} position={[3, 0, 0]} />
@@ -45,9 +78,9 @@
 			<Sun look={YELLOW_SUN} />
 		{:else if view === 'red'}
 			<Sun look={RED_SUN} />
-		{:else}
+		{:else if view === 'magmus'}
 			<T.AmbientLight intensity={0.08} />
-			<Sun look={YELLOW_SUN} radius={1.2} position={[-26, 3, 14]} intensity={1.2} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.2} />
 			<Planet
 				slug="magmus"
 				glow={1.0}
@@ -57,23 +90,70 @@
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
 			/>
+		{:else if view === 'gonhirrim'}
+			<T.AmbientLight intensity={0.05} />
+			<Sun look={YELLOW_SUN} radius={3} position={GONHIRRIM_SUN} intensity={1.6} />
+			<Planet
+				slug="gonhirrim"
+				radius={GONHIRRIM.radius}
+				glow={GONHIRRIM.glow}
+				flicker={GONHIRRIM.flicker}
+				atmosphere={GONHIRRIM.atmosphere}
+				sun={GONHIRRIM_SUN}
+				face={40}
+				spin={0.006}
+			/>
+			{#each MOONS as [slug, m] (slug)}
+				<Orbit period={m.orbit!.period} phase={m.orbit!.phase} tilt={m.orbit!.tilt}>
+					<Planet
+						{slug}
+						radius={m.radius}
+						position={[m.orbit!.distance, 0, 0]}
+						face={90}
+						glow={m.glow ?? 1}
+						clouds={m.clouds}
+						atmosphere={m.atmosphere}
+						sun={GONHIRRIM_SUN}
+					/>
+				</Orbit>
+			{/each}
+		{:else if moon}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug={focus!}
+				radius={moon.radius}
+				glow={moon.glow ?? 1}
+				clouds={moon.clouds}
+				atmosphere={moon.atmosphere}
+				sun={SUN_AT}
+				face={pins[0]?.lon ?? 0}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
 		{/if}
 	</Canvas>
 
 	<nav class="panel">
 		{#each VIEWS as v (v.id)}
-			<button class:active={view === v.id} onclick={() => ((view = v.id), (selected = null))}>
-				{v.label}
-			</button>
+			<button class:active={view === v.id} onclick={() => pick(v.id)}>{v.label}</button>
 		{/each}
-		{#if view === 'magmus'}
+		{#if focus}
 			<label><input type="checkbox" bind:checked={showPins} /> Places</label>
+		{/if}
+		{#if inGonhirrim}
+			<div class="moons">
+				{#each MOONS as [slug, m] (slug)}
+					<button class:active={view === `moon:${slug}`} onclick={() => pick(`moon:${slug}`)}>{m.name}</button>
+				{/each}
+			</div>
 		{/if}
 	</nav>
 
 	{#if selected}
 		<aside class="readout">
-			<div class="kicker">Magmus · {selected.lat.toFixed(1)}°, {selected.lon.toFixed(1)}°</div>
+			<div class="kicker">{focusName} · {selected.lat.toFixed(1)}°, {selected.lon.toFixed(1)}°</div>
 			<h2>{selected.name}</h2>
 			<p>
 				Position: <strong>{selected.confidence}</strong>
@@ -112,6 +192,12 @@
 		background: #0d0f1ccc;
 		color: inherit;
 		cursor: pointer;
+	}
+	.moons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		flex-basis: 100%;
 	}
 	.panel button.active {
 		border-color: #e8b45a;
