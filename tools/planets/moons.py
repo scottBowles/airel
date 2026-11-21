@@ -386,7 +386,12 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     if m.get("fog"):
         clouds = np.maximum(clouds, m["fog"] * smoothstep(0.32, 0.12, e) * (1 - water) * smoothstep(-0.3, 0.3, fbm(n3, p * 5, 4)))
 
-    rough = np.where(water > 0.5, 0.25, 0.88 - 0.25 * ice)
+    # Water: calm patches shine and windy ones don't, so sunglint is a soft, broken sheen,
+    # streaked along the winds, rather than one clean mirror spot.
+    pw = p * np.array([1.0, 1.0, 2.5], np.float32)
+    wind = rank(fbm(n5, pw * 4 + cw * 1.2 + 4.2, 5) + 0.4 * fbm(n6, pw * 22 + 8.1, 3))
+    rough_water = 0.43 + 0.3 * wind
+    rough = np.where(water > 0.5, rough_water, 0.88 - 0.25 * ice)
     height = np.clip(u, 0, 1) * (1 - water) + np.clip(sea_level, 0, 1) * water
 
     out = out_root / slug
