@@ -162,17 +162,24 @@ Built so far, in this repo:
 
 Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 
-### Look-and-feel lessons (from the user's review)
+### Look-and-feel lessons (from the user's reviews)
 
+- **One coherent pattern beats many.** Magmus round 2 layered separate systems (crust
+  plates, crack lines, rivers, pools, land texture); each looked fine alone but they didn't
+  join up, and the user found it worse than both round 1 and the original Blender model.
+  What works: one domain-warped field with detail at every scale drives lava, coasts and
+  land glow together. The land is that field cooled and darkened, with soft coasts shaped
+  by it, so there's continuity everywhere. Compare against the original Blender model
+  (`solars/static/models/Magmus.glb`), which the user likes for selling "chaotic fire planet".
+- **A full heat range**, leaning red-orange: black → deep red → red → orange → gold, with
+  yellow-white only in the hottest spots. Keep plenty of glowing area (~60%).
 - **Self-lit bodies stay bright to the edge.** Strong limb darkening on a sun, then a corona
   starting outside it, leaves a dark ring. Keep darkening gentle and overlap the glow.
-- **Heat is a continuous range**, not crust vs molten: black → deep red → red → orange →
-  yellow-white, varying by region (active vs calm) and by crust plate.
-- **Lava crust breaks into polygonal plates** (cellular noise), not wiggly contour lines.
-  Thresholded multi-octave noise breaks lines into dashes; avoid it for cracks.
-- **Land needs texture and life**: fractured blocks, rust/ochre/sulphur/ash colours, relief,
-  glowing rivers crossing it, and town lights so civilisation is plausible.
-- **Motion matters**: the glow pulses and shimmers in the app (`flicker`).
+- **Restraint in motion.** The user found the Red Sun's churn and both coronas too much.
+  Surfaces now move slowly; coronas are a modest halo with faint streamers.
+- **Tone mapping:** use `NeutralToneMapping`. ACES washed bright oranges to cream.
+- **Judge motion at real speed.** Headless captures run slow; build GIFs from real frame
+  timestamps (or say they're sped up).
 
 ## Vision (from the user, Nov 2026)
 

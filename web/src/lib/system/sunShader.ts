@@ -27,8 +27,8 @@ export const YELLOW_SUN: SunLook = {
 	dark: [0.92, 0.52, 0.16],
 	glow: [1.0, 0.82, 0.45],
 	turbulence: 0.55,
-	speed: 0.025,
-	flares: 0.25
+	speed: 0.015,
+	flares: 0.12
 };
 
 export const RED_SUN: SunLook = {
@@ -36,9 +36,9 @@ export const RED_SUN: SunLook = {
 	mid: [0.95, 0.24, 0.06],
 	dark: [0.42, 0.04, 0.02],
 	glow: [1.0, 0.28, 0.08],
-	turbulence: 1.5,
-	speed: 0.07,
-	flares: 0.9
+	turbulence: 0.85,
+	speed: 0.022,
+	flares: 0.3
 };
 
 // 3D simplex noise (Ashima Arts / Stefan Gustavson, MIT licence).
@@ -128,12 +128,12 @@ void main(){
   float t = uTime * uSpeed;
   // Radial falloff from the sun's edge (uInner, in quad units) outwards.
   float d = max(r - uInner*0.985, 0.0) / (1.0 - uInner);
-  float glow = exp(-d*6.0) * 1.0 + exp(-d*2.2) * 0.3;
+  float glow = exp(-d*8.0) * 1.0 + exp(-d*3.0) * 0.32;
   // Streamers and flares: noise around the rim, stretched outwards.
-  vec3 q = vec3(cos(a)*2.0, sin(a)*2.0, d*1.5 - t*2.0);
+  vec3 q = vec3(cos(a)*2.0, sin(a)*2.0, d*1.5 - t*0.6);
   float streak = smoothstep(0.1, 0.8, fbm(q*1.7 + t)) * exp(-d*3.5);
   float flare = pow(max(snoise(vec3(cos(a)*3.0, sin(a)*3.0, t*1.5)), 0.0), 3.0) * exp(-d*4.0);
-  float k = glow + uFlares*(0.8*streak + 1.6*flare);
+  float k = glow + uFlares*(0.5*streak + 0.8*flare);
   k *= smoothstep(1.0, 0.85, r);
   gl_FragColor = vec4(uGlow * k, k);
 }`;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	// A workbench for the solar-system models: look at each sun and planet on its own.
 	import { Canvas, T } from '@threlte/core';
-	import { ACESFilmicToneMapping } from 'three';
+	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -31,7 +31,7 @@
 <svelte:head><title>System lab</title></svelte:head>
 
 <div class="lab">
-	<Canvas toneMapping={ACESFilmicToneMapping}>
+	<Canvas toneMapping={NeutralToneMapping}>
 		{#key view}
 			<T.PerspectiveCamera makeDefault position={view === 'suns' ? [0, 2, 14] : [0, 0.6, 3.4]} fov={45}>
 				<OrbitControls enableDamping minDistance={1.3} maxDistance={40} />
@@ -47,10 +47,10 @@
 			<Sun look={RED_SUN} />
 		{:else}
 			<T.AmbientLight intensity={0.08} />
-			<Sun look={YELLOW_SUN} radius={1.2} position={[-26, 3, 14]} intensity={2.6} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={[-26, 3, 14]} intensity={1.2} />
 			<Planet
 				slug="magmus"
-				glow={1}
+				glow={0.55}
 				face={0}
 				flicker={1}
 				spin={0.004}

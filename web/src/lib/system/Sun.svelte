@@ -12,7 +12,7 @@
 	};
 	let { look, radius = 1, position = [0, 0, 0], intensity = 3 }: Props = $props();
 
-	const CORONA = 3.2; // corona size, in sun radii
+	const CORONA = 2.6; // corona size, in sun radii
 	// The look is fixed for a sun's lifetime, so the materials are built once.
 	// svelte-ignore state_referenced_locally
 	const surface = sunSurfaceMaterial(look);

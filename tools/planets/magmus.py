@@ -30,8 +30,6 @@ from pathlib import Path
 import numpy as np
 
 from planetgen import (
-    worley,
-    veins,
     ramp,
     Noise3,
     angular_distance,
@@ -139,7 +137,7 @@ def generate(width: int, out: Path) -> None:
         if s["kind"] == "cap":
             edge = s["edge"] + coast * 6
             t = (lat_deg - edge) * s["pole"]
-            mask = smoothstep(-0.6, 0.6, t)
+            mask = smoothstep(-4, 4, t)
             add(mask, s["height"] * (0.6 + 0.4 * smoothstep(0, 15, t)))
         elif s["kind"] == "archipelago":
             rng = np.random.default_rng(SEED + 7)
@@ -148,14 +146,14 @@ def generate(width: int, out: Path) -> None:
                 lo = s["lon"] + rng.normal() * s["spread"][1] / 2
                 r = rng.uniform(0.6, 2.6)
                 d = angular_distance(g, la, lo) / r + coast * 0.35 + 0.45 * fine
-                add(smoothstep(1.0, 0.85, d), s["height"] * profile_height("cone", np.clip(d, 0, 1), g) + 0.04)
+                add(smoothstep(1.2, 0.7, d), s["height"] * profile_height("cone", np.clip(d, 0, 1), g) + 0.04)
         else:
             if s["kind"] == "strip":
                 d = segment_distance(g, s["a"], s["b"])
             else:
                 d = angular_distance(g, s["lat"], s["lon"])
             t = d / s["r"] + coast * 0.55
-            mask = smoothstep(1.0, 0.9, t)
+            mask = smoothstep(1.25, 0.7, t)
             add(mask, s["height"] * profile_height(s["profile"], np.clip(t, 0, 1.2), g))
             if s["profile"] in ("mountain", "cone"):
                 glow_vents = np.maximum(glow_vents, smoothstep(0.16, 0.0, t))
@@ -169,100 +167,66 @@ def generate(width: int, out: Path) -> None:
     sea = 1 - land
     print(f"  features {time.time() - t0:.1f}s")
 
-    # ---- Land relief: broken, multi-scale volcanic ground everywhere, ridges in the mountains.
+    # One chaotic heat field drives everything: lava, coasts and the glow on the land.
+    # (Separate pattern systems for plates, cracks and rivers didn't join up; one field does.)
+    warp = np.stack([fbm(n1, p * 2.5 + 11, 5), fbm(n2, p * 2.5 + 23, 5), fbm(n3, p * 2.5 + 37, 5)], -1)
+    warp2 = np.stack([fbm(n3, p * 6 + warp * 1.2 + 5, 4), fbm(n1, p * 6 + warp * 1.2 + 9, 4), fbm(n2, p * 6 + warp * 1.2 + 13, 4)], -1)
     n4, n5 = Noise3(SEED + 3), Noise3(SEED + 4)
-    ridges = ridged(n3, p * 14.0, octaves=6)
-    rough_ground = fbm(n4, p * 60.0, octaves=5)  # metre-scale rubble, flows, cones
-    cones = smoothstep(0.80, 0.95, ridged(n5, p * 34.0, octaves=2))  # small cinder cones and spatter ridges
-    mountainous = smoothstep(0.3, 0.9, elev)
-    elev_full = elev + land * (0.07 * detail + 0.04 * rough_ground + 0.06 * cones + 0.3 * mountainous * (ridges - 0.45))
-    elev_full = np.clip(elev_full, 0, 1.3)
-    print(f"  land {time.time() - t0:.1f}s")
+    field = fbm(n2, p * 4.5 + warp * 1.8 + warp2 * 0.6, octaves=10)
+    # Fine grain at every scale (the original Blender Magmus's strength), riding the same flow.
+    field = field + 0.3 * fbm(n4, p * 30 + warp2 * 2.0, octaves=6) + 0.14 * fbm(n5, p * 120 + warp2 * 4.0, octaves=4)
+    # Rank-normalise to 0..1 so the proportions hold at any resolution.
+    u = (np.argsort(np.argsort(field.ravel())) / (field.size - 1)).reshape(field.shape).astype(np.float32)
+    print(f"  field {time.time() - t0:.1f}s")
 
-    # ---- Lava: one heat field (0 cold crust … 1 white-hot) drives colour and glow.
-    warp = np.stack([fbm(n1, p * 3 + 11, 4), fbm(n2, p * 3 + 23, 4), fbm(n3, p * 3 + 37, 4)], -1)
-    swirl = fbm(n2, p * 6 + warp * 1.6, octaves=8)
-    q = np.quantile(swirl, [0.04, 0.12, 0.35, 0.7])
-    # Open molten lava in the lowest swirls, cooling through orange and red into crust.
-    flow_heat = np.interp(swirl, q, [1.0, 0.62, 0.16, 0.04]).astype(np.float32)
-    # Crust plates: cooler plate interiors, hotter edges; a branching crack network at two scales.
-    plates = ridged(n4, p * 9 + warp * 1.2, octaves=3)
-    # Crust breaks into polygonal plates (cellular noise): rifts of varying width between big
-    # plates, finer cracks within them. Each plate has its own temperature, and crust is
-    # warmer near a crack.
-    wob = fbm(n4, p * 30, octaves=3)[..., None] * 0.06
-    f1, f2, cell = worley(p * 11 + warp * 0.9 + wob, SEED + 21)
-    edge_big = f2 - f1
-    width = 0.03 + 0.05 * smoothstep(-0.3, 0.5, fbm(n5, p * 8, 3))
-    cracks_big = smoothstep(width, 0.0, edge_big)
-    g1, g2, cell_s = worley(p * 34 + warp * 1.6 + wob * 2, SEED + 22)
-    cracks_mid = smoothstep(0.06, 0.0, g2 - g1) * smoothstep(0.2, 0.6, cell_s)  # not every plate is cracked
-    print(f"  plates {time.time() - t0:.1f}s")
-    plate_heat = 0.02 + 0.15 * cell ** 4 + 0.04 * cell_s
-    near_crack = np.exp(-edge_big / 0.08) * 0.12
-    cracks_mid_heat = cracks_mid * 0.45
-    # Regions differ: active zones have hot, wide rifts; calm ones dull red seams.
-    activity = smoothstep(-0.35, 0.35, fbm(n3, p * 2.5 + 5, 4))
-    crack_heat = cracks_big * (0.18 + 0.55 * activity + 0.2 * cell)
-    sea_heat = np.maximum.reduce([flow_heat, crack_heat, cracks_mid_heat * (0.5 + 0.5 * activity), plate_heat + near_crack])
-    plates = cell
-    print(f"  lava {time.time() - t0:.1f}s")
+    # Coasts follow the field: hot lava eats into the land's edge, cool crust extends it.
+    land = smoothstep(0.35, 0.65, land + (0.5 - u) * 0.55)
+    elev = elev * land
+    sea = 1 - land
 
-    # Rivers on land: a branching network that crosses the Solidlands from sea to sea, avoiding
-    # the high ground; fine fissures feed it. Vents glow at the summits.
-    rivers = np.maximum(veins(n3, p * 7 + warp * 1.0, 0.05), veins(n4, p * 16 + warp * 1.5, 0.035) * 0.7)
-    rivers *= smoothstep(0.6, 0.15, elev_full)
-    fissures = cracks_mid * smoothstep(0.8, 0.2, elev_full) * 0.8
-    # Shorelines crumble: the land's edge is cooling flows and spatter, not a clean line.
-    shore = smoothstep(0.0, 0.35, land) * smoothstep(0.95, 0.45, land)
-    land_heat = np.maximum.reduce([rivers * 0.85, fissures * 0.5, glow_vents * 0.95, shore * (0.3 + 0.5 * cracks_big)])
-
+    # Lava: about half cooled dark crust, the rest glowing in a continuous range.
+    sea_heat = smoothstep(0.22, 1.0, u) ** 1.6
+    # Land: the same field, cooled to dim embers, with its hottest threads still glowing as
+    # rivers and fissures; vents at the summits.
+    land_heat = np.maximum.reduce([sea_heat * 0.14, smoothstep(0.955, 0.995, u) * 0.8, glow_vents * 0.95])
     heat = land * land_heat + sea * sea_heat
-    # Colours of heat: deep red → red → orange → yellow-orange → yellow-white.
-    heat_rgb = ramp(heat, [(0.0, (0, 0, 0)), (0.08, (0.28, 0.02, 0.0)), (0.25, (0.75, 0.09, 0.01)),
-                           (0.45, (1.0, 0.30, 0.03)), (0.7, (1.0, 0.58, 0.10)), (1.0, (1.0, 0.88, 0.5))])
-    emissive = heat_rgb * (heat ** 1.2)[..., None]
+    heat_rgb = ramp(heat, [(0.0, (0, 0, 0)), (0.1, (0.30, 0.03, 0.0)), (0.28, (0.62, 0.08, 0.01)),
+                           (0.5, (0.92, 0.25, 0.02)), (0.7, (1.0, 0.45, 0.05)), (0.86, (1.0, 0.66, 0.14)),
+                           (1.0, (1.0, 0.86, 0.45))])
+    emissive = heat_rgb * (0.25 + 0.75 * heat)[..., None] * smoothstep(0.0, 0.12, heat)[..., None]
 
-    # ---- Towns: warm-white lights, so there's visible civilisation on the night side.
+    # Towns: faint warm lights on the land, visible on the night side.
     rng = np.random.default_rng(SEED + 11)
     lights = np.zeros(g.lat.shape, np.float32)
     towns = [(pp["lat"], pp["lon"], 1.0) for pp in PINS if pp["name"] in TOWN_LIGHTS]
-    for s_ in SOLIDLANDS:  # scattered smaller settlements on every Solidland
+    for s_ in SOLIDLANDS:
         if s_["kind"] in ("blob", "strip"):
             c = (s_["lat"], s_["lon"]) if s_["kind"] == "blob" else tuple((np.array(s_["a"]) + np.array(s_["b"])) / 2)
             for _ in range(3):
                 towns.append((c[0] + rng.normal() * 3, c[1] + rng.normal() * 3, 0.45))
     for la, lo, w in towns:
         d = angular_distance(g, la, lo)
-        cluster = np.exp(-(d / (0.9 * w + 0.4)) ** 2)
-        lights = np.maximum(lights, cluster * smoothstep(0.55, 0.85, (fine + 1) / 2 + 0.2 * w) * w)
-    lights *= land
-    emissive += lights[..., None] * np.array([1.0, 0.82, 0.55], np.float32) * 0.8
+        lights = np.maximum(lights, np.exp(-(d / (0.9 * w + 0.4)) ** 2) * smoothstep(0.55, 0.85, (fine + 1) / 2 + 0.2 * w) * w)
+    lights *= smoothstep(0.6, 0.9, land)
+    emissive += lights[..., None] * np.array([1.0, 0.82, 0.55], np.float32) * 0.45
 
-    # ---- Albedo: basalt, rust and ochre, sulphur near heat, ash on the heights, obsidian flows.
+    # Albedo: crust and rock share the field's mottling, so lava and land read as one world.
+    crust = ramp(u, [(0.0, (0.05, 0.03, 0.025)), (0.2, (0.12, 0.05, 0.03)), (0.35, (0.22, 0.07, 0.03))])
     t = np.clip(0.5 + 0.8 * detail, 0, 1)
-    rock = ramp(t, [(0.0, (0.11, 0.10, 0.10)), (0.3, (0.22, 0.18, 0.15)), (0.55, (0.38, 0.22, 0.12)),
-                    (0.75, (0.52, 0.33, 0.15)), (0.9, (0.36, 0.30, 0.24)), (1.0, (0.28, 0.25, 0.22))])
-    rubble = (0.85 + 0.3 * rough_ground)[..., None]
-    rock = rock * rubble
-    # Solidlands are old cooled lava: fractured into blocks with dark joints.
-    joints = smoothstep(0.0, 0.05, g2 - g1) * 0.35 + smoothstep(0.0, 0.08, edge_big) * 0.25 + 0.4
-    rock = rock * joints[..., None] * 1.35
-    sulphur = (smoothstep(0.15, 0.5, np.maximum(land_heat, glow_vents * 0.6)) * smoothstep(-0.1, 0.4, fine))[..., None]
-    rock = rock * (1 - sulphur * 0.7) + np.array([0.62, 0.55, 0.18], np.float32) * sulphur * 0.7
-    ashy = np.clip(np.maximum(ash, smoothstep(0.7, 1.05, elev_full) * 0.7) * (0.7 + 0.3 * rough_ground), 0, 1)[..., None]
-    rock = rock * (1 - ashy) + np.array([0.46, 0.44, 0.41], np.float32) * ashy
-    obsidian = smoothstep(0.7, 0.85, plates) * smoothstep(0.3, 0.1, elev_full) * 0.6
-    rock = rock * (1 - obsidian[..., None] * 0.8) + np.array([0.03, 0.03, 0.035], np.float32) * obsidian[..., None] * 0.8
-    crust_c = ramp(plates, [(0.0, (0.05, 0.045, 0.045)), (0.5, (0.09, 0.05, 0.04)), (1.0, (0.16, 0.06, 0.04))])
-    crust_c = crust_c * (0.8 + 0.4 * (rough_ground[..., None] + 1) / 2)
-    hot = smoothstep(0.4, 0.85, heat)[..., None]
-    base = rock * land[..., None] + crust_c * sea[..., None]
-    albedo = base * (1 - hot) + heat_rgb * 0.8 * hot
+    rock = ramp(t, [(0.0, (0.10, 0.09, 0.09)), (0.4, (0.20, 0.16, 0.13)), (0.7, (0.34, 0.20, 0.11)), (1.0, (0.28, 0.24, 0.20))])
+    rock = rock * (0.75 + 0.5 * u)[..., None]
+    ashy = np.clip(np.maximum(ash, smoothstep(0.7, 1.05, elev) * 0.6), 0, 1)[..., None]
+    rock = rock * (1 - ashy) + np.array([0.42, 0.40, 0.37], np.float32) * ashy
+    base = rock * land[..., None] + crust * sea[..., None]
+    hot = smoothstep(0.1, 0.6, heat)[..., None]
+    albedo = base * (1 - hot) + heat_rgb * 0.7 * hot
 
-    # ---- Roughness and height
-    rough = land * (0.9 - 0.5 * obsidian - 0.2 * ashy[..., 0]) + sea * (0.75 - 0.4 * smoothstep(0.3, 0.8, heat))
-    height = land * elev_full + sea * (0.012 * plates - 0.01 * smoothstep(0.3, 0.8, heat))
+    # Relief: mountains and land texture, gentle ripples in the crust.
+    ridges = ridged(n3, p * 14.0, octaves=6)
+    mountainous = smoothstep(0.3, 0.9, elev)
+    elev_full = elev + land * (0.06 * detail + 0.25 * mountainous * (ridges - 0.45))
+    height = np.clip(elev_full, 0, 1.3) + sea * 0.015 * (1 - u)
+    rough = land * (0.9 - 0.2 * ashy[..., 0]) + sea * (0.8 - 0.45 * smoothstep(0.3, 0.8, heat))
 
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", albedo)
