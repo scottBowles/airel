@@ -175,15 +175,15 @@ appears in. It has **no position**: nothing says where a town is on its planet, 
 planet's orbit, size or look. Those have to be added (in the DB or in front-end config
 keyed by slug) before places can be pinned on a planet.
 
-## Open decisions for the user
+## Decisions so far
 
-1. Keep building in `solars`, or move the work into `web/` (e.g. a 3D mode of the
-   Star Chart, or its own route)?
-2. Use the DB as the source of truth for which planets exist and which sun they orbit,
-   with only rendering settings in code?
-3. Which model to keep for each planet (Janus vs Janus2, Mystra vs Mystra2), and who
-   makes the missing ones (Terran, Gonhirrim, Didymus, Chromium)? Making them needs
-   Blender on the user's machine.
+1. **It lives in `web/`** (Svelte 5 + Threlte 8). `solars` is reference only.
+2. **Which bodies exist and what they orbit come from the DB** (`Place.parent`). Place
+   lat/long goes in the DB. Per-planet rendering settings live in code: there won't be
+   new planets, and they're tied to the baked textures. The user had no strong view.
+3. **Next asset work: new models for planets, moons and suns**, made in Blender in cloud
+   sessions. Keep the Sketchfab and existing Blender models; don't overwrite them. See
+   [`assets.md`](assets.md) for what each body needs and the open lore questions.
 
 ## Running `solars` today
 
