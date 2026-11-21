@@ -29,8 +29,17 @@ install_chromium_deps() {
 	npx -y playwright@1.64.1 install-deps chromium >/dev/null || echo "cloud-setup: chromium deps install failed" >&2
 }
 
-# Both use apt, so they run one after the other.
-{ install_postgres; install_chromium_deps; } &
+# Blender (official build, bundled Python with numpy) for headless planet modelling:
+# blender -b -P script.py. Needs download.blender.org in the network allowlist.
+install_blender() {
+	apt-get install -y -qq libgl1 libsm6 libx11-6 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrender1 >/dev/null &&
+		curl -fsSL https://download.blender.org/release/Blender5.3/blender-5.3.0-linux-x64.tar.xz | tar -xJ -C /opt &&
+		ln -sfn /opt/blender-5.3.0-linux-x64 /opt/blender && ln -sf /opt/blender/blender /usr/local/bin/blender ||
+		echo "cloud-setup: blender install failed" >&2
+}
+
+# All use apt, so they run one after the other.
+{ install_postgres; install_chromium_deps; install_blender; } &
 
 # Vite+ (vp) toolchain for web/. The session hook pins it to the lockfile's version.
 npm install -g --silent vite-plus || echo "cloud-setup: vite-plus install failed" >&2 &

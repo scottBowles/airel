@@ -1,0 +1,107 @@
+{
+  "body": "Magmus",
+  "pins": [
+    {
+      "name": "The Roaring Kettle",
+      "lat": 80,
+      "lon": 0,
+      "confidence": "lore"
+    },
+    {
+      "name": "The Well of Destiny",
+      "lat": -80,
+      "lon": 0,
+      "confidence": "lore"
+    },
+    {
+      "name": "The Well of Wisdom",
+      "lat": 2,
+      "lon": 128,
+      "confidence": "lore"
+    },
+    {
+      "name": "Ymir \u2014 the Mother of all Giants",
+      "lat": 24,
+      "lon": 9,
+      "confidence": "layout"
+    },
+    {
+      "name": "Forge at Mother of Giants",
+      "lat": 24.5,
+      "lon": 10,
+      "confidence": "layout"
+    },
+    {
+      "name": "Muspell \u2014 Mountain of the Fire Giants",
+      "lat": 20,
+      "lon": -12,
+      "confidence": "layout"
+    },
+    {
+      "name": "Vale of Cleaveland",
+      "lat": 21,
+      "lon": -1.5,
+      "confidence": "lore"
+    },
+    {
+      "name": "Old Bae",
+      "lat": 31,
+      "lon": -4,
+      "confidence": "layout"
+    },
+    {
+      "name": "Thestal Halls of Heorot",
+      "lat": 44,
+      "lon": -68,
+      "confidence": "guess"
+    },
+    {
+      "name": "Brawnheim",
+      "lat": 67.5,
+      "lon": -35,
+      "confidence": "layout"
+    },
+    {
+      "name": "Vigrid, the Last Battlefield",
+      "lat": -27,
+      "lon": -108,
+      "confidence": "layout"
+    },
+    {
+      "name": "Kenaz",
+      "lat": 12,
+      "lon": 62,
+      "confidence": "guess"
+    },
+    {
+      "name": "Hot Springs of Canaz",
+      "lat": 12,
+      "lon": 62.4,
+      "confidence": "guess"
+    },
+    {
+      "name": "Sinmara \u2014 an upland of cinders",
+      "lat": -38,
+      "lon": 38,
+      "confidence": "guess"
+    },
+    {
+      "name": "Surtesy \u2014 a volcanic island",
+      "lat": -12,
+      "lon": -58,
+      "confidence": "layout"
+    },
+    {
+      "name": "Svalinn \u2014 the Great Shield",
+      "lat": 30,
+      "lon": 128,
+      "confidence": "guess"
+    },
+    {
+      "name": "Gungnir \u2014 a thin stretch of lava delta marshlands",
+      "lat": -32,
+      "lon": -138,
+      "confidence": "layout"
+    }
+  ]
+}
