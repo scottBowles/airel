@@ -1,5 +1,30 @@
 # Open questions for the DM, by how much they change the models
 
+## DM answers (Nov 2026): these override the briefs
+
+- **Terran:** some seas, but not many. City covers most of the planet.
+- **Felucia:** mostly jungle with small seas, more ocean than Terran (enough to feed the jungle).
+- **Hyang Wan:** islands only. It **has a moon** (two logs show one; it isn't in the DB yet).
+- **Janus:**
+  - Tidally locked to the Red Sun, and that alone makes the dark side.
+  - West of the butte is dark (follow the later logs).
+  - The light side is an unbearably hot desert with very little life.
+- **Gonhirrim:** a gas giant. Its colour is open: something Jupiter-like that looks good.
+  - All seven moons have air, weather and inhabitants.
+  - Durinfol follows the logs: a warm saltwater coral lake.
+  - A hint of "the eighth moon" (the core) is fine, but only a hint.
+- **Didymus:**
+  - Each twin is smaller than half a typical planet. They revolve around each other as one
+    system.
+  - The DM recalls one twin as larger and kidney-bean shaped, the other smaller and more
+    spherical. The logs neither confirm nor contradict this (searched: no shape description),
+    so the DM's memory stands.
+  - The Solar Cannon strike was long ago: at most a small, weathered remnant.
+- **Mystra:** the surface is mostly, not entirely, hidden by pink mist.
+- **The asteroid belt** orbits nothing. It sits between the suns, a little nearer the Yellow Sun.
+- **Genussa:** G3 is the 2022 clean business district.
+- **Gates:** unanswered. **Ask again later**, before building navigation.
+
 Collected from the briefs in this folder (each brief has its full list). Each question has the
 default used if it isn't answered.
 
@@ -100,3 +125,25 @@ default used if it isn't answered.
 - Dwampton's location.
 - Penumbra and Mezzolux: the same region?
 - Daedalus HQ: is it Tom Tom's lot?
+
+## Where the three parentless places are (from the logs)
+
+- **Champion City → Terran.** The DB has no type and no parent; it should be a TOWN under
+  Terran. It's named on Terran in the primer ("Champion City … The Senate is here"), and the
+  logs place it there:
+  - Bruno's concert "on Terran" was at Champion City (2018–2022 logs);
+  - Raltak: "The orb you know as Terran … Seek Champion City … the arena" (Raltak's Promise,
+    2024-10-21);
+  - "an arena in Champion City on Terran" (Bargain in the Ash Pit, 2025-03-27).
+
+  The party has never been there in the logs (to 2025-07); the meeting at the arena is still
+  ahead of them.
+- **Tomb of Teresias → Mystra.** The party was there before the logs begin (with Bruno: "since
+  we were first at the tomb of Teresias … with Bruno, the famous rock star", 2019-11-07), during
+  the Mystra adventure. Bruno stayed on there "until I got strong enough" (2019-04-04), and his
+  last video was recorded at the tomb ("the IP address is from the tomb", 2022-01-17) before
+  he was abducted. The DB notes for Mystra put it there. Later logs mention it only in
+  memories, visions and the key.
+- **Thiton's Temple → Hyang Wan.** The party went there in person: a flight on the Desconnegut
+  from Mulgogi, then a dive to the undersea temple on a reef (Thiton's Temple, 2019-01-22). It
+  crumbled 2019-04-04. Not to be confused with the smaller Thiton temple on Durinfol.
