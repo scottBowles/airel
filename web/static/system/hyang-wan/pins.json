@@ -1,0 +1,41 @@
+{
+  "body": "Hyang Wan",
+  "pins": [
+    {
+      "name": "Mulgogi",
+      "lat": -7,
+      "lon": -24,
+      "confidence": "layout"
+    },
+    {
+      "name": "Kamasu Complex",
+      "lat": -3.5,
+      "lon": -29,
+      "confidence": "guess"
+    },
+    {
+      "name": "Bagmulgwan",
+      "lat": -4.0,
+      "lon": -28.2,
+      "confidence": "guess"
+    },
+    {
+      "name": "Thiton's Temple",
+      "lat": 4,
+      "lon": 15,
+      "confidence": "layout"
+    },
+    {
+      "name": "Hatatori Island",
+      "lat": -5,
+      "lon": -155,
+      "confidence": "layout"
+    },
+    {
+      "name": "JingLong Facility",
+      "lat": -5.2,
+      "lon": -155.6,
+      "confidence": "layout"
+    }
+  ]
+}

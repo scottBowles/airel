@@ -91,8 +91,8 @@ export const GONHIRRIM_MOONS: Record<string, BodyLook> = {
 export const HYANG_WAN: BodyLook = {
 	name: 'Hyang Wan',
 	radius: 1.4,
-	glow: 3,
-	clouds: { color: [0.8, 0.82, 0.85], opacity: 0.9, drift: 0.003 },
+	glow: 7,
+	clouds: { color: [0.52, 0.55, 0.58], opacity: 0.82, drift: 0.003 },
 	atmosphere: { color: [0.55, 0.7, 0.85], strength: 0.85 }
 };
 
