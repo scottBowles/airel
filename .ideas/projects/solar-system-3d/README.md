@@ -156,10 +156,23 @@ Built so far, in this repo:
 - **`web/src/lib/system/`**: Threlte 8 components. `Sun.svelte` + `sunShader.ts` (animated
   shader suns with coronas; `YELLOW_SUN` calm and golden-white, `RED_SUN` deep red, wild,
   flaring). `Planet.svelte` (textured planet, spin, clickable place pins on the visible
-  side). `geo.ts` (lat/lon → sphere position, tested).
+  side, optional emissive `flicker` so lava pulses). `geo.ts` (lat/lon → sphere position,
+  tested).
 - **`/system/lab`**: preview page to look at each body and click Magmus's pins.
 
 Next: the other planets and moons (see `assets.md`), then the fly-through UI.
+
+### Look-and-feel lessons (from the user's review)
+
+- **Self-lit bodies stay bright to the edge.** Strong limb darkening on a sun, then a corona
+  starting outside it, leaves a dark ring. Keep darkening gentle and overlap the glow.
+- **Heat is a continuous range**, not crust vs molten: black → deep red → red → orange →
+  yellow-white, varying by region (active vs calm) and by crust plate.
+- **Lava crust breaks into polygonal plates** (cellular noise), not wiggly contour lines.
+  Thresholded multi-octave noise breaks lines into dashes; avoid it for cracks.
+- **Land needs texture and life**: fractured blocks, rust/ochre/sulphur/ash colours, relief,
+  glowing rivers crossing it, and town lights so civilisation is plausible.
+- **Motion matters**: the glow pulses and shimmers in the app (`flicker`).
 
 ## Vision (from the user, Nov 2026)
 

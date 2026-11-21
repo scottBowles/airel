@@ -3,6 +3,7 @@
 	import { HTML } from '@threlte/extras';
 	import { onDestroy } from 'svelte';
 	import * as THREE from 'three';
+	import { addEmissiveFlicker } from './emissiveFlicker';
 	import { latLonToVector, type Pin } from './geo';
 
 	type Props = {
@@ -16,6 +17,8 @@
 		spin?: number;
 		/** Longitude (degrees) that starts out facing +z, towards the default camera. */
 		face?: number;
+		/** How much the glow pulses and shimmers, 0 (steady) … 1 (lava). */
+		flicker?: number;
 		pins?: Pin[];
 		onpin?: (pin: Pin) => void;
 	};
@@ -26,6 +29,7 @@
 		glow = 1.5,
 		spin = 0,
 		face = -90,
+		flicker = 0,
 		pins = [],
 		onpin
 	}: Props = $props();
@@ -47,8 +51,11 @@
 		emissive: new THREE.Color(1, 1, 1),
 		metalness: 0
 	});
+	// svelte-ignore state_referenced_locally
+	const live = addEmissiveFlicker(material, flicker);
 	$effect(() => {
 		material.emissiveIntensity = glow;
+		live.uniforms.uAmount.value = flicker;
 	});
 
 	let group = $state<THREE.Group>();
@@ -62,6 +69,7 @@
 	useTask((delta) => {
 		if (!group) return;
 		group.rotation.y += spin * Math.PI * 2 * delta;
+		live.uniforms.uTime.value += delta;
 		const next = pins.map((pin) => {
 			normal.set(...latLonToVector(pin.lat, pin.lon));
 			world.copy(normal).multiplyScalar(radius);

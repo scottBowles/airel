@@ -125,6 +125,51 @@ def ridged(noise: Noise3, p: np.ndarray, octaves: int = 5) -> np.ndarray:
     return total / norm
 
 
+def ramp(x: np.ndarray, stops: list[tuple[float, tuple[float, float, float]]]) -> np.ndarray:
+    """Colour ramp: x (any shape) → RGB, linearly between (position, colour) stops."""
+    pos = np.array([s[0] for s in stops], np.float32)
+    cols = np.array([s[1] for s in stops], np.float32)
+    return np.stack([np.interp(x, pos, cols[:, c]) for c in range(3)], axis=-1).astype(np.float32)
+
+
+def worley(p: np.ndarray, seed: int, jitter: float = 0.9, chunk: int = 1 << 20):
+    """3D cellular noise. Returns (f1, f2, cell_id): distances to the nearest and second-nearest
+    feature points, and a random 0..1 value per nearest cell. f2 - f1 is small along cell
+    borders: polygonal plates and the cracks between them."""
+    flat = p.reshape(-1, 3)
+    f1 = np.empty(len(flat), np.float32)
+    f2 = np.empty(len(flat), np.float32)
+    cid = np.empty(len(flat), np.float32)
+    offs = np.array([(x, y, z) for x in (-1, 0, 1) for y in (-1, 0, 1) for z in (-1, 0, 1)], np.int64)
+
+    def h(c, k):  # hash integer cells to 0..1
+        v = (c[..., 0] * 73856093) ^ (c[..., 1] * 19349663) ^ (c[..., 2] * 83492791) ^ (seed * 2654435761 + k * 97)
+        v = (v ^ (v >> 13)) * 1274126177
+        return ((v ^ (v >> 16)) & 0xFFFFFF).astype(np.float32) / 0xFFFFFF
+
+    for s in range(0, len(flat), chunk):
+        q = flat[s : s + chunk]
+        base = np.floor(q).astype(np.int64)
+        cells = base[:, None, :] + offs[None]  # (n, 27, 3)
+        pts = cells + 0.5 + (np.stack([h(cells, 1), h(cells, 2), h(cells, 3)], -1) - 0.5) * jitter
+        d = np.linalg.norm(pts - q[:, None, :], axis=-1)
+        idx = np.argpartition(d, 1, axis=1)[:, :2]
+        d2 = np.take_along_axis(d, idx, 1)
+        order = np.argsort(d2, axis=1)
+        d2 = np.take_along_axis(d2, order, 1)
+        i1 = np.take_along_axis(idx, order[:, :1], 1)[:, 0]
+        f1[s : s + chunk], f2[s : s + chunk] = d2[:, 0], d2[:, 1]
+        cid[s : s + chunk] = h(cells[np.arange(len(q)), i1], 4)
+    shape = p.shape[:-1]
+    return f1.reshape(shape), f2.reshape(shape), cid.reshape(shape)
+
+
+def veins(noise: Noise3, p: np.ndarray, width: float = 0.06) -> np.ndarray:
+    """Connected network of thin lines (the zero-crossings of one noise octave), 0..1.
+    Unlike thresholded multi-octave ridges, these never break into dashes."""
+    return smoothstep(width, 0.0, np.abs(noise(p)))
+
+
 def smoothstep(e0, e1, x):
     t = np.clip((x - e0) / (e1 - e0), 0, 1)
     return t * t * (3 - 2 * t)

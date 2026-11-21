@@ -50,8 +50,9 @@
 			<Sun look={YELLOW_SUN} radius={1.2} position={[-26, 3, 14]} intensity={2.6} />
 			<Planet
 				slug="magmus"
-				glow={1.2}
+				glow={1}
 				face={0}
+				flicker={1}
 				spin={0.004}
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}

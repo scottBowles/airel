@@ -83,7 +83,7 @@ void main(){
 
 const surfaceFragment = /* glsl */ `
 uniform float uTime; uniform float uTurb; uniform float uSpeed;
-uniform vec3 uCore; uniform vec3 uMid; uniform vec3 uDark;
+uniform vec3 uCore; uniform vec3 uMid; uniform vec3 uDark; uniform vec3 uGlow;
 varying vec3 vPos; varying vec3 vNormal; varying vec3 vView;
 ${NOISE}
 void main(){
@@ -96,10 +96,12 @@ void main(){
   float v = 0.5 + 0.5*big*(0.6+0.4*uTurb) + 0.18*(gran-0.5)*(1.0+uTurb*0.5);
   v = clamp(v, 0.0, 1.0);
   vec3 col = v < 0.5 ? mix(uDark, uMid, v*2.0) : mix(uMid, uCore, (v-0.5)*2.0);
-  // Limb darkening: the edge of the disc is cooler and dimmer.
+  // A sun is its own light, so its edge stays bright: only a gentle limb darkening, then
+  // the rim warms into the corona's colour so disc and corona meet without a seam.
   float mu = clamp(dot(normalize(vNormal), normalize(vView)), 0.0, 1.0);
-  col = mix(uDark*0.8, col, pow(mu, 0.35));
-  col *= 0.75 + 0.45*pow(mu, 0.6);
+  col *= 0.86 + 0.14*mu;
+  float rim = pow(1.0 - mu, 2.5);
+  col = mix(col, uGlow*1.1, rim*0.4);
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -125,8 +127,8 @@ void main(){
   float a = atan(vUv.y, vUv.x);
   float t = uTime * uSpeed;
   // Radial falloff from the sun's edge (uInner, in quad units) outwards.
-  float d = max(r - uInner, 0.0) / (1.0 - uInner);
-  float glow = exp(-d*7.0) * 0.9 + exp(-d*2.5) * 0.25;
+  float d = max(r - uInner*0.985, 0.0) / (1.0 - uInner);
+  float glow = exp(-d*6.0) * 1.0 + exp(-d*2.2) * 0.3;
   // Streamers and flares: noise around the rim, stretched outwards.
   vec3 q = vec3(cos(a)*2.0, sin(a)*2.0, d*1.5 - t*2.0);
   float streak = smoothstep(0.1, 0.8, fbm(q*1.7 + t)) * exp(-d*3.5);
@@ -146,7 +148,8 @@ export function sunSurfaceMaterial(look: SunLook): THREE.ShaderMaterial {
 			uSpeed: { value: look.speed },
 			uCore: { value: new THREE.Color(...look.core) },
 			uMid: { value: new THREE.Color(...look.mid) },
-			uDark: { value: new THREE.Color(...look.dark) }
+			uDark: { value: new THREE.Color(...look.dark) },
+			uGlow: { value: new THREE.Color(...look.glow) }
 		}
 	});
 }
