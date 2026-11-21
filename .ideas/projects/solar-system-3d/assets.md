@@ -19,15 +19,15 @@ The existing `.glb`s (Blender and Sketchfab) stay as they are. New work goes in 
 | Magmus | Fire world; lava flows and geysers; habitable underworld; 12 Solidlands, 3 Wells (two polar caps, an equatorial archipelago) | Dark crust with glowing lava cracks and rivers | Orange/black blotches, evenly bright, no glow | **Rework**: dark basalt, emissive lava veins visible on the night side, authored landmarks |
 | Felucia | Humid, colourful jungle; wildlands; hopeful | Bright lush green, white clouds, little ocean | Green patches on a dark-blue ocean | **Rework**: mostly jungle, vivid, cloudy, small seas |
 | Terran | Planet-sized metropolis, "Chicago across a planet", parks, Senate, Champion City | City-light grids and circular arcologies covering the planet | None (the `Terran.glb` from the bake test is Earth-like and wrong) | **New**: urban grey surface, emissive city grid, a few parks and seas |
-| Hyang Wan | High-tech water planet, always raining; islands (Mulgogi, Hatatori) | Deep teal ocean with swirls, island lights; second image has a ring | Mostly dark ocean, a few green islands | **Rework**: teal swirling ocean, heavy rain clouds, lit islands. (The ring is just from an inspiration image) |
+| Hyang Wan | High-tech water planet, always raining; islands (Mulgogi, Hatatori) | Deep teal ocean with swirls, island lights; second image has a ring | Mostly dark ocean, a few green islands | **Rework**: teal swirling ocean, heavy rain clouds, lit islands. No ring (not canon) |
 | Gonhirrim | Gas giant, perpetual storms, seven inhabited moons; "the eighth moon" is its core | Pink/orange/yellow banded giant with moons; a diagram of seven moons in a ring | None | **New**: banded gas giant shader with a storm, plus seven moons |
-| Gonhirrim's 7 moons | Broadbeam (Gliten, air), Firebeard (Tyronóë, dreams), Blacklock (Moronóë, hearth), Durinfol (Thiton, water/life; capital Erebôr), Ironfist (Mazoë, justice), Stiffbeard (Yafel, knowledge), Stonefoot (Glitonea, earth). Dwarven mining moons | Only the ring diagram | None | **New**: one rocky, mined moon base, varied per moon's god |
-| Hielo | Frozen, largely uninhabitable; "not a planet", in the asteroid belt | Grey-white cratered body | Grey/white icy | **Keep**, maybe more craters. Needs an asteroid belt to sit in |
+| Gonhirrim's 7 moons | Broadly similar but each with its own character. Broadbeam (Gliten, air), Firebeard (Tyronóë, dreams), Blacklock (Moronóë, hearth), Durinfol (Thiton, water/life; capital Erebôr), Ironfist (Mazoë, justice), Stiffbeard (Yafel, knowledge), Stonefoot (Glitonea, earth). Dwarven mining moons | Only the ring diagram | None | **New**: one shared rocky, mined-moon base; per-moon variation drawn from its god |
+| Hielo | Frozen, largely uninhabitable; "not a planet": it sits **in the asteroid belt**, which runs between the suns, a little nearer the Yellow Sun | Grey-white cratered body | Grey/white icy | **Keep**, maybe more craters. Needs an asteroid belt to sit in |
 | Mystra | "The pink Dagobah": swampy, mystic, pilgrimage site | Vivid pink planet with white clouds | Olive-green (and `Mystra2` is similar) | **Rework**: pink swamp world, misty clouds |
 | Genussa | "Vegas of planets", sleazy metropolis, "Nega-Terran"; four quadrants G1–G4 | Dark planet webbed with orange city lights | Blue ocean with green/tan continents | **New**: dark city world with neon light, four quadrants visible |
-| Janus | Half light, half dark, a little Mezzolux; dark east, light west (from the butte description) | Lit orange/rust half, black other half | Tan/blue noise, no halves | **Rework**: tidally locked; scorched light side, black/icy dark side, Mezzolux band at the terminator |
+| Janus | Half light, half dark, a little Mezzolux; dark east, light west (from the butte description) | Lit orange/rust half, black other half | Tan/blue noise, no halves | **Rework**: tidally locked to the Red Sun, so the sun's light makes the halves. The surface should also differ by side (see below) |
 | Didymus | Twin planets, broken from one; lots of sand, few waters | Two small bodies, one pale banded, one light blue | None | **New**: two small desert bodies with fractured faces, orbiting each other. Sand per the text; the image is only for mood |
-| Chromium | Planet of Dragons; no one returns; figure-eight orbit around both suns | None | None (red sphere in `solars`) | **New**, design open: ask the user |
+| Chromium | "The dark planet." No one has gone there; dragons are said to live there. Its delegates used to come to interplanetary meetings, then stopped. Figure-eight orbit around both suns | None | None (red sphere in `solars`) | **New**: near-black and unknown (see below) |
 
 Also needed, not bodies: **the crew's ship** (the Kontularien) for the fly-through, and
 **an asteroid belt** (where Hielo sits).
@@ -41,13 +41,45 @@ Also needed, not bodies: **the crew's ship** (the Kontularien) for the fly-throu
 - Their UV layout hasn't been checked. For pins on a map they need a known lat/long
   layout (see below).
 
-## Lore questions for the user
+## User's answers (Nov 2026)
 
-1. **Hielo**: DB parent is the Yellow Sun, notes say it's in the asteroid belt and "not a
-   planet", and Gonhirrim's notes mention it near the moons. Where does it go?
-2. **Chromium**: no image. Dragons, mystery, figure-eight orbit. Any picture in mind?
-3. **Gonhirrim's moons**: are they distinct worlds (each themed by its god), or broadly
-   alike mining moons?
+- **Hielo** is in the asteroid belt. The belt runs between the two suns, a little nearer the
+  Yellow Sun. Model the belt as instanced rocks along an arc, with Hielo as its largest body.
+- **Didymus**: the description is canon (sand, few waters). The image was only the best one
+  found showing two close planets.
+- **Hyang Wan**: no ring unless the lore mentions one; it doesn't.
+- **Chromium** is "the dark planet". Nobody has been there; lore says dragons live there.
+  Not much description exists. Plan: keep it mysterious. A near-black, low-reflectance
+  world under dark storm cloud, a faint ember glow in fissures and the odd flash of
+  lightning. Its display reads "uncharted"; it has no places in the DB.
+- **Gonhirrim's moons**: broadly similar, with enough difference for character. Plan:
+  one shared mined-rock base (mining scars, lit settlements) varied by each moon's god:
+  - Broadbeam (Gliten, air/balance): hazy thin atmosphere
+  - Firebeard (Tyronóë, dreams/psyche): violet tint
+  - Blacklock (Moronóë, wisdom/hearth): warm-lit settlements
+  - Durinfol (Thiton, water/life): ice and water, some green; capital Erebôr
+  - Ironfist (Mazoë, justice/courage): iron-red rock
+  - Stiffbeard (Yafel, knowledge/temperance): pale stone
+  - Stonefoot (Glitonea, earth/law): heavily cratered
+- **Janus**: the user let lighting and the tidal lock make the halves. Open to whatever
+  looks best. Recommended: keep lighting doing day and night, and also vary the surface
+  by side. Day side scorched and arid; night side dark rock and ice with faint
+  settlement lights (people live there); the Mezzolux a habitable band at the terminator.
+  With lighting alone, the dark half is one black disc with nothing to see or click.
+
+## System layout (user's sketch)
+
+[`system-sketch.jpg`](system-sketch.jpg) is the user's rough hand-drawn map, top-down:
+
+- **Yellow Sun** upper left, drawn small; **Red Sun** lower right, drawn much larger.
+- **The asteroid belt** is a long arc between them, passing nearer the Yellow Sun.
+- Planets are numbered 1–10, with a legend: 1 Magmus, 2 Felucia, 3 Terran, 4 Hyang Wan,
+  5 Gonhirrim, 6 Hielo, then 7–10 (the legend reads like Mystra?, Genussa, Janus,
+  Didymus).
+- Coloured diamonds, with a second legend: **Vostok, Galileo, Tiberius, Lizhi, Aryabhata**.
+  They sit along lines between the suns. What they are (stations? relays?) is unconfirmed.
+
+It's rough, so treat it as relative placement, not exact positions.
 
 ## Specific geography: authored control maps, noise for detail
 
