@@ -1,0 +1,29 @@
+{
+  "body": "Terran",
+  "pins": [
+    {
+      "name": "Champion City",
+      "lat": 42,
+      "lon": 0,
+      "confidence": "guess"
+    },
+    {
+      "name": "The Senate",
+      "lat": 42.3,
+      "lon": 0.6,
+      "confidence": "guess"
+    },
+    {
+      "name": "The Arena",
+      "lat": 41.6,
+      "lon": 1.4,
+      "confidence": "layout"
+    },
+    {
+      "name": "Whidmore terraforming testbed",
+      "lat": -20,
+      "lon": 120,
+      "confidence": "guess"
+    }
+  ]
+}

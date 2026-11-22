@@ -17,6 +17,7 @@ python3 tools/planets/gonhirrim.py                  # the gas giant (~2 min)
 python3 tools/planets/moons.py [durinfol ironfist …] # Gonhirrim's moons, 2048×1024 (~75 s each)
 python3 tools/planets/hyang_wan.py                  # island water world (~13 min; --clouds-only ~3 min)
 python3 tools/planets/felucia.py                    # jungle world with seas and rivers (~10 min)
+python3 tools/planets/terran.py                     # planet-wide city, brightest night side (~10 min)
 ```
 
 Moons also write `clouds.webp` (white where cloudy) for the app's cloud layer. Their render

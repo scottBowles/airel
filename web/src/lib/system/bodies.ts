@@ -111,6 +111,15 @@ export const FELUCIA: BodyLook = {
 	atmosphere: { color: [0.55, 0.78, 0.9], strength: 0.9 }
 };
 
+/** The planet-wide metropolis: grey city by day, the brightest night side in the system. */
+export const TERRAN: BodyLook = {
+	name: 'Terran',
+	radius: 1.4,
+	glow: 4,
+	clouds: { color: [0.9, 0.92, 0.94], opacity: 0.85, drift: 0.003, normal: true },
+	atmosphere: { color: [0.5, 0.68, 0.95], strength: 0.85 }
+};
+
 /** Two logs see it set over Mulgogi. Airless grey rock. */
 export const HYANG_WAN_MOON: BodyLook = {
 	name: "Hyang Wan's Moon",

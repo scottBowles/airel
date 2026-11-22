@@ -161,7 +161,8 @@ Built so far, in this repo:
 - **`/system/lab`**: preview page to look at each body and click Magmus's pins.
 
 Since then: **Gonhirrim** (banded gas giant) and its seven moons (`moons.py`), **Hyang Wan**
-(island water world under grey rain cloud) and its moon. Shared cloud layers are in
+(island water world under grey rain cloud) and its moon. **Felucia** (jungle with small seas and rivers) and
+**Terran** (planet-wide city: district street grids, hubs, transit lines, few seas). Shared cloud layers are in
 `tools/planets/clouds.py`. Place labels on a planet are laid out on screen so they never
 overlap (`web/src/lib/system/labels.ts`): a label with no free spot hides until its dot is
 hovered.
