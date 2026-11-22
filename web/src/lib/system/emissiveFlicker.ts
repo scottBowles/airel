@@ -81,7 +81,8 @@ float cloudShadow(vec3 p) {
   float u = atan(c.z, -c.x) / (2.0 * PI);
   u = u < 0.0 ? u + 1.0 : u;
   float v = 1.0 - acos(clamp(c.y, -1.0, 1.0)) / PI;
-  return textureLod(uCloudMap, vec2(u, v), 3.0).r;
+  // Only thick cloud casts a shadow; a thin overcast everywhere would just dim the whole planet.
+  return smoothstep(0.4, 0.85, textureLod(uCloudMap, vec2(u, v), 3.0).r);
 }
 float fhash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float fnoise(vec3 x) {

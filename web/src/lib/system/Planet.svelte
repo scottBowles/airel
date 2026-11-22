@@ -34,7 +34,7 @@
 			near?: number;
 			/** Shade the cloud tops with clouds-normal.webp. */
 			normal?: boolean;
-			/** How dark the clouds' shadows on the ground are, 0..1 (default 0.55). */
+			/** How dark the clouds' shadows on the ground are, 0..1 (default 0.6). */
 			shadow?: number;
 		};
 		/** A glow around the rim, lit from `sun`. */
@@ -141,7 +141,8 @@
 				live.uniforms.uSunLocal.value.copy(sunPosition);
 				ground.worldToLocal(live.uniforms.uSunLocal.value);
 				live.uniforms.uCloudTurn.value = cloudMesh.rotation.y;
-				live.uniforms.uShadow.value = (clouds?.shadow ?? 0.55) * cloudMaterial.opacity;
+				// Full strength even when the clouds thin close in: the shadows then show where they are.
+					live.uniforms.uShadow.value = (clouds?.shadow ?? 0.6) * (clouds?.opacity ?? 0.9);
 			}
 		}
 		live.uniforms.uTime.value += delta;
