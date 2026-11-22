@@ -63,11 +63,14 @@ def arc_distance(p: np.ndarray, a: tuple[float, float], b: tuple[float, float]):
     return dist, np.clip(from_a / length, 0, 1)
 
 
-def zones(lat: np.ndarray) -> np.ndarray:
+def zones(lat: np.ndarray, clusters: np.ndarray) -> np.ndarray:
     """Earth-like circulation: a cloudy band at the equator, clearer subtropics (the calm
-    high-pressure belts near 25°), and stormy mid-latitudes."""
+    high-pressure belts near 25°), and stormy mid-latitudes. These are averages, not what any
+    one day looks like, so the caller lets `lat` wander; the equatorial band comes in
+    thunderstorm clusters with gaps between them."""
     a = np.abs(lat)
-    return 0.25 * np.exp(-((lat / 7) ** 2)) - 0.2 * np.exp(-(((a - 25) / 8) ** 2)) + 0.15 * np.exp(-(((a - 50) / 10) ** 2))
+    equator = 0.25 * np.exp(-((lat / 8) ** 2)) * (0.2 + 1.6 * clusters)
+    return equator - 0.2 * np.exp(-(((a - 25) / 9) ** 2)) + 0.15 * np.exp(-(((a - 50) / 12) ** 2))
 
 
 def make_clouds(g, seed: int, cover: float, storms: list[dict], veil: tuple[float, float] = (0.0, 0.0), zoning: float = 0.0, log=print):
@@ -77,7 +80,8 @@ def make_clouds(g, seed: int, cover: float, storms: list[dict], veil: tuple[floa
 
     Each storm: lat, lon, ax, ay (its extent, degrees), swirl (turn at the centre, radians:
     + anticlockwise), and optionally inflow (how tightly the arms wind), strength (how much
-    cloud it gathers), eye (how clear its centre is), face (direction of its cloud shield, radians)
+    cloud it gathers), eye (how clear its centre is), face (direction of its cloud shield, radians), round
+    (a symmetric tropical storm, not a comma)
     and front: the (lat, lon) the trailing cold front reaches."""
     n = [Noise3(seed * 7 + i) for i in range(8)]
     lat = np.degrees(g.lat)
@@ -94,13 +98,18 @@ def make_clouds(g, seed: int, cover: float, storms: list[dict], veil: tuple[floa
     warp = np.stack([fbm(n[0], q * 2.5 + 3, 4), fbm(n[1], q * 2.5 + 9, 4), fbm(n[2], q * 2.5 + 17, 4)], -1)
 
     # Weather systems: where cloud gathers at all.
-    raw = fbm(n[3], qz * 3.2 + warp * 1.6, octaves=6) + zoning * zones(lat) / 0.25
+    # The zones' edges wander by several degrees, and storms and fronts cut across them.
+    wander = lat + 28 * fbm(n[1], g.xyz * 1.6 + 40, 3)
+    clusters = smoothstep(-0.05, 0.3, fbm(n[2], q * 7 + warp + 60, 4))
+    raw = fbm(n[3], qz * 3.2 + warp * 1.6, octaves=6) + zoning * zones(wander, clusters) / 0.25
     rough = fbm(n[6], q * 12 + warp * 2, 4)
     for s in storms:
         # A comma, not a pinwheel: the cloud shield wraps one side, a dry slot cuts the other.
         d, _ = storm_coords(q, s)
         c, east, north = tangent_basis(s["lat"], s["lon"])
         side = 0.5 + 0.5 * np.cos(np.arctan2(q @ north, q @ east) - s.get("face", 0.0))
+        if s.get("round"):  # a tropical storm is symmetric, cloud all the way round
+            side = np.ones_like(side)
         k = s.get("strength", 1.0)
         raw = raw + k * (0.22 * np.exp(-(d**2) * 1.8) * (0.3 + 0.7 * side) - 0.15 * np.exp(-(d**2) * 4) * (1 - side))
         raw = raw - 0.4 * s.get("eye", 1.0) * np.exp(-((d / 0.06) ** 2))

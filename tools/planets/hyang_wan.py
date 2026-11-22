@@ -249,16 +249,19 @@ def hyang_clouds(g):
     """Rain bands wound into a few cyclones, over a thin grey overcast ("everything is greyed
     out") that dulls the islands without hiding them."""
     # Storms at different stages along the mid-latitude storm tracks: mature commas trailing
-    # cold fronts, young waves just kinking a front, an old one unwinding. A mature one sits
+    # cold fronts (looser than a hurricane), young waves just kinking a front, an old one
+    # unwinding, and one tropical storm. A mature one sits
     # north-west of Mulgogi, in view. Positive swirl turns anticlockwise (the north's cyclones).
     storms = [
-        dict(lat=40, lon=-38, ax=24, ay=17, swirl=2.0, face=0.8, front=(16, -64)),
+        dict(lat=40, lon=-38, ax=26, ay=16, swirl=1.6, inflow=0.7, face=0.8, front=(16, -64)),
+        # A tropical storm: small, tight and round, with a clear eye.
+        dict(lat=15, lon=-85, ax=6, ay=6, swirl=2.6, inflow=1.4, eye=1.3, strength=4.0, round=True),
         dict(lat=46, lon=70, ax=14, ay=10, swirl=1.0, inflow=0.5, strength=0.7, eye=0, face=0.5, front=(30, 44)),
         dict(lat=-44, lon=-125, ax=22, ay=16, swirl=-1.9, face=-0.8, front=(-20, -150)),
         dict(lat=58, lon=165, ax=18, ay=14, swirl=1.3, inflow=0.4, strength=0.6, eye=0.3),
         dict(lat=-50, lon=25, ax=13, ay=10, swirl=-1.0, inflow=0.5, strength=0.7, eye=0, front=(-34, 2)),
     ]
-    return make_clouds(g, SEED, cover=0.38, storms=storms, veil=(0.25, 0.42), zoning=0.3)
+    return make_clouds(g, SEED, cover=0.38, storms=storms, veil=(0.25, 0.42), zoning=0.2)
 
 
 def save_clouds(out: Path, clouds, thickness) -> None:
