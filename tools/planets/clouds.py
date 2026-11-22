@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from gonhirrim import swirl
+from gonhirrim import storm_coords, swirl
 from planetgen import Noise3, fbm, smoothstep
 
 
@@ -42,32 +42,44 @@ def make_clouds(g, seed: int, cover: float, storms: list[dict], veil: tuple[floa
     in bands either side of the equator."""
     n = [Noise3(seed * 7 + i) for i in range(8)]
     lat = np.degrees(g.lat)
+    # The big field takes the storms' full twist, which makes the spiral arms; the small-scale
+    # texture only half, or it winds into tight, regular rings around each centre.
     q = g.xyz
     for s in storms:
         q = swirl(q, s)
+    qh = g.xyz
+    for s in storms:
+        qh = swirl(qh, dict(s, swirl=s["swirl"] * 0.5))
     # Winds shear everything along latitude: the same points, squashed toward the pole axis.
     qz = q * np.array([1.0, 1.0, 2.6], np.float32)
     warp = np.stack([fbm(n[0], q * 2.5 + 3, 4), fbm(n[1], q * 2.5 + 9, 4), fbm(n[2], q * 2.5 + 17, 4)], -1)
 
     # Weather systems: where cloud gathers at all.
-    systems = rank(fbm(n[3], qz * 3.2 + warp * 1.6, octaves=6) + belts * np.cos(np.radians(lat) * 5))
+    raw = fbm(n[3], qz * 3.2 + warp * 1.6, octaves=6) + belts * np.cos(np.radians(lat) * 5)
+    # Cyclones gather cloud into their spiral arms, around a clear eye.
+    for s in storms:
+        d, _ = storm_coords(g.xyz, s)
+        raw = raw + 0.15 * np.exp(-(d**2) * 2.0) - 0.4 * np.exp(-((d / 0.06) ** 2))
+    systems = rank(raw)
     log("  clouds: systems")
     # Clumps at two sizes, bent by the same winds so cells line up in streets and spirals.
-    qm = q * np.array([1.0, 1.0, 1.4], np.float32)  # small cloud is only a little sheared
+    qm = qh * np.array([1.0, 1.0, 1.4], np.float32)  # small cloud is only a little sheared
     clump = billow(n[4], qm * 14 + warp * 4, 4)
     fine = billow(n[5], qm * 55 + warp * 6, 3)
-    pop = billow(n[0], qm * 150 + warp * 8, 2)
+    pop = billow(n[0], qm * 80 + warp * 8, 2)
     log("  clouds: clumps")
     # Wisps: long thin filaments along the wind, strongest where cloud is thin.
-    streak = 1 - np.abs(fbm(n[6], q * np.array([9.0, 9.0, 40.0], np.float32) + warp * 3, 4) * 2)
+    streak = 1 - np.abs(fbm(n[6], q * np.array([6.0, 6.0, 28.0], np.float32) + warp * 3, 4) * 2)
     streak = smoothstep(0.55, 0.95, streak)
     log("  clouds: wisps")
 
     # Density: the systems decide the broad shape; the clumps carve its edges into fragments,
     # so the boundary breaks up instead of fading smoothly.
     edge = 1 - cover
-    density = (systems - edge) * 2.2 + 0.6 * (clump - 0.55) + 0.35 * (fine - 0.55)
-    thick = smoothstep(-0.2, 0.55, density) ** 0.8
+    # Steep at the large scale, so systems have definite edges; the fine terms feather them.
+    fray = fbm(n[7], qm * 120 + warp * 6, 3)
+    density = (systems - edge) * 3.5 + 0.55 * (clump - 0.55) + 0.4 * (fine - 0.55) + 0.5 * fray
+    thick = smoothstep(-0.12, 0.4, density) ** 0.8
     # Uneven tops: thickest in the clump cores, never a flat sheet.
     thick = thick * (0.68 + 0.32 * smoothstep(0.3, 0.85, clump * 0.6 + fine * 0.4))
     # Around the systems' fringes and across the clear gaps: wisps along the wind, and small

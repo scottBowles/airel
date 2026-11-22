@@ -248,14 +248,16 @@ def generate(width: int, out: Path) -> None:
 def hyang_clouds(g):
     """Rain bands wound into a few cyclones, over a thin grey overcast ("everything is greyed
     out") that dulls the islands without hiding them."""
-    rng = np.random.default_rng(SEED + 1)
-    storms = []
-    for i in range(4):
-        hemi = 1 if i % 2 else -1
-        storms.append(
-            dict(lat=float(rng.uniform(12, 45) * hemi), lon=float(rng.uniform(-180, 180)), ax=float(rng.uniform(12, 18)), ay=float(rng.uniform(10, 14)), swirl=float(1.8 * hemi))
-        )
-    return make_clouds(g, SEED, cover=0.42, storms=storms, veil=(0.3, 0.5), belts=0.12)
+    # Placed by hand: a big one in view of Mulgogi, the rest spread round the planet. Large and
+    # strongly turned, so they wind the cloud into long comma-shaped arms. Positive
+    # swirl turns anticlockwise (the north's cyclones), negative clockwise (the south's).
+    storms = [
+        dict(lat=24, lon=-44, ax=28, ay=20, swirl=2.9),
+        dict(lat=-28, lon=-120, ax=26, ay=19, swirl=-2.8),
+        dict(lat=34, lon=125, ax=18, ay=14, swirl=2.5),
+        dict(lat=-32, lon=40, ax=18, ay=14, swirl=-2.4),
+    ]
+    return make_clouds(g, SEED, cover=0.42, storms=storms, veil=(0.25, 0.42), belts=0.12)
 
 
 def save_clouds(out: Path, clouds, thickness) -> None:
