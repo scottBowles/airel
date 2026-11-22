@@ -226,18 +226,18 @@ def generate(width: int, out: Path) -> None:
     green = ramp(
         biome,
         [
-            (0.0, (0.03, 0.22, 0.09)),
-            (0.3, (0.06, 0.33, 0.1)),
-            (0.55, (0.14, 0.42, 0.07)),
-            (0.8, (0.28, 0.5, 0.06)),
-            (1.0, (0.42, 0.55, 0.08)),
+            (0.0, (0.03, 0.2, 0.09)),
+            (0.35, (0.05, 0.3, 0.1)),
+            (0.65, (0.09, 0.37, 0.09)),
+            (0.9, (0.15, 0.43, 0.08)),
+            (1.0, (0.19, 0.46, 0.08)),
         ],
     )
     green = green * (0.85 + 0.3 * patch[..., None])
     # Higher ground is darker old growth; the floodplains are bright and fresh.
     old = smoothstep(0.35, 0.8, e)[..., None]
     green = green * (1 - 0.5 * old) + np.array([0.05, 0.17, 0.08], np.float32) * 0.5 * old
-    green = green * (1 - 0.35 * flood[..., None]) + np.array([0.3, 0.46, 0.12], np.float32) * 0.35 * flood[..., None]
+    green = green * (1 - 0.35 * flood[..., None]) + np.array([0.3, 0.5, 0.1], np.float32) * 0.35 * flood[..., None]
     # The wildlands: the densest, darkest canopy.
     wild = smoothstep(1.15, 0.75, ellipse(g, WILDLANDS["lat"], WILDLANDS["lon"], WILDLANDS["ax"], WILDLANDS["ay"]) + 0.25 * fbm(n[1], p * 5 + warp, 4))
     green = green * (1 - 0.55 * wild[..., None]) + np.array([0.04, 0.15, 0.07], np.float32) * 0.55 * wild[..., None]
@@ -246,7 +246,7 @@ def generate(width: int, out: Path) -> None:
     groves = smoothstep(0.88, 0.97, rank(fbm(n[2], p * 70 + warp * 4, 3))) * region
     groves = np.maximum(groves, 0.5 * smoothstep(0.93, 0.99, rank(fbm(n[2], p * 24 + warp * 3, 4))) * region)
     hue = rank(fbm(n[4], p * 3 + 7.7, 3))
-    accent = ramp(hue, [(0.0, (0.62, 0.14, 0.42)), (0.35, (0.48, 0.2, 0.6)), (0.65, (0.75, 0.38, 0.1)), (1.0, (0.7, 0.62, 0.15))])
+    accent = ramp(hue, [(0.0, (0.62, 0.14, 0.42)), (0.35, (0.48, 0.2, 0.6)), (0.7, (0.78, 0.3, 0.12)), (1.0, (0.85, 0.42, 0.5))])
     green = green * (1 - 0.5 * groves[..., None]) + accent * 0.5 * groves[..., None]
     # Volcanic rock on the cone, pale steaming ground at the springs, and a little tundra and
     # ice only at the poles.
