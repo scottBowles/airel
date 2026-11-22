@@ -115,7 +115,7 @@ export const FELUCIA: BodyLook = {
 export const TERRAN: BodyLook = {
 	name: 'Terran',
 	radius: 1.4,
-	glow: 4,
+	glow: 3,
 	clouds: { color: [0.9, 0.92, 0.94], opacity: 0.85, drift: 0.003, normal: true },
 	atmosphere: { color: [0.5, 0.68, 0.95], strength: 0.85 }
 };

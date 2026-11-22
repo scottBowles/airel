@@ -220,6 +220,11 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 - **Clouds cast shadows** (`emissiveFlicker.ts`): the ground shader traces toward the sun to the
   cloud layer, cast from a little higher than the cloud mesh so the offset shows. Shadows lying
   right under their clouds are hidden; the offset is what makes clouds look lifted.
+- **A city planet** (Terran). Even-toned patches read as farm fields: no flat district or block
+  tints, and parks shaped like nature (greenbelts along old valleys), not squares. City is a
+  fine bright-and-dark speckle, silvery in the cores. Big hubs get ring roads and radial
+  highways; a few trunk lines join the biggest. At night nearly all land is lit, as glitter
+  (lit blocks with dark gaps), not a smooth wash, with hubs brighter.
 - **Clouds thin as the camera closes in** (to `near` × opacity at 2 radii), so places can be
   seen up close while the planet reads as cloudy from afar.
 

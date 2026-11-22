@@ -153,9 +153,28 @@ def generate(width: int, out: Path) -> None:
     density = np.zeros_like(h)
     # Hubs sprawl unevenly along their coasts and corridors, not in circles.
     ragged = fbm(n[4], p * 14 + warp * 2, 4)
-    for la, lo, r, b in hubs:
-        d = angular_distance(g, la, lo) * (1 + 0.9 * ragged)
+    # Big hubs get wheels: ring roads (beltways) and radial highways, like DC's or Moscow's,
+    # at city-planet scale and a little out of round.
+    wheels = np.zeros_like(h)
+    for i, (la, lo, r, b) in enumerate(hubs):
+        d0 = angular_distance(g, la, lo)
+        d = d0 * (1 + 0.9 * ragged)
         density = np.maximum(density, b * np.exp(-((d / r) ** 2)))
+        if i == 0 or r < 1.8:
+            continue
+        c = unit(la, lo)
+        e = np.cross([0, 0, 1.0], c)
+        e /= np.linalg.norm(e)
+        nn = np.cross(c, e)
+        near = d0 < r * 1.6
+        dw = d0[near] * (1 + 0.06 * ragged[near])
+        ang = np.arctan2(p[near] @ nn, p[near] @ e)
+        w = 0.16
+        ring = np.maximum(smoothstep(w, 0, np.abs(dw - 0.4 * r)), smoothstep(w, 0, np.abs(dw - 0.85 * r)) * (r > 2.6))
+        k = int(rng.integers(5, 9))
+        phase = rng.uniform(0, np.pi)
+        spoke = smoothstep(w, 0, dw * np.abs(np.sin((ang - phase) * k / 2))) * smoothstep(0.1 * r, 0.25 * r, dw) * smoothstep(1.5 * r, 1.0 * r, dw)
+        wheels[near] = np.maximum(wheels[near], b * np.maximum(ring, spoke))
     # The urban sprawl between hubs is everywhere, thinning toward the poles.
     # It is patchy: dense suburbs, industry, and darker tracts between.
     base = 0.2 + 0.35 * smoothstep(0.2, 0.85, rank(fbm(n[5], p * 7 + warp * 1.5, 5)))
@@ -198,7 +217,6 @@ def generate(width: int, out: Path) -> None:
         return ((x ^ (x >> 16)) & 0xFFFF).astype(np.float32) / 0xFFFF
 
     block = hashf(sx, sy, (cid * 1000).astype(np.int64))
-    super_block = hashf(bx, by, (cid * 1000).astype(np.int64) + 7)
 
     # Champion City: rings of boulevards and radial avenues, the Senate and the Arena.
     cd = angular_distance(g, *CHAMPION)
@@ -224,12 +242,27 @@ def generate(width: int, out: Path) -> None:
         for j in np.argsort(-dots)[1:3]:
             if i < j or i not in np.argsort(-(xyz @ xyz[j]))[1:3]:
                 segs.append(((hubs[i][0], hubs[i][1]), (hubs[j][0], hubs[j][1]), 1.0))
-    arteries = near_arcs(g, segs, 0.22)
+    arteries = 0.5 * near_arcs(g, segs, 0.22)
+    # Trunk lines: the biggest hubs joined to each other across continents, brighter and wider.
+    top = sorted(range(len(hubs)), key=lambda i: -hubs[i][2])[:32]
+    txyz = xyz[top]
+    trunks = []
+    for a_ in range(len(top)):
+        for b_ in np.argsort(-(txyz @ txyz[a_]))[1:3]:
+            if a_ < b_:
+                i, j = top[a_], top[b_]
+                trunks.append(((hubs[i][0], hubs[i][1]), (hubs[j][0], hubs[j][1]), 1.0))
+    arteries = np.maximum(arteries, near_arcs(g, trunks, 0.32))
     print(f"arteries {time.time() - t0:.1f}s: {len(segs)} lines, max {float(arteries.max()):.2f}, cover {float((arteries > 0.1).mean()):.4f}")
 
-    # Parks: the initiative's squares at a regular spacing in each district's grid, a ring of
-    # parks around the capital, and the lakefront strip.
-    parks = (hashf(bx, by, (cid * 1000).astype(np.int64) + 3) > 0.975).astype(np.float32)
+    # Parks: greenbelts kept along old river valleys and irregular preserved parkland, shaped
+    # like nature rather than plots; rectangular planned parks only in the dense cores; a ring
+    # of parks around the capital, and the lakefront strip.
+    belts = smoothstep(0.035, 0.012, np.abs(fbm(n[6], p * 5 + warp * 1.2, 4)))
+    belts = belts * smoothstep(0.35, 0.6, rank(fbm(n[7], p * 3 + 4.4, 3)))
+    wild = smoothstep(0.93, 0.97, rank(fbm(n[2], p * 9 + warp * 2, 5)))
+    planned = (hashf(bx, by, (cid * 1000).astype(np.int64) + 3) > 0.97) * smoothstep(0.35, 0.6, hubd)
+    parks = np.maximum(np.maximum(belts, wild), planned).astype(np.float32)
     ring_d = np.abs(cd - 9)
     parks = np.maximum(parks, smoothstep(1.2, 0.6, ring_d) * (np.sin(ang * 4) > 0.2))
     shore = smoothstep(0.02, 0.0, np.abs(h - sea_level) - 0.004) * smoothstep(14, 4, cd)
@@ -237,20 +270,23 @@ def generate(width: int, out: Path) -> None:
     testbed = smoothstep(1.1, 0.9, ellipse(g, TESTBED["lat"], TESTBED["lon"], TESTBED["ax"], TESTBED["ay"]))
     ice = smoothstep(78, 86, alat + 3 * fbm(n[7], p * 8, 3))
 
-    # Day: grey-tan urban fabric, a little warmer or cooler district by district; dark streets;
-    # pale avenues; green parks; the testbed a patchwork of desert, forest, ice and steppe.
-    tone = ramp(rank(cid), [(0, (0.4, 0.41, 0.43)), (0.5, (0.47, 0.46, 0.44)), (1, (0.43, 0.45, 0.49))])
-    city = tone * (0.82 + 0.3 * block[..., None]) * (0.9 + 0.15 * super_block[..., None])
-    city = city * (1 - 0.25 * streets[..., None] * smoothstep(0.3, 0.9, density)[..., None])
-    city = city * (1 - 0.15 * avenues[..., None]) + 0.12 * avenues[..., None] * smoothstep(0.3, 1.0, density)[..., None]
-    city = city * (1 - 0.3 * monuments[..., None]) + 0.6 * monuments[..., None]
-    # Thinner sprawl lets old ground show through: scrub and rock.
-    ground = ramp(rank(fbm(n[2], p * 8 + warp, 4)), [(0, (0.4, 0.41, 0.4)), (1, (0.48, 0.48, 0.46))])
-    built = smoothstep(0.04, 0.2, density)[..., None]
+    # Day: no flat tints (even-toned patches read as farm fields); instead the fine bright and
+    # dark speckle of rooftops and shadows, silvery in the cores, darker grey in the sprawl.
+    core = smoothstep(0.25, 1.0, hubd)
+    grain = rank(fbm(n[3], p * 380, 2))
+    v = (0.33 + 0.17 * core) * (0.8 + 0.28 * block) * (0.88 + 0.24 * grain)
+    v = v * (1 - 0.3 * streets * smoothstep(0.2, 0.7, density)) * (1 - 0.1 * avenues)
+    v = v * (1 - 0.35 * np.maximum(wheels, arteries))  # highways are dark bands by day
+    city = v[..., None] * np.array([0.98, 1.0, 1.04], np.float32)
+    city = city * (1 - 0.3 * monuments[..., None]) + 0.7 * monuments[..., None]
+    # Only near the poles does the city thin out to bare tundra.
+    ground = ramp(rank(fbm(n[2], p * 8 + warp, 4)), [(0, (0.44, 0.45, 0.44)), (1, (0.55, 0.56, 0.55))])
+    built = polar_thin[..., None]
     land = ground * (1 - built) + city * built
-    park = np.array([0.2, 0.3, 0.16], np.float32) * (0.85 + 0.3 * block[..., None])
+    park = np.array([0.17, 0.27, 0.13], np.float32) * (0.8 + 0.4 * block[..., None]) * (0.85 + 0.3 * grain[..., None])
     land = land * (1 - parks[..., None]) + park * parks[..., None]
-    patches = ramp(super_block, [(0, (0.62, 0.52, 0.36)), (0.3, (0.14, 0.32, 0.12)), (0.55, (0.82, 0.85, 0.86)), (0.8, (0.42, 0.44, 0.24)), (1, (0.3, 0.22, 0.16))])
+    patch_id = hashf(bx, by, (cid * 1000).astype(np.int64) + 7)
+    patches = ramp(patch_id, [(0, (0.62, 0.52, 0.36)), (0.3, (0.14, 0.32, 0.12)), (0.55, (0.82, 0.85, 0.86)), (0.8, (0.42, 0.44, 0.24)), (1, (0.3, 0.22, 0.16))])
     land = land * (1 - testbed[..., None]) + patches * testbed[..., None]
     land = land * (1 - ice[..., None]) + np.array([0.8, 0.83, 0.86], np.float32) * ice[..., None]
 
@@ -264,10 +300,14 @@ def generate(width: int, out: Path) -> None:
     # Night: lights wherever people are, strongest in the hubs, traced along streets and avenues,
     # with the arteries as bright threads between cities.
     # The sprawl glows faintly everywhere; the hubs blaze.
-    lit = (0.3 * density + 1.1 * hubd**1.3) * (0.35 + 0.65 * block) * (0.55 + 0.45 * np.maximum(streets, avenues * smoothstep(0.1, 0.6, hubd)))
+    # Nearly everywhere is lit like an Earth city; the hubs blaze like megacity cores.
+    # Glitter, not a wash: each block lit brightly or dimly, so the sprawl sparkles with dark
+    # gaps between lit blocks (as real cities do from orbit), while hub cores fill in solid.
+    sparkle = block**2.5 + 0.12
+    lit = (1.6 * density * sparkle + 1.0 * hubd**1.3 * (0.6 + 0.4 * block)) * (0.75 + 0.25 * np.maximum(streets, avenues * smoothstep(0.1, 0.6, hubd)))
     # Transit lines: faint broken strings of light, brighter where they pass through towns.
-    strings = arteries * (0.3 + 0.7 * smoothstep(0.4, 0.8, rank(fbm(n[7], p * 120, 2)))) * (0.15 + 0.35 * density)
-    lit = lit + 0.35 * avenues * hubd**1.5 + strings + 0.8 * rings * smoothstep(9, 0, cd) + 1.2 * monuments
+    strings = 0.7 * arteries * (0.5 + 0.5 * smoothstep(0.4, 0.8, rank(fbm(n[7], p * 120, 2))))
+    lit = lit + 0.35 * avenues * hubd**1.5 + strings + 0.6 * wheels + 0.8 * rings * smoothstep(9, 0, cd) + 1.2 * monuments
     lit = lit * (1 - water) * (1 - parks * 0.85) * (1 - testbed) * (1 - ice)
     # Coastal promenades light the shore.
     lit = lit + 0.3 * smoothstep(0.004, 0.0, np.abs(h - sea_level)) * smoothstep(0.2, 0.5, density)
@@ -276,7 +316,8 @@ def generate(width: int, out: Path) -> None:
     # Lit windows tint the city a touch by day as well.
     print(f"lights {time.time() - t0:.1f}s")
 
-    rough = np.where(water > 0.5, 0.35, 0.7 - 0.2 * block * (density > 0.6))
+    # Glass and steel in the cores catch the sun.
+    rough = np.where(water > 0.5, 0.35, 0.75 - 0.5 * core * (0.5 + 0.5 * block))
     height = (0.6 * density + 0.15 * block * built[..., 0] - 0.05 * streets) * (1 - water)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
