@@ -160,6 +160,12 @@ Built so far, in this repo:
   tested).
 - **`/system/lab`**: preview page to look at each body and click Magmus's pins.
 
+Since then: **Gonhirrim** (banded gas giant) and its seven moons (`moons.py`), **Hyang Wan**
+(island water world under grey rain cloud) and its moon. Shared cloud layers are in
+`tools/planets/clouds.py`. Place labels on a planet are laid out on screen so they never
+overlap (`web/src/lib/system/labels.ts`): a label with no free spot hides until its dot is
+hovered.
+
 Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 
 ### Look-and-feel lessons (from the user's reviews)
@@ -190,6 +196,21 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
   than the app does on a high-DPI screen.
 - **Judge motion at real speed.** Headless captures run slow; build GIFs from real frame
   timestamps (or say they're sped up).
+- **Clouds need texture at every scale, not whiteness** (Hyang Wan). Flat white cloud reads
+  as monochrome blobs; the user preferred grey cloud (`[0.52, 0.55, 0.58]`) with more of the
+  surface showing through, because it has "the textures and collections and feathery
+  parts" of satellite cloud. `clouds.py` builds that: weather systems decide where cloud
+  gathers, then billowed clumps, popcorn cumulus, wisps along the wind and a frayed edge
+  break it up, and a thickness map becomes `clouds-normal.webp` so the tops catch light.
+- **Storms shouldn't look placed.** Vary them: commas with dry slots and trailing fronts,
+  young waves, an old one unwinding, one small round tropical storm. Big spiral storms
+  belong at mid-latitudes, tropical ones low. Twist only the large field fully; the fine
+  texture half, or it winds into rings.
+- **Latitude zones, but softly.** Earth-like bands (cloudy equator, clear subtropics, stormy
+  mid-latitudes) look ruled-off if they're strong. Let their latitude wander and keep the
+  weight low (`zoning=0.2`).
+- **Clouds thin as the camera closes in** (to `near` × opacity at 2 radii), so places can be
+  seen up close while the planet reads as cloudy from afar.
 
 ## Vision (from the user, Nov 2026)
 

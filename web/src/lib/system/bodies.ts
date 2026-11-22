@@ -102,6 +102,15 @@ export const HYANG_WAN: BodyLook = {
 	atmosphere: { color: [0.55, 0.7, 0.85], strength: 0.85 }
 };
 
+/** Humid jungle world of the fey: white cumulus over the canopy, a faint green-blue haze. */
+export const FELUCIA: BodyLook = {
+	name: 'Felucia',
+	radius: 1.2,
+	glow: 5,
+	clouds: { color: [0.9, 0.92, 0.93], opacity: 0.9, drift: 0.003, normal: true },
+	atmosphere: { color: [0.55, 0.78, 0.9], strength: 0.9 }
+};
+
 /** Two logs see it set over Mulgogi. Airless grey rock. */
 export const HYANG_WAN_MOON: BodyLook = {
 	name: "Hyang Wan's Moon",
