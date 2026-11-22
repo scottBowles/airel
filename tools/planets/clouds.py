@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from gonhirrim import storm_coords, swirl
-from planetgen import Noise3, fbm, smoothstep
+from gonhirrim import storm_coords, tangent_basis
+from planetgen import Noise3, fbm, smoothstep, unit
 
 
 def rank(x: np.ndarray) -> np.ndarray:
@@ -36,30 +36,79 @@ def billow(noise: Noise3, p: np.ndarray, octaves: int) -> np.ndarray:
     return total / norm
 
 
-def make_clouds(g, seed: int, cover: float, storms: list[dict], veil: tuple[float, float] = (0.0, 0.0), belts: float = 0.0, log=print):
+def spiral(p: np.ndarray, s: dict, scale: float = 1.0) -> np.ndarray:
+    """Wind points about a storm's centre. Turning that falls off with distance alone shears
+    cloud into rings; adding a turn that grows with log(1/distance), as air spirals inward,
+    bends features into arms that wind toward the eye."""
+    d, c = storm_coords(p, s)
+    sign = np.sign(s["swirl"])
+    ang = scale * (s["swirl"] * np.exp(-(d**2) * 1.4) - sign * s.get("inflow", 1.0) * np.log(d + 0.1) * np.exp(-(d**2) * 0.8))
+    cos, sin = np.cos(ang)[..., None], np.sin(ang)[..., None]
+    k = c[None, None, :]
+    return p * cos + np.cross(k, p) * sin + k * (p @ c)[..., None] * (1 - cos)
+
+
+def arc_distance(p: np.ndarray, a: tuple[float, float], b: tuple[float, float]):
+    """Angular distance (radians) from points to the great-circle arc a→b, and how far along it
+    (0 at a, 1 at b) each point lies."""
+    ua, ub = unit(*a), unit(*b)
+    length = np.arccos(np.clip(ua @ ub, -1, 1))
+    nrm = np.cross(ua, ub)
+    nrm = nrm / np.linalg.norm(nrm)
+    off = np.arcsin(np.clip(np.abs(p @ nrm), 0, 1))
+    from_a = np.arccos(np.clip(p @ ua, -1, 1))
+    from_b = np.arccos(np.clip(p @ ub, -1, 1))
+    inside = (from_a <= length) & (from_b <= length)
+    dist = np.where(inside, off, np.minimum(from_a, from_b))
+    return dist, np.clip(from_a / length, 0, 1)
+
+
+def zones(lat: np.ndarray) -> np.ndarray:
+    """Earth-like circulation: a cloudy band at the equator, clearer subtropics (the calm
+    high-pressure belts near 25°), and stormy mid-latitudes."""
+    a = np.abs(lat)
+    return 0.25 * np.exp(-((lat / 7) ** 2)) - 0.2 * np.exp(-(((a - 25) / 8) ** 2)) + 0.15 * np.exp(-(((a - 50) / 10) ** 2))
+
+
+def make_clouds(g, seed: int, cover: float, storms: list[dict], veil: tuple[float, float] = (0.0, 0.0), zoning: float = 0.0, log=print):
     """Cloud alpha (0..1) and thickness for a planet. `cover` is roughly the share under thick cloud;
-    `veil` the (min, max) alpha of a thin overcast everywhere; `belts` how strongly cloud gathers
-    in bands either side of the equator."""
+    `veil` the (min, max) alpha of a thin overcast everywhere; `zoning` how strongly cloud follows
+    the latitude zones.
+
+    Each storm: lat, lon, ax, ay (its extent, degrees), swirl (turn at the centre, radians:
+    + anticlockwise), and optionally inflow (how tightly the arms wind), strength (how much
+    cloud it gathers), eye (how clear its centre is), face (direction of its cloud shield, radians)
+    and front: the (lat, lon) the trailing cold front reaches."""
     n = [Noise3(seed * 7 + i) for i in range(8)]
     lat = np.degrees(g.lat)
     # The big field takes the storms' full twist, which makes the spiral arms; the small-scale
-    # texture only half, or it winds into tight, regular rings around each centre.
+    # texture only half, or it winds too tightly around each centre.
     q = g.xyz
     for s in storms:
-        q = swirl(q, s)
+        q = spiral(q, s)
     qh = g.xyz
     for s in storms:
-        qh = swirl(qh, dict(s, swirl=s["swirl"] * 0.5))
+        qh = spiral(qh, s, 0.5)
     # Winds shear everything along latitude: the same points, squashed toward the pole axis.
     qz = q * np.array([1.0, 1.0, 2.6], np.float32)
     warp = np.stack([fbm(n[0], q * 2.5 + 3, 4), fbm(n[1], q * 2.5 + 9, 4), fbm(n[2], q * 2.5 + 17, 4)], -1)
 
     # Weather systems: where cloud gathers at all.
-    raw = fbm(n[3], qz * 3.2 + warp * 1.6, octaves=6) + belts * np.cos(np.radians(lat) * 5)
-    # Cyclones gather cloud into their spiral arms, around a clear eye.
+    raw = fbm(n[3], qz * 3.2 + warp * 1.6, octaves=6) + zoning * zones(lat) / 0.25
+    rough = fbm(n[6], q * 12 + warp * 2, 4)
     for s in storms:
-        d, _ = storm_coords(g.xyz, s)
-        raw = raw + 0.15 * np.exp(-(d**2) * 2.0) - 0.4 * np.exp(-((d / 0.06) ** 2))
+        # A comma, not a pinwheel: the cloud shield wraps one side, a dry slot cuts the other.
+        d, _ = storm_coords(q, s)
+        c, east, north = tangent_basis(s["lat"], s["lon"])
+        side = 0.5 + 0.5 * np.cos(np.arctan2(q @ north, q @ east) - s.get("face", 0.0))
+        k = s.get("strength", 1.0)
+        raw = raw + k * (0.22 * np.exp(-(d**2) * 1.8) * (0.3 + 0.7 * side) - 0.15 * np.exp(-(d**2) * 4) * (1 - side))
+        raw = raw - 0.4 * s.get("eye", 1.0) * np.exp(-((d / 0.06) ** 2))
+        if "front" in s:
+            # The trailing front: a long band, ragged along its length, thinning toward its end.
+            dist, along = arc_distance(q, (s["lat"], s["lon"]), s["front"])
+            band = np.exp(-((dist / np.radians(2.2 + 1.5 * along)) ** 2)) * (1 - 0.6 * along)
+            raw = raw + 0.5 * k * band * (0.7 + 0.6 * rough)
     systems = rank(raw)
     log("  clouds: systems")
     # Clumps at two sizes, bent by the same winds so cells line up in streets and spirals.
