@@ -26,7 +26,7 @@ from pathlib import Path
 
 import numpy as np
 
-from gonhirrim import swirl
+from clouds import make_clouds
 from planetgen import (
     Noise3,
     angular_distance,
@@ -224,29 +224,9 @@ def generate(width: int, out: Path) -> None:
     rgb = rgb * (1 - 0.25 * np.clip(lights, 0, 1)[..., None]) + 0.12 * np.clip(lights, 0, 1)[..., None]
     print(f"lights {time.time() - t0:.1f}s")
 
-    # Clouds: rain bands wound into a few cyclones, over a thin overcast.
-    storms = []
-    for i in range(4):
-        hemi = 1 if i % 2 else -1
-        storms.append(
-            dict(lat=float(rng.uniform(12, 45) * hemi), lon=float(rng.uniform(-180, 180)), ax=float(rng.uniform(12, 18)), ay=float(rng.uniform(10, 14)), swirl=float(1.8 * hemi))
-        )
-    q = p
-    for s in storms:
-        q = swirl(q, s)
-    cw = np.stack([fbm(n5, q * 2.5 + 3, 4), fbm(n6, q * 2.5 + 9, 4), fbm(n4, q * 2.5 + 17, 4)], -1)
-    qc = q * np.array([1.0, 1.0, 2.6], np.float32)
-    cf = rank(fbm(n1, qc * 3.2 + cw * 1.6, octaves=8) + 0.3 * fbm(n2, qc * 18 + cw * 3, 5))
-    # Heaviest along the rainy belts either side of the equator.
-    belts = 0.12 * np.cos(np.radians(lat) * 5)
-    # Thick rain cells and bands over about half the planet...
-    cover = 0.48
-    thick = smoothstep(1 - cover - 0.1, 1 - cover + 0.2, cf + belts)
-    # ...over a thin grey overcast everywhere ("everything is greyed out"), which dulls the
-    # islands without hiding them.
-    veil = 0.3 + 0.2 * smoothstep(0.2, 0.8, rank(fbm(n3, qc * 2 + cw, 5)))
-    clouds = veil + (1 - veil) * thick
+    clouds, cloud_thick = hyang_clouds(g)
     print(f"clouds {time.time() - t0:.1f}s")
+    cw = np.stack([fbm(n5, p * 2.5 + 3, 4), fbm(n6, p * 2.5 + 9, 4), fbm(n4, p * 2.5 + 17, 4)], -1)
 
     # Water roughness: wind-varied, so the glint is broken; rain-pocked seas are rough.
     pw = p * np.array([1.0, 1.0, 2.5], np.float32)
@@ -260,9 +240,28 @@ def generate(width: int, out: Path) -> None:
     save_gray(out / "roughness.webp", rough)
     save_gray(out / "height.webp", height)
     save_rgb(out / "normal.webp", normal_map(height * 0.03, strength=1.0))
-    save_gray(out / "clouds.webp", clouds)
+    save_clouds(out, clouds, cloud_thick)
     write_pins(out / "pins.json", "Hyang Wan", PINS)
     print(f"done {time.time() - t0:.1f}s -> {out}, land {float((water < 0.5).mean()):.3f}")
+
+
+def hyang_clouds(g):
+    """Rain bands wound into a few cyclones, over a thin grey overcast ("everything is greyed
+    out") that dulls the islands without hiding them."""
+    rng = np.random.default_rng(SEED + 1)
+    storms = []
+    for i in range(4):
+        hemi = 1 if i % 2 else -1
+        storms.append(
+            dict(lat=float(rng.uniform(12, 45) * hemi), lon=float(rng.uniform(-180, 180)), ax=float(rng.uniform(12, 18)), ay=float(rng.uniform(10, 14)), swirl=float(1.8 * hemi))
+        )
+    return make_clouds(g, SEED, cover=0.42, storms=storms, veil=(0.3, 0.5), belts=0.12)
+
+
+def save_clouds(out: Path, clouds, thickness) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    save_gray(out / "clouds.webp", clouds)
+    save_rgb(out / "clouds-normal.webp", normal_map(thickness * 0.006, strength=1.0))
 
 
 def angular_distance_pt(la1, lo1, la2, lo2) -> float:
@@ -275,5 +274,9 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--width", type=int, default=4096)
     ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[2] / "web/static/system/hyang-wan")
+    ap.add_argument("--clouds-only", action="store_true", help="regenerate just the cloud layer")
     args = ap.parse_args()
-    generate(args.width, args.out)
+    if args.clouds_only:
+        save_clouds(args.out, *hyang_clouds(make_grid(args.width)))
+    else:
+        generate(args.width, args.out)

@@ -10,7 +10,13 @@ export type BodyLook = {
 	/** Emissive multiplier (lava, city lights, the giant's ember). */
 	glow?: number;
 	flicker?: number;
-	clouds?: { color?: [number, number, number]; opacity?: number; drift?: number; near?: number };
+	clouds?: {
+		color?: [number, number, number];
+		opacity?: number;
+		drift?: number;
+		near?: number;
+		normal?: boolean;
+	};
 	atmosphere?: AtmosphereLook;
 	/** For a moon: distance from its planet's centre and seconds per orbit. */
 	orbit?: { distance: number; period: number; phase: number; tilt?: number };
@@ -92,7 +98,7 @@ export const HYANG_WAN: BodyLook = {
 	name: 'Hyang Wan',
 	radius: 1.4,
 	glow: 7,
-	clouds: { color: [0.52, 0.55, 0.58], opacity: 0.82, drift: 0.003 },
+	clouds: { color: [0.52, 0.55, 0.58], opacity: 0.82, drift: 0.003, normal: true },
 	atmosphere: { color: [0.55, 0.7, 0.85], strength: 0.85 }
 };
 

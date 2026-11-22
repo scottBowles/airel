@@ -26,7 +26,14 @@
 		 * A cloud layer from clouds.webp (white where cloudy), drifting slowly over the ground. It
 		 * thins as the camera comes close, to `near` × its opacity, so places can be seen.
 		 */
-		clouds?: { color?: [number, number, number]; opacity?: number; drift?: number; near?: number };
+		clouds?: {
+			color?: [number, number, number];
+			opacity?: number;
+			drift?: number;
+			near?: number;
+			/** Shade the cloud tops with clouds-normal.webp. */
+			normal?: boolean;
+		};
 		/** A glow around the rim, lit from `sun`. */
 		atmosphere?: AtmosphereLook;
 		/** World position of the light that lights the atmosphere. */
@@ -82,6 +89,7 @@
 		? new THREE.MeshStandardMaterial({
 				color: new THREE.Color(...(clouds.color ?? [1, 1, 1])),
 				alphaMap: load('clouds.webp', false),
+				normalMap: clouds.normal ? load('clouds-normal.webp', false) : null,
 				transparent: true,
 				opacity: clouds.opacity ?? 0.9,
 				depthWrite: false,
@@ -135,6 +143,7 @@
 			t?.dispose();
 		material.dispose();
 		cloudMaterial?.alphaMap?.dispose();
+		cloudMaterial?.normalMap?.dispose();
 		cloudMaterial?.dispose();
 		airMaterial?.dispose();
 	});
