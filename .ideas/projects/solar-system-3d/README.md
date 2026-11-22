@@ -209,6 +209,10 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 - **Latitude zones, but softly.** Earth-like bands (cloudy equator, clear subtropics, stormy
   mid-latitudes) look ruled-off if they're strong. Let their latitude wander and keep the
   weight low (`zoning=0.2`).
+- **Colour accents read as damage from orbit** (Felucia). Small flecks of bloom colour looked
+  like bare clearings; broad crimson or violet stands looked like rust; autumn-coloured stands
+  looked like burn scars. A world's "colourful" has to come from its main palette (here a wide
+  range of greens), not from spots of other colours. Broad yellow-green variation was fine.
 - **Clouds thin as the camera closes in** (to `near` × opacity at 2 radii), so places can be
   seen up close while the planet reads as cloudy from afar.
 

@@ -11,8 +11,9 @@ Lore (see .ideas/projects/solar-system-3d/bodies/felucia.md and QUESTIONS.md):
   lights, far dimmer than Terran's.
 - Rivers (a corporation "illegally diverting rivers"), hot springs in the jungle, and the
   volcano where Mazoë's sarcophagus was found.
-- Its namesake is famous for giant brightly-coloured fungi: flowering colour as accents, not a
-  rainbow.
+- "Colorful" comes from the range of greens, emerald to lime and yellow-green. Accents of
+  violet, crimson and autumn colour were tried; from orbit they read as burn scars or
+  disease, not blooms, so the canopy stays green (user's call, Nov 2026).
 
 No DB places have Felucia as parent, so every position is a guess, chosen to spread the
 features readably. Longitude zero is arbitrary.
@@ -241,16 +242,7 @@ def generate(width: int, out: Path) -> None:
     # The wildlands: the densest, darkest canopy.
     wild = smoothstep(1.15, 0.75, ellipse(g, WILDLANDS["lat"], WILDLANDS["lon"], WILDLANDS["ax"], WILDLANDS["ay"]) + 0.25 * fbm(n[1], p * 5 + warp, 4))
     green = green * (1 - 0.55 * wild[..., None]) + np.array([0.04, 0.15, 0.07], np.float32) * 0.55 * wild[..., None]
-    # Coloured forests: a few broad stands where the canopy itself is violet, crimson or
-    # magenta (giant fungi and strange trees). At orbital scale single groves can't be seen;
-    # whole forests of another colour can. Their edges feather into the green through the crowns.
-    crowns = billow(n[1], p * 90 + warp * 3, 3)
-    # Ragged, feathered edges: the field that bounds each stand carries fine detail too.
-    stands = smoothstep(0.88, 0.98, rank(fbm(n[2], p * 7 + warp * 2.5, 5) + 0.12 * fbm(n[5], p * 60 + warp * 4, 3)))
-    groves = stands * (0.55 + 0.45 * smoothstep(0.35, 0.8, crowns)) * (1 - smoothstep(0.5, 0.9, e))
-    hue = rank(fbm(n[4], p * 2.5 + 7.7, 3))
-    accent = ramp(hue, [(0.0, (0.42, 0.1, 0.38)), (0.4, (0.3, 0.12, 0.45)), (0.75, (0.5, 0.08, 0.18)), (1.0, (0.55, 0.15, 0.4))])
-    green = green * (1 - 0.6 * groves[..., None]) + accent * 0.6 * groves[..., None]
+    crowns = billow(n[1], p * 90 + warp * 3, 3)  # tree crowns, used for the canopy's texture below
     # Volcanic rock on the cone, pale steaming ground at the springs, and a little tundra and
     # ice only at the poles.
     # Old lava flows run down the flanks as dark tongues; the cone's top is bare.
@@ -286,7 +278,7 @@ def generate(width: int, out: Path) -> None:
     emissive = LIGHT * lights[..., None]
     print(f"lights {time.time() - t0:.1f}s")
 
-    rough = np.where(water > 0.5, 0.45, 0.88 - 0.1 * groves)
+    rough = np.where(water > 0.5, 0.45, 0.88)
     height = e * (1 - water)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
