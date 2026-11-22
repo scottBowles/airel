@@ -6,6 +6,7 @@
 	import { atmosphereMaterial, type AtmosphereLook } from './atmosphere';
 	import { addEmissiveFlicker } from './emissiveFlicker';
 	import { latLonToVector, type Pin } from './geo';
+	import { layoutLabels, type Placement } from './labels';
 
 	type Props = {
 		/** Folder under /system/ holding albedo, normal, roughness, emissive (from tools/planets). */
@@ -106,10 +107,16 @@
 
 	let group = $state<THREE.Group>();
 	let cloudMesh = $state<THREE.Mesh>();
-	const { camera } = useThrelte();
+	const { camera, size } = useThrelte();
 
-	// A pin shows only while it's on the side of the planet facing the camera.
+	// A pin shows only while it's on the side of the planet facing the camera, and its label sits
+	// wherever on screen it overlaps no other label or dot (or hides, until its dot is hovered).
 	let facing = $state<boolean[]>([]);
+	let placements = $state<Placement[]>([]);
+	let widths = $state<number[]>([]);
+	const LABEL_H = 13;
+	const screen = new THREE.Vector3();
+	const labelOf = (pin: Pin) => pin.name.split(' — ')[0].split(',')[0];
 	const world = new THREE.Vector3();
 	const normal = new THREE.Vector3();
 	const toCamera = new THREE.Vector3();
@@ -127,15 +134,31 @@
 			cloudMaterial.opacity = (clouds?.opacity ?? 0.9) * (near + (1 - near) * t * t * (3 - 2 * t));
 		}
 		live.uniforms.uTime.value += delta;
-		const next = pins.map((pin) => {
+		if (!pins.length) return;
+		const { width, height } = size.current;
+		const at = pins.map((pin) => {
 			normal.set(...latLonToVector(pin.lat, pin.lon));
-			world.copy(normal).multiplyScalar(radius);
+			world.copy(normal).multiplyScalar(radius * 1.01);
 			group!.localToWorld(world);
 			normal.transformDirection(group!.matrixWorld);
 			toCamera.copy(camera.current.position).sub(world).normalize();
-			return normal.dot(toCamera) > 0.3;
+			screen.copy(world).project(camera.current);
+			return {
+				facing: normal.dot(toCamera) > 0.3,
+				x: ((screen.x + 1) / 2) * width,
+				y: ((1 - screen.y) / 2) * height
+			};
 		});
+		const next = at.map((a) => a.facing);
 		if (next.some((v, i) => v !== facing[i])) facing = next;
+		const shown = pins.map((_, i) => i).filter((i) => next[i]);
+		const laid = layoutLabels(
+			shown.map((i) => ({ x: at[i].x, y: at[i].y, w: widths[i] || labelOf(pins[i]).length * 7, h: LABEL_H }))
+		);
+		const all: Placement[] = pins.map(() => null);
+		shown.forEach((i, k) => (all[i] = laid[k]));
+		const same = (a: Placement, b: Placement | undefined) => (a && b ? a.dx === b.dx && a.dy === b.dy : a === b);
+		if (all.length !== placements.length || all.some((p, i) => !same(p, placements[i]))) placements = all;
 	});
 
 	onDestroy(() => {
@@ -166,9 +189,17 @@
 	{#each pins as pin, i (pin.name)}
 		{#if facing[i]}
 			<HTML position={latLonToVector(pin.lat, pin.lon, radius * 1.01)} center zIndexRange={[10, 0]}>
-				<button class="pin pin-{pin.confidence}" onclick={() => onpin?.(pin)}>
-					<span class="dot"></span>{pin.name.split(' — ')[0].split(',')[0]}
-				</button>
+				<div class="pin pin-{pin.confidence}">
+					<button class="dot" aria-label={labelOf(pin)} onclick={() => onpin?.(pin)}></button>
+					<button
+						class="label"
+						class:hidden={!placements[i]}
+						style:left="{placements[i]?.dx ?? 9}px"
+						style:top="{placements[i]?.dy ?? -LABEL_H / 2}px"
+						bind:clientWidth={widths[i]}
+						onclick={() => onpin?.(pin)}>{labelOf(pin)}</button
+					>
+				</div>
 			</HTML>
 		{/if}
 	{/each}
@@ -176,25 +207,42 @@
 
 <style>
 	.pin {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		white-space: nowrap;
-		font: 500 11px/1 var(--font-mono, ui-monospace, monospace);
+		position: relative;
+		width: 7px;
+		height: 7px;
+		font: 500 11px/13px var(--font-mono, ui-monospace, monospace);
 		color: #ffe9c7;
 		text-shadow: 0 0 3px #000, 0 0 6px #000;
+	}
+	.pin button {
 		background: none;
 		border: 0;
 		padding: 0;
+		font: inherit;
+		color: inherit;
+		text-shadow: inherit;
 		cursor: pointer;
-		transform: translateX(calc(50% - 4px));
 	}
-	.dot {
+	.pin .dot {
+		display: block;
 		width: 7px;
 		height: 7px;
 		border-radius: 50%;
 		background: currentColor;
 		box-shadow: 0 0 0 1.5px #000;
+	}
+	.label {
+		position: absolute;
+		white-space: nowrap;
+		height: 13px;
+	}
+	/* No room beside its dot: hidden (but still measured) until the dot is hovered. */
+	.label.hidden {
+		visibility: hidden;
+	}
+	.pin:hover .label {
+		visibility: visible;
+		z-index: 1;
 	}
 	.pin-lore {
 		color: #9dffb0;
