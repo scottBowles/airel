@@ -226,28 +226,31 @@ def generate(width: int, out: Path) -> None:
     green = ramp(
         biome,
         [
-            (0.0, (0.03, 0.2, 0.09)),
-            (0.35, (0.05, 0.3, 0.1)),
-            (0.65, (0.09, 0.37, 0.09)),
-            (0.9, (0.15, 0.43, 0.08)),
-            (1.0, (0.19, 0.46, 0.08)),
+            (0.0, (0.03, 0.22, 0.09)),
+            (0.3, (0.06, 0.33, 0.1)),
+            (0.55, (0.14, 0.42, 0.07)),
+            (0.8, (0.28, 0.5, 0.06)),
+            (1.0, (0.42, 0.55, 0.08)),
         ],
     )
     green = green * (0.85 + 0.3 * patch[..., None])
     # Higher ground is darker old growth; the floodplains are bright and fresh.
     old = smoothstep(0.35, 0.8, e)[..., None]
     green = green * (1 - 0.5 * old) + np.array([0.05, 0.17, 0.08], np.float32) * 0.5 * old
-    green = green * (1 - 0.35 * flood[..., None]) + np.array([0.3, 0.5, 0.1], np.float32) * 0.35 * flood[..., None]
+    green = green * (1 - 0.35 * flood[..., None]) + np.array([0.3, 0.46, 0.12], np.float32) * 0.35 * flood[..., None]
     # The wildlands: the densest, darkest canopy.
     wild = smoothstep(1.15, 0.75, ellipse(g, WILDLANDS["lat"], WILDLANDS["lon"], WILDLANDS["ax"], WILDLANDS["ay"]) + 0.25 * fbm(n[1], p * 5 + warp, 4))
     green = green * (1 - 0.55 * wild[..., None]) + np.array([0.04, 0.15, 0.07], np.float32) * 0.55 * wild[..., None]
-    # Blooms and giant fungi: groves of vivid colour, a few percent of the land.
-    region = smoothstep(0.6, 0.85, rank(fbm(n[3], p * 4 + 3.3, 3)))
-    groves = smoothstep(0.88, 0.97, rank(fbm(n[2], p * 70 + warp * 4, 3))) * region
-    groves = np.maximum(groves, 0.5 * smoothstep(0.93, 0.99, rank(fbm(n[2], p * 24 + warp * 3, 4))) * region)
-    hue = rank(fbm(n[4], p * 3 + 7.7, 3))
-    accent = ramp(hue, [(0.0, (0.62, 0.14, 0.42)), (0.35, (0.48, 0.2, 0.6)), (0.7, (0.78, 0.3, 0.12)), (1.0, (0.85, 0.42, 0.5))])
-    green = green * (1 - 0.5 * groves[..., None]) + accent * 0.5 * groves[..., None]
+    # Coloured forests: a few broad stands where the canopy itself is violet, crimson or
+    # magenta (giant fungi and strange trees). At orbital scale single groves can't be seen;
+    # whole forests of another colour can. Their edges feather into the green through the crowns.
+    crowns = billow(n[1], p * 90 + warp * 3, 3)
+    # Ragged, feathered edges: the field that bounds each stand carries fine detail too.
+    stands = smoothstep(0.88, 0.98, rank(fbm(n[2], p * 7 + warp * 2.5, 5) + 0.12 * fbm(n[5], p * 60 + warp * 4, 3)))
+    groves = stands * (0.55 + 0.45 * smoothstep(0.35, 0.8, crowns)) * (1 - smoothstep(0.5, 0.9, e))
+    hue = rank(fbm(n[4], p * 2.5 + 7.7, 3))
+    accent = ramp(hue, [(0.0, (0.42, 0.1, 0.38)), (0.4, (0.3, 0.12, 0.45)), (0.75, (0.5, 0.08, 0.18)), (1.0, (0.55, 0.15, 0.4))])
+    green = green * (1 - 0.6 * groves[..., None]) + accent * 0.6 * groves[..., None]
     # Volcanic rock on the cone, pale steaming ground at the springs, and a little tundra and
     # ice only at the poles.
     # Old lava flows run down the flanks as dark tongues; the cone's top is bare.
@@ -260,7 +263,6 @@ def generate(width: int, out: Path) -> None:
     polar = smoothstep(80, 87, np.abs(lat) + 5 * fbm(n[0], p * 6, 4))[..., None]
     green = green * (1 - polar) + np.array([0.75, 0.78, 0.76], np.float32) * polar
     # The canopy seen from above: tree crowns bunched into clumps, with shaded gaps.
-    crowns = billow(n[1], p * 90 + warp * 3, 3)
     grain = fbm(n[2], p * 400, 2)
     land = green * (0.8 + 0.3 * crowns[..., None] + 0.08 * grain[..., None])
     rgb = land * (1 - water[..., None]) + water_rgb * water[..., None]
