@@ -213,6 +213,12 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
   like bare clearings; broad crimson or violet stands looked like rust; autumn-coloured stands
   looked like burn scars. A world's "colourful" has to come from its main palette (here a wide
   range of greens), not from spots of other colours. Broad yellow-green variation was fine.
+- **Jungle from orbit is dark** (Felucia). Real rainforest is a deep, even green; bright
+  yellow-green reads as grassland. Its texture comes from drainage: stream valleys etched into
+  the canopy at several scales (`veins` at three frequencies), not airbrushed colour swirls.
+- **Clouds cast shadows** (`emissiveFlicker.ts`): the ground shader traces toward the sun to the
+  cloud layer, cast from a little higher than the cloud mesh so the offset shows. Shadows lying
+  right under their clouds are hidden; the offset is what makes clouds look lifted.
 - **Clouds thin as the camera closes in** (to `near` × opacity at 2 radii), so places can be
   seen up close while the planet reads as cloudy from afar.
 

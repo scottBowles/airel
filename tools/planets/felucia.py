@@ -40,6 +40,7 @@ from planetgen import (
     save_rgb,
     smoothstep,
     unit,
+    veins,
     write_pins,
 )
 
@@ -206,6 +207,18 @@ def generate(width: int, out: Path) -> None:
     water = np.maximum(smoothstep(sea_level + 0.004, sea_level - 0.004, h), river)
     below = np.clip(sea_level - h, 0, None)
     e = np.clip((h - sea_level) / (np.quantile(h, 0.995) - sea_level), 0, 1)
+    # Dissected land: stream valleys at three scales (the zero-crossings of noise make
+    # connected, winding lines), deeper in the hills. From orbit, drainage etched into the
+    # canopy is most of what gives a forest its texture.
+    w2 = np.stack([fbm(n[3], p * 8 + 5, 3), fbm(n[6], p * 8 + 9, 3), fbm(n[2], p * 8 + 3, 3)], -1)
+    valleys = np.maximum.reduce(
+        [
+            veins(n[4], p * 9 + warp * 2 + w2 * 0.6, 0.08),
+            0.7 * veins(n[5], p * 22 + warp * 3 + w2 * 0.8, 0.09),
+            0.45 * veins(n[7], p * 55 + warp * 4 + w2, 0.1),
+        ]
+    ) * (0.45 + 0.55 * smoothstep(0.0, 0.5, e))
+    print(f"relief {time.time() - t0:.1f}s")
 
     # Seas: clear tropical water, turquoise on the shelves, deep blue-green in the basins.
     deep = np.array([0.03, 0.15, 0.24], np.float32)
@@ -220,25 +233,26 @@ def generate(width: int, out: Path) -> None:
     silt = np.array([0.16, 0.2, 0.12], np.float32)
     water_rgb = np.where((river > 0.01)[..., None] & (below[..., None] <= 0), silt, water_rgb)
 
-    # Canopy: many greens, from deep emerald in the old forest to lime and yellow-green in the
-    # lowlands, varied in patches by a biome field built from the same warp.
+    # Canopy: mostly deep rainforest green, as jungle is from orbit, varied in patches by a
+    # biome field built from the same warp; the lighter yellow-greens only in its top tenth
+    # (younger growth and clearings) and along the rivers.
     biome = rank(fbm(n[6], p * 4.5 + warp * 1.6, 6))
     patch = fbm(n[7], p * 14 + warp * 2.5, 5)
     green = ramp(
         biome,
         [
-            (0.0, (0.03, 0.22, 0.09)),
-            (0.3, (0.06, 0.33, 0.1)),
-            (0.55, (0.14, 0.42, 0.07)),
-            (0.8, (0.28, 0.5, 0.06)),
-            (1.0, (0.42, 0.55, 0.08)),
+            (0.0, (0.02, 0.15, 0.06)),
+            (0.4, (0.04, 0.23, 0.08)),
+            (0.72, (0.07, 0.3, 0.08)),
+            (0.88, (0.18, 0.4, 0.07)),
+            (1.0, (0.34, 0.5, 0.08)),
         ],
     )
     green = green * (0.85 + 0.3 * patch[..., None])
     # Higher ground is darker old growth; the floodplains are bright and fresh.
     old = smoothstep(0.35, 0.8, e)[..., None]
     green = green * (1 - 0.5 * old) + np.array([0.05, 0.17, 0.08], np.float32) * 0.5 * old
-    green = green * (1 - 0.35 * flood[..., None]) + np.array([0.3, 0.46, 0.12], np.float32) * 0.35 * flood[..., None]
+    green = green * (1 - 0.5 * flood[..., None]) + np.array([0.26, 0.45, 0.1], np.float32) * 0.5 * flood[..., None]
     # The wildlands: the densest, darkest canopy.
     wild = smoothstep(1.15, 0.75, ellipse(g, WILDLANDS["lat"], WILDLANDS["lon"], WILDLANDS["ax"], WILDLANDS["ay"]) + 0.25 * fbm(n[1], p * 5 + warp, 4))
     green = green * (1 - 0.55 * wild[..., None]) + np.array([0.04, 0.15, 0.07], np.float32) * 0.55 * wild[..., None]
@@ -256,7 +270,8 @@ def generate(width: int, out: Path) -> None:
     green = green * (1 - polar) + np.array([0.75, 0.78, 0.76], np.float32) * polar
     # The canopy seen from above: tree crowns bunched into clumps, with shaded gaps.
     grain = fbm(n[2], p * 400, 2)
-    land = green * (0.8 + 0.3 * crowns[..., None] + 0.08 * grain[..., None])
+    # Valleys sit in shade under taller, denser trees; ridges catch light.
+    land = green * (0.8 + 0.3 * crowns[..., None] + 0.08 * grain[..., None]) * (1 - 0.22 * valleys[..., None])
     rgb = land * (1 - water[..., None]) + water_rgb * water[..., None]
     print(f"colour {time.time() - t0:.1f}s")
 
@@ -279,13 +294,13 @@ def generate(width: int, out: Path) -> None:
     print(f"lights {time.time() - t0:.1f}s")
 
     rough = np.where(water > 0.5, 0.45, 0.88)
-    height = e * (1 - water)
+    height = (e - 0.06 * valleys) * (1 - water)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
     save_rgb(out / "emissive.webp", emissive)
     save_gray(out / "roughness.webp", rough)
     save_gray(out / "height.webp", height)
-    save_rgb(out / "normal.webp", normal_map(height * 0.02, strength=1.0))
+    save_rgb(out / "normal.webp", normal_map(height * 0.025, strength=1.0))
     save_clouds(out, *felucia_clouds(g))
     write_pins(out / "pins.json", "Felucia", PINS)
     print(f"done {time.time() - t0:.1f}s -> {out}, water {float((water > 0.5).mean()):.3f}")

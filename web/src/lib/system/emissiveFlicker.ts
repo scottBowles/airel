@@ -1,6 +1,7 @@
 // Makes a planet's emissive map feel alive: glowing areas pulse and shimmer slowly, as lava
-// does. Optionally the glow shows only on the night side, for city lights. Patches a
-// MeshStandardMaterial's shader; advance `uniforms.uTime` every frame.
+// does. Optionally the glow shows only on the night side, for city lights. Also casts the
+// cloud layer's shadows onto the ground. Patches a MeshStandardMaterial's shader; advance
+// `uniforms.uTime` every frame.
 
 import * as THREE from 'three';
 
@@ -11,6 +12,13 @@ export type Flicker = {
 		/** 1: show the glow only on the side facing away from uSun. */
 		uNightOnly: { value: number };
 		uSun: { value: THREE.Vector3 };
+		/** The cloud layer's alpha map; its shadow strength (0 for none). */
+		uCloudMap: { value: THREE.Texture | null };
+		uShadow: { value: number };
+		/** The sun's position in the planet mesh's own space (unit sphere). */
+		uSunLocal: { value: THREE.Vector3 };
+		/** How far the cloud layer has turned relative to the ground, radians about +y. */
+		uCloudTurn: { value: number };
 	};
 };
 
@@ -19,7 +27,11 @@ export function addEmissiveFlicker(material: THREE.MeshStandardMaterial, amount:
 		uTime: { value: 0 },
 		uAmount: { value: amount },
 		uNightOnly: { value: 0 },
-		uSun: { value: new THREE.Vector3() }
+		uSun: { value: new THREE.Vector3() },
+		uCloudMap: { value: null as THREE.Texture | null },
+		uShadow: { value: 0 },
+		uSunLocal: { value: new THREE.Vector3(0, 0, 1) },
+		uCloudTurn: { value: 0 }
 	};
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms);
@@ -37,6 +49,11 @@ vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
 			);
 		shader.fragmentShader = shader.fragmentShader
 			.replace(
+				'#include <map_fragment>',
+				/* glsl */ `#include <map_fragment>
+if (uShadow > 0.0) diffuseColor.rgb *= 1.0 - uShadow * cloudShadow(normalize(vObjPos));`
+			)
+			.replace(
 				'#include <common>',
 				/* glsl */ `#include <common>
 varying vec3 vObjPos;
@@ -46,6 +63,26 @@ uniform float uTime;
 uniform float uAmount;
 uniform float uNightOnly;
 uniform vec3 uSun;
+uniform sampler2D uCloudMap;
+uniform float uShadow;
+uniform vec3 uSunLocal;
+uniform float uCloudTurn;
+// Cloud cover between this point and the sun. The shadow is cast from a little higher than the
+// cloud mesh really is, so the offset shows; a blurred mip makes its edges soft.
+float cloudShadow(vec3 p) {
+  vec3 l = normalize(uSunLocal - p);
+  float r = 1.05;
+  float b = dot(p, l);
+  vec3 c = p + l * (-b + sqrt(b * b - (1.0 - r * r)));
+  float s = sin(-uCloudTurn), co = cos(-uCloudTurn);
+  c = vec3(co * c.x + s * c.z, c.y, -s * c.x + co * c.z);
+  c = normalize(c);
+  // three.js SphereGeometry's uv: u from atan(z, -x), v from y.
+  float u = atan(c.z, -c.x) / (2.0 * PI);
+  u = u < 0.0 ? u + 1.0 : u;
+  float v = 1.0 - acos(clamp(c.y, -1.0, 1.0)) / PI;
+  return textureLod(uCloudMap, vec2(u, v), 3.0).r;
+}
 float fhash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float fnoise(vec3 x) {
   vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);

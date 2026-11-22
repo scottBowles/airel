@@ -34,6 +34,8 @@
 			near?: number;
 			/** Shade the cloud tops with clouds-normal.webp. */
 			normal?: boolean;
+			/** How dark the clouds' shadows on the ground are, 0..1 (default 0.55). */
+			shadow?: number;
 		};
 		/** A glow around the rim, lit from `sun`. */
 		atmosphere?: AtmosphereLook;
@@ -98,6 +100,7 @@
 				metalness: 0
 			})
 		: null;
+	if (cloudMaterial) live.uniforms.uCloudMap.value = cloudMaterial.alphaMap;
 	const sunPosition = new THREE.Vector3();
 	// svelte-ignore state_referenced_locally
 	const airMaterial = atmosphere ? atmosphereMaterial(atmosphere, sunPosition) : null;
@@ -107,6 +110,7 @@
 
 	let group = $state<THREE.Group>();
 	let cloudMesh = $state<THREE.Mesh>();
+	let ground = $state<THREE.Mesh>();
 	const { camera, size } = useThrelte();
 
 	// A pin shows only while it's on the side of the planet facing the camera, and its label sits
@@ -132,6 +136,13 @@
 			const t = Math.min(Math.max((d - 2) / 3, 0), 1);
 			const near = clouds?.near ?? 0.4;
 			cloudMaterial.opacity = (clouds?.opacity ?? 0.9) * (near + (1 - near) * t * t * (3 - 2 * t));
+			// Shadows on the ground, from where the sun is now and how far the clouds have drifted.
+			if (ground) {
+				live.uniforms.uSunLocal.value.copy(sunPosition);
+				ground.worldToLocal(live.uniforms.uSunLocal.value);
+				live.uniforms.uCloudTurn.value = cloudMesh.rotation.y;
+				live.uniforms.uShadow.value = (clouds?.shadow ?? 0.55) * cloudMaterial.opacity;
+			}
 		}
 		live.uniforms.uTime.value += delta;
 		if (!pins.length) return;
@@ -173,7 +184,7 @@
 </script>
 
 <T.Group bind:ref={group} {position} rotation.y={(-(face + 90) * Math.PI) / 180}>
-	<T.Mesh scale={radius} {material}>
+	<T.Mesh bind:ref={ground} scale={radius} {material}>
 		<T.SphereGeometry args={[1, 128, 64]} />
 	</T.Mesh>
 	{#if cloudMaterial}
