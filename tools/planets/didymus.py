@@ -425,7 +425,13 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         d = angular_distance(g, la, lo)[sub]
         jag = r * 0.12 * fbm(n[4], ps * (25 / r) + lo, 4)
         lob = r * 0.15 * fbm(n[5], ps * (6 / r) + la, 3)  # a little out of round
-        water[sub] = np.maximum(water[sub], smoothstep(0.55 * r, 0.1 * r, d + jag + lob))
+        # The lake sits toward one edge of its green (as the Faiyum's Lake Qarun does): a dark dot
+        # in the middle of a green ring read as an eye.
+        ang = rng.uniform(0, 2 * np.pi)
+        wl = la + 0.9 * r * np.sin(ang)
+        wo = lo + 0.9 * r * np.cos(ang) / np.cos(np.radians(la))
+        dw = angular_distance(g, wl, wo)[sub]
+        water[sub] = np.maximum(water[sub], smoothstep(0.75 * r, 0.15 * r, 0.75 * dw + jag + lob))
         patches = smoothstep(-0.3, 0.3, fbm(n[6], ps * (20 / r) + lo, 3))
         fringe = smoothstep(4.5 * r, 0.5 * r, d + 4 * jag + 2 * lob)
         green[sub] = np.maximum(green[sub], fringe * (0.6 + 0.4 * patches) * (0.5 + 0.5 * smoothstep(2.2 * r, 0.7 * r, d)))
@@ -452,7 +458,7 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     rgb = rgb * (1 - 0.8 * green[..., None]) + veg * 0.8 * green[..., None]
     rgb = rgb * (1 - pivots[..., None]) + np.array([0.40, 0.38, 0.22], np.float32) * pivots[..., None]
     rgb = rgb * (1 - 0.4 * fallow[..., None]) + np.array([0.56, 0.42, 0.30], np.float32) * 0.4 * fallow[..., None]
-    rgb = rgb * (1 - water[..., None]) + np.array([0.13, 0.17, 0.17], np.float32) * water[..., None]
+    rgb = rgb * (1 - water[..., None]) + np.array([0.16, 0.2, 0.2], np.float32) * water[..., None]
     rgb = rgb * (1 + (0.05 * grain[..., None] + 0.1 * gibber[..., None]) * calm * (1 - water[..., None]))
     print(f"  {slug}: colour {time.time() - t0:.1f}s")
 

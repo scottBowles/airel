@@ -15,6 +15,11 @@
 		position?: [number, number, number];
 		/** Multiplier for the emissive map (lava, city lights). */
 		glow?: number;
+		/**
+		 * Metalness, 0..1 (default 0). A little makes glossy parts of the roughness map shine with
+		 * a broad sun highlight (glass and metal in a city), which plain dielectric barely shows.
+		 */
+		metalness?: number;
 		/** Turns per second about the planet's axis. */
 		spin?: number;
 		/** Longitude (degrees) that starts out facing +z, towards the default camera. */
@@ -61,6 +66,7 @@
 		radius = 1,
 		position = [0, 0, 0],
 		glow = 1.5,
+		metalness = 0,
 		spin = 0,
 		face = -90,
 		flicker = 0,
@@ -136,7 +142,7 @@
 		roughnessMap: load('roughness.webp', false),
 		emissiveMap: load('emissive.webp', true),
 		emissive: new THREE.Color(1, 1, 1),
-		metalness: 0
+		metalness
 	});
 	// svelte-ignore state_referenced_locally
 	const live = addEmissiveFlicker(material, flicker);

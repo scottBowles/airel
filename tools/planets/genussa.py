@@ -264,14 +264,24 @@ def generate(width: int, out: Path) -> None:
     grain = rank(fbm(n[3], p * 380, 2))
     mid = rank(fbm(n[2], p * 90 + warp, 3))
     core = smoothstep(0.3, 0.9, hubd)
-    tone = (0.9 + 0.12 * grain) * (0.88 + 0.24 * mid) * (1 + 0.04 * (block - 0.5) * gridness)
-    tone = tone * (1 - 0.22 * core) * (1 + 0.1 * arteries)
-    base = np.array([0.3, 0.29, 0.28], np.float32)
-    lift = 1 + 0.12 * G3 + 0.03 * G2 - 0.14 * G4
+    # Zoning: each district a slightly different tone (towers, warehouses, housing), so by day
+    # the city is a mosaic of patches with straight-ish edges, which bare ground never is.
+    zone = hashf(inv, inv * 0 + 7, inv * 0 + 3)
+    tone = (0.95 + 0.05 * grain) * (0.85 + 0.3 * mid) * (0.86 + 0.28 * zone)
+    tone = tone * (1 - 0.3 * core)
+    # Pale, slightly cool concrete: under the Red Sun a darker neutral grey turned maroon-brown
+    # and read as bare dirt; much bluer read as snow.
+    base = np.array([0.45, 0.455, 0.47], np.float32)
+    lift = 1 + 0.2 * G3 + 0.03 * G2 - 0.14 * G4  # G3 paler and cleaner
     cool = G3[..., None] * np.array([-0.01, 0.0, 0.015], np.float32) + G4[..., None] * np.array([0.015, 0.0, -0.015], np.float32)
     city = (base + cool) * (tone * lift)[..., None]
     soot = G4 * smoothstep(0.5, 0.9, rank(fbm(n[7], p * 4 + warp, 5)))  # derelict, burnt-out tracts
     city = city * (1 - 0.3 * soot[..., None])
+    # The highways by day: the night's corridors as broad, soft, pale concrete (dark lines read as
+    # cracks); fainter in G4, where they're broken and grimy.
+    roads = near_arcs(g, segs, 1.1) * polar * smoothstep(0.0, 0.6, rank(fbm(n[7], p * 12 + warp, 3)))
+    pave = 0.35 * roads * (1 - 0.5 * G4)
+    city = city * (1 - pave[..., None]) + np.array([0.6, 0.6, 0.6], np.float32) * pave[..., None]
     # Docks and fill along the shores: a thin paler band.
     shore = smoothstep(0.03, 0.0, np.abs(h - sea_level) - 0.01) * (1 - water)
     city = city * (1 - 0.3 * shore[..., None]) + np.array([0.42, 0.41, 0.39], np.float32) * 0.3 * shore[..., None]
@@ -329,7 +339,9 @@ def generate(width: int, out: Path) -> None:
     emissive = emissive * (1 - beacon[..., None]) + np.array([1.0, 0.5, 0.15], np.float32) * beacon[..., None]
     print(f"lights {time.time() - t0:.1f}s")
 
-    rough = np.where(water > 0.5, 0.4, 0.8 - 0.4 * G3 * core)
+    # Glass and metal: the dense cores and G3 are glossier, so a soft sun highlight slides over the
+    # city as it turns, which bare ground never does. G4 stays matte (grime, rust).
+    rough = np.where(water > 0.5, 0.4, 0.85 - (0.35 * smoothstep(0.2, 0.8, density) + 0.25 * core) * (1 - 0.7 * G4) - 0.15 * G3)
     height = (0.6 * density + 0.15 * block * polar - 0.05 * streets * gridness) * (1 - water) * (1 - chasm)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)

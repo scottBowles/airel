@@ -10,6 +10,8 @@ export type BodyLook = {
 	radius: number;
 	/** Emissive multiplier (lava, city lights, the giant's ember). */
 	glow?: number;
+	/** See Planet's `metalness`. */
+	metalness?: number;
 	flicker?: number;
 	clouds?: {
 		color?: [number, number, number];
@@ -161,6 +163,8 @@ export const GENUSSA: BodyLook = {
 	name: 'Genussa',
 	radius: 1.3,
 	glow: 3,
+	// Glass and metal: with the roughness map, the cores and G3 catch a broad sun highlight.
+	metalness: 0.15,
 	clouds: { color: [0.62, 0.56, 0.5], opacity: 0.75, drift: 0.003, normal: true },
 	atmosphere: { color: [0.82, 0.58, 0.42], strength: 0.85 }
 };

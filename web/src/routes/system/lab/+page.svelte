@@ -140,6 +140,7 @@
 				slug="genussa"
 				radius={GENUSSA.radius}
 				glow={GENUSSA.glow}
+				metalness={GENUSSA.metalness}
 				clouds={GENUSSA.clouds}
 				atmosphere={GENUSSA.atmosphere}
 				nightLights
