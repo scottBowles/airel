@@ -75,7 +75,8 @@
 <svelte:head><title>System lab</title></svelte:head>
 
 <div class="lab">
-	<Canvas toneMapping={NeutralToneMapping}>
+	<!-- At most 2× pixel density: phones are often 3×, which costs half again more pixels per frame for little visible gain. -->
+	<Canvas toneMapping={NeutralToneMapping} dpr={[1, 2]}>
 		{#key view}
 			<T.PerspectiveCamera makeDefault position={camera.at as [number, number, number]} fov={45}>
 				<OrbitControls enableDamping minDistance={camera.min} maxDistance={90} />
@@ -111,6 +112,7 @@
 				clouds={TERRAN.clouds}
 				atmosphere={TERRAN.atmosphere}
 				nightLights
+				detail={1}
 				sun={SUN_AT}
 				face={20}
 				spin={0.003}

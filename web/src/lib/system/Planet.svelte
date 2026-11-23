@@ -43,6 +43,8 @@
 		sun?: [number, number, number];
 		/** The glow is city lights: show it only on the night side (away from `sun`). */
 		nightLights?: boolean;
+		/** 0..1: up close, break the glow into points of light finer than the map (cities). */
+		detail?: number;
 	};
 	let {
 		slug,
@@ -57,7 +59,8 @@
 		clouds,
 		atmosphere,
 		sun = [0, 0, 0],
-		nightLights = false
+		nightLights = false,
+		detail = 0
 	}: Props = $props();
 
 	const loader = new THREE.TextureLoader();
@@ -83,6 +86,7 @@
 		material.emissiveIntensity = glow;
 		live.uniforms.uAmount.value = flicker;
 		live.uniforms.uNightOnly.value = nightLights ? 1 : 0;
+		live.uniforms.uDetail.value = detail;
 		live.uniforms.uSun.value.set(...sun);
 	});
 
