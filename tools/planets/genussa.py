@@ -143,8 +143,14 @@ def generate(width: int, out: Path) -> None:
 
     # --- Water: a few seas, the bay and its arm, one river. ----------------------------------
     h = 0.35 * rank(fbm(n[3], p * 2.5 + warp * 1.3, 7))
-    for la, lo, ax, ay in SEAS:
-        h = h - 0.9 * smoothstep(1.6, 0.3, ellipse(g, la, lo, ax, ay) + 0.55 * fbm(n[4], p * 5 + warp * 1.5, 5))
+    # Each sea is a few overlapping lobes with a warped shore, so none is an oval hole.
+    for k, (la, lo, ax, ay) in enumerate(SEAS):
+        lobes = [(la, lo, ax, ay)] + [
+            (la + rng.uniform(-0.6, 0.6) * ay, lo + rng.uniform(-0.7, 0.7) * ax, ax * rng.uniform(0.35, 0.6), ay * rng.uniform(0.35, 0.7))
+            for _ in range(3)
+        ]
+        d = np.min([ellipse(g, *lb) for lb in lobes], axis=0) * 1.0
+        h = h - 0.9 * smoothstep(1.4, 0.4, d + 0.5 * fbm(n[4], p * 4 + warp * 2.0 + k, 5))
     coast = 0.25 * fbm(n[5], p * 60 + warp, 4)  # small bays and points along the hub's shores
     for b in (BAY, BAY_ARM):
         h = h - 0.9 * smoothstep(1.15, 0.85, ellipse(g, b["lat"], b["lon"], b["ax"], b["ay"]) + coast)
@@ -165,8 +171,8 @@ def generate(width: int, out: Path) -> None:
 
     # --- Quadrants: hemispheres split by the equator and the 0°/180° meridian, blended over a
     # degree or two with a ragged edge (an old city's boundary isn't ruled straight). ---------
-    edge_n = 6.0 * fbm(n[1], p * 2.5 + warp, 4) + 0.8 * fbm(n[1], p * 40, 3)
-    edge_e = 6.0 * fbm(n[2], p * 2.5 + warp, 4) + 0.8 * fbm(n[2], p * 40, 3)
+    edge_n = 11.0 * fbm(n[1], p * 2.0 + warp, 4) + 0.8 * fbm(n[1], p * 40, 3)
+    edge_e = 11.0 * fbm(n[2], p * 2.0 + warp, 4) + 0.8 * fbm(n[2], p * 40, 3)
     north = smoothstep(-3.0, 3.0, lat + edge_n)
     east = smoothstep(-0.05, 0.05, np.sin(np.radians(lon)) + np.radians(edge_e))
     G1 = north * (1 - east)
@@ -276,7 +282,7 @@ def generate(width: int, out: Path) -> None:
     flicker = smoothstep(0.5, 0.75, block)  # G4: only some blocks lit at all
     fires = smoothstep(0.985, 1.0, rank(fbm(n[1], p * 300, 2))) * smoothstep(0.1, 0.4, density)
     g4 = lit * 0.45 * flicker * (1 - 0.9 * blackout) + 0.9 * fires
-    g2 = lit * 1.25 + 1.8 * strip
+    g2 = lit * 1.6 + 0.5 * hubd**1.2 + 1.8 * strip
     g3 = lit * (0.55 + 1.1 * smoothstep(0.3, 0.9, hubd))
     lit = G1 * lit * 0.95 + G2 * g2 + G3 * g3 + G4 * g4
     lit = lit * (1 - water) * (1 - chasm) * polar
