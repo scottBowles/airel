@@ -10,7 +10,11 @@ pins always agree.
 python3 tools/planets/magmus.py                     # 4096×2048, into web/static/system/magmus (~4 min)
 python3 tools/planets/magmus.py --width 1024 --out /tmp/m   # quick draft (~12 s)
 python3 tools/planets/preview_map.py /tmp/m /tmp/m.png       # flat map with pins
+python3 tools/planets/inspect_planet.py /tmp/m /tmp/m-inspect # lit sphere views, close-ups, pattern checks
 ```
+
+Building a new planet: follow [`WORKFLOW.md`](WORKFLOW.md) (workflow, checks, and the patterns
+that have failed review).
 
 ```sh
 python3 tools/planets/gonhirrim.py                  # the gas giant (~2 min)
