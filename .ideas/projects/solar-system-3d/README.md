@@ -162,7 +162,9 @@ Built so far, in this repo:
 
 Since then: **Gonhirrim** (banded gas giant) and its seven moons (`moons.py`), **Hyang Wan**
 (island water world under grey rain cloud) and its moon. **Felucia** (jungle with small seas and rivers) and
-**Terran** (planet-wide city: district street grids, hubs, transit lines, few seas). Shared cloud layers are in
+**Terran** (planet-wide city: district street grids, hubs, transit lines, few seas). **Janus**
+(tidally locked to the Red Sun: rust desert day side, grey Mezzolux ring of towns, dark rock
+and steam on the night side, the Princes' floating cities as cool lights). Shared cloud layers are in
 `tools/planets/clouds.py`. Place labels on a planet are laid out on screen so they never
 overlap (`web/src/lib/system/labels.ts`): a label with no free spot hides until its dot is
 hovered.
@@ -225,6 +227,12 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
   fine bright-and-dark speckle, silvery in the cores. Big hubs get ring roads and radial
   highways; a few trunk lines join the biggest. At night nearly all land is lit, as glitter
   (lit blocks with dark gaps), not a smooth wash, with hubs brighter.
+- **Points of light up close** (`uDetail` in `emissiveFlicker.ts`): a city's night side breaks
+  into jittered points on cube-face grids, fading in only where a point is a few pixels across.
+  The mosaic look came from whole blocks switching on and off, not from too few texels.
+- **A tidally locked planet** (Janus). Lighting alone made the dark half a black disc, so it gets
+  more ambient than the others (its steam and rock can be made out), lights that thin out from
+  the terminator into the dark, and clouds that don't drift.
 - **Clouds thin as the camera closes in** (to `near` × opacity at 2 radii), so places can be
   seen up close while the planet reads as cloudy from afar.
 

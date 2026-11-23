@@ -120,6 +120,18 @@ export const TERRAN: BodyLook = {
 	atmosphere: { color: [0.5, 0.68, 0.95], strength: 0.85 }
 };
 
+/**
+ * Tidally locked to the Red Sun: one half always in its light, one always dark, the Mezzolux
+ * between. Its clouds stay put over the dark side (steam from the geysers), so they don't drift.
+ */
+export const JANUS: BodyLook = {
+	name: 'Janus',
+	radius: 1.1,
+	glow: 2.5,
+	clouds: { color: [0.86, 0.86, 0.87], opacity: 0.85, drift: 0, normal: true },
+	atmosphere: { color: [0.95, 0.62, 0.42], strength: 0.6 }
+};
+
 /** Two logs see it set over Mulgogi. Airless grey rock. */
 export const HYANG_WAN_MOON: BodyLook = {
 	name: "Hyang Wan's Moon",

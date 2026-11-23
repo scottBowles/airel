@@ -3,7 +3,7 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
-	import { FELUCIA, GONHIRRIM, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import { FELUCIA, GONHIRRIM, JANUS, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -17,22 +17,23 @@
 		{ id: 'magmus', label: 'Magmus' },
 		{ id: 'felucia', label: 'Felucia' },
 		{ id: 'terran', label: 'Terran' },
+		{ id: 'janus', label: 'Janus' },
 		{ id: 'hyang-wan', label: 'Hyang Wan' },
 		{ id: 'gonhirrim', label: 'Gonhirrim' }
 	];
 	const MOONS = Object.entries(GONHIRRIM_MOONS);
 
-	let view = $state('terran');
+	let view = $state('janus');
 	let showPins = $state(true);
 	let selected = $state<Pin | null>(null);
 	let pins = $state<Pin[]>([]);
 
 	/** The body whose places can be pinned in this view, if any. */
 	const focus = $derived(
-		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' ? view : view.startsWith('moon:') ? view.slice(5) : null
+		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' || view === 'janus' ? view : view.startsWith('moon:') ? view.slice(5) : null
 	);
 	const moon = $derived(focus && view.startsWith('moon:') ? GONHIRRIM_MOONS[focus] : null);
-	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : 'Magmus');
+	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : view === 'janus' ? JANUS.name : 'Magmus');
 	const inGonhirrim = $derived(view === 'gonhirrim' || view.startsWith('moon:'));
 
 	$effect(() => {
@@ -57,6 +58,8 @@
 					? { at: [0, 0.7, 4.6], min: 1.6 }
 				: view === 'terran'
 					? { at: [0, 0.8, 5.4], min: 1.9 }
+				: view === 'janus'
+					? { at: [0, 0.6, 4.4], min: 1.45 }
 				: moon
 					? { at: [0, 0.25, moon.radius * 3.6], min: moon.radius * 1.3 }
 					: { at: [0, 0.6, 3.4], min: 1.3 }
@@ -64,6 +67,9 @@
 
 	// The Yellow Sun, off to the side of whatever we're looking at.
 	const SUN_AT: [number, number, number] = [-26, 3, 14];
+	// Janus keeps one face to the Red Sun: put it square to the side, so the default view looks
+	// straight at the Mezzolux, light to the east (right), dark to the west.
+	const JANUS_SUN: [number, number, number] = [30, 2, 0];
 	const GONHIRRIM_SUN: [number, number, number] = [-80, 8, 45];
 
 	function pick(id: string) {
@@ -116,6 +122,22 @@
 				sun={SUN_AT}
 				face={20}
 				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'janus'}
+			<!-- A little more than the other planets get, so the dark side's rock and steam can be made out. -->
+			<T.AmbientLight intensity={0.14} />
+			<Sun look={RED_SUN} radius={1.2} position={JANUS_SUN} intensity={1.6} />
+			<Planet
+				slug="janus"
+				radius={JANUS.radius}
+				glow={JANUS.glow}
+				clouds={JANUS.clouds}
+				atmosphere={JANUS.atmosphere}
+				nightLights
+				sun={JANUS_SUN}
+				face={-90}
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
 			/>
