@@ -117,19 +117,22 @@ def generate(width: int, out: Path) -> None:
     fine = fbm(n[6], p * 60 + warp, 4)
 
     # --- The light side: an unbearably hot desert. ------------------------------------------
-    # Earth's hottest ground (the Lut, the Danakil) is not orange sand: it is dark, sun-baked
-    # rock and gravel (desert varnish), wind-carved ridges, and blinding salt flats. Sand piles
-    # up farther out. The red sunlight adds the red; the ground itself is browner and darker.
+    # Hot deserts from orbit are light tan to ochre (the Sahara, Arabia, the Lut), with dark
+    # patches only where there are volcanic fields or old varnished plateaus, and white salt flats.
+    # The base is paler than it looks lit: the Red Sun pushes everything toward orange.
     desert = ramp(
         rank(fbm(n[6], p * 4 + warp * 1.4, 6)) * 0.55 + 0.45 * e,
         [
-            (0.0, (0.46, 0.38, 0.3)),  # gravel plains
-            (0.35, (0.36, 0.28, 0.21)),
-            (0.65, (0.27, 0.2, 0.16)),  # varnished rock
-            (1.0, (0.17, 0.13, 0.11)),  # dark highland rock
+            (0.0, (0.78, 0.68, 0.53)),
+            (0.35, (0.72, 0.6, 0.44)),  # tan plains
+            (0.7, (0.64, 0.5, 0.35)),  # ochre
+            (1.0, (0.5, 0.39, 0.29)),  # upland rock
         ],
     )
-    desert = desert * (0.85 + 0.3 * fine[..., None])
+    desert = desert * (0.9 + 0.2 * fine[..., None])
+    # Dark accents: volcanic fields and varnished plateaus, a few, irregular.
+    volc = smoothstep(0.8, 0.88, rank(fbm(n[7], p * 3.5 + warp * 1.5 + 13, 5))) * (0.7 + 0.3 * smoothstep(-0.2, 0.2, fine))
+    desert = desert * (1 - 0.75 * volc[..., None]) + np.array([0.16, 0.13, 0.12], np.float32) * 0.75 * volc[..., None]
     # Salt flats: blinding white pans in the low basins, sharp-edged.
     playa = smoothstep(0.065, 0.045, e + 0.03 * fine) * smoothstep(8, 20, sun)
     desert = desert * (1 - playa[..., None]) + np.array([0.9, 0.88, 0.84], np.float32) * (0.92 + 0.1 * grain[..., None]) * playa[..., None]
@@ -140,15 +143,16 @@ def generate(width: int, out: Path) -> None:
     ang_w = ang + 0.05 * fbm(n[7], p * 9 + warp, 4)
     yard = 0.5 + 0.5 * np.sin(ang_w * 1500 + 3.0 * fbm(n[2], p * 50, 3))
     carved = smoothstep(40, 58, sun) * smoothstep(0.3, 0.55, rank(fbm(n[3], p * 5 + warp + 7, 4)))
-    desert = desert * (1 - 0.45 * carved[..., None] * (1 - yard[..., None])) + 0.12 * carved[..., None] * yard[..., None]
+    desert = desert * (1 - 0.3 * carved[..., None] * (1 - yard[..., None])) + 0.06 * carved[..., None] * yard[..., None]
     dunes = 0.5 + 0.5 * np.sin(ang_w * 520 + 2.0 * fbm(n[2], p * 30, 3))
     erg = smoothstep(0.5, 0.7, rank(fbm(n[1], p * 3 + warp * 1.2 + 5, 5))) * smoothstep(0.6, 0.35, e)
     erg = erg * smoothstep(52, 38, sun) * smoothstep(6, 16, sun) * (1 - playa)
-    sand = np.array([0.7, 0.5, 0.31], np.float32)
+    sand = np.array([0.8, 0.62, 0.42], np.float32)
     desert = desert * (1 - 0.85 * erg[..., None]) + sand * (0.8 + 0.3 * dunes[..., None]) * 0.85 * erg[..., None]
-    # Right under the sun: a scorched black plain.
-    scorch = smoothstep(66, 82, sun + 4 * fbm(n[3], p * 8, 4))
-    desert = desert * (1 - 0.7 * scorch[..., None]) + np.array([0.1, 0.08, 0.07], np.float32) * 0.7 * scorch[..., None]
+    # Right under the sun: a smaller, softer scorched plain (fiction: nothing on Earth is hot
+    # enough to darken ground like this, but it marks the hottest point at a glance).
+    scorch = smoothstep(74, 86, sun + 4 * fbm(n[3], p * 8, 4))
+    desert = desert * (1 - 0.5 * scorch[..., None]) + np.array([0.22, 0.16, 0.13], np.float32) * 0.5 * scorch[..., None]
     # Dry riverbeds cut long ago, faint.
     wadis = veins(n[4], p * 10 + warp * 2, 0.05) * smoothstep(0.55, 0.75, rank(fbm(n[5], p * 3 + 2.2, 4)))
     desert = desert * (1 - 0.15 * wadis[..., None])
