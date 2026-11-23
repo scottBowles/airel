@@ -110,22 +110,29 @@ Write down the answers; don't just think them.
   and shapes stay ovals and straight lines. Measure what the noise actually does.
 - **Too regular placement:** things evenly spaced, or all the same size, look placed.
 
-## Fresh-eyes review
+## Review rounds
 
-Before showing the user, have a separate reviewer (a fresh agent with no stake in the work)
-look at the inspector images and the flat map, with this file and the lore brief. Ask it to
-list everything a picky viewer would notice, most noticeable first, with the image and spot
-for each, and to say what the real analogue looks like. Then fix, or note why not. Include in-app screenshots if the planet is wired into the lab:
-the real renderer's lighting and cloud colour change how things read. (A subagent can't start
-another agent; if you're one, say so in your report and whoever integrates runs the review.)
+The builder checks their own work all the way through (the inspector, the flat map, in-app
+screenshots, the questions above). That isn't enough on its own: the builder knows what each
+feature is meant to be and sees it that way. So every planet also gets reviews by a **fresh
+reviewer**: a separate agent started with a clean context and no stake in the work, given this
+file, the lore brief, the inspector images, the flat map and in-app screenshots (the real
+renderer's lighting and cloud colour change how things read). Ask it to list everything a picky
+viewer would notice, most noticeable first, with the image and spot for each, and to say what
+the real analogue looks like. (A subagent can't start another agent; if you're one, say so in
+your report and whoever integrates runs the reviews.)
 
-## Knowing when to stop
+1. **Review and fix.** Fix everything that shows at a normal viewing distance (the whole
+   planet on screen, or a modest zoom), or note why not.
+2. **Follow-up review**, by a new fresh reviewer, on the fixed build. It writes notes, not a
+   to-do list: each remaining suggestion with a level of recommendation (*do it*, *worth
+   considering*, *optional polish*). Fix the *do it* items if they're quick; pass the rest to
+   the user with the planet.
 
-A fresh reviewer will always find something. One review round per planet: fix what shows at a
-normal viewing distance (the whole planet on screen, or a modest zoom), note the rest in the
-hand-off, and show the user. Close-up detail matters less: the user views at moderate
-resolution, and detail that appears up close belongs to later flight work. Commit each
-improvement as it lands, so nothing is lost if a build or session stops.
+Then stop and show the user. A fresh reviewer will always find something, so more rounds don't
+converge. Close-up detail matters less: the user views at moderate resolution, and detail that
+appears up close belongs to later flight work. Commit each improvement as it lands, so nothing
+is lost if a build or session stops.
 
 ## Shared code
 
@@ -142,6 +149,6 @@ When a planet is ready for review, report:
 - what each feature is and where the lore says so, and every guess made;
 - the answers to the questions above;
 - what the inspector flagged and what you did about each;
-- what you couldn't fix or aren't sure of;
+- what you couldn't fix or aren't sure of, and the follow-up review's notes;
 - anything needed from shared code or the app (`bodies.ts` settings: radius, glow,
   atmosphere, clouds, twilight).

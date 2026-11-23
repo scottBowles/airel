@@ -44,7 +44,8 @@ Interpretations (all guesses unless marked):
 - The launch site isn't scarred: the launch was years ago, and a scorched patch would read as
   damage from orbit.
 - Polar caps: none; a swamp world under a warm, wet deck.
-- Night: a handful of dim, warm towns at the sites; a faint magenta tint at the Netherese
+- Night: a handful of dim, warm towns at the sites and a few dozen villages on firm ground
+  (the user found two lights a hemisphere too few, Nov 2026); a faint magenta tint at the Netherese
   complex (Mystran robots glow "a sort of magenta", 2018-10-16). No faint magenta swamp
   glow (the brief's option): not built, as a broad glow risked reading as a rash.
 - Only the Tomb of Teresias gets a pin: it's the only DB place on Mystra.
@@ -124,6 +125,8 @@ TOWNS = [
     (-26, 88, 0.3, 0.35),
     (35, 66, 0.25, 0.3),
 ]
+VILLAGES = 45  # more villages, placed on firm ground (see generate)
+VILLAGE_GAP = 6.0  # degrees between any two settlements
 COMPLEX = (31, 61)  # the Netherese complex: a small cool-magenta glow
 
 PINS = [
@@ -327,9 +330,29 @@ def generate(width: int, out: Path) -> None:
 
     for la, lo, r, b in TOWNS:
         town(la, lo, r, b)
-    # Hamlets: a sparse scatter on the uplands and the levees of the belts only.
+    # Villages: a few dozen more across the planet, on firm ground (the uplands, and the levees
+    # of the floodplain belts), never closer than VILLAGE_GAP. Sizes and brightness vary, most
+    # small. The named towns alone left a whole hemisphere with two lights.
     firm = np.maximum(up, 0.5 * belt)
-    lights += 0.12 * firm * smoothstep(0.993, 0.999, rank(fbm(n[2], p * 380 + 7.7, 2)))
+    weight = (firm * (1 - water) * np.cos(g.lat)).ravel().astype(np.float64)
+    weight /= weight.sum()
+    placed = [unit(t[0], t[1]) for t in TOWNS]
+    lonv = np.degrees(g.lon)
+    villages = 0
+    for idx in rng.choice(weight.size, size=4000, p=weight):
+        if villages >= VILLAGES:
+            break
+        la, lo = float(lat.flat[idx]), float(lonv.flat[idx])
+        c = unit(la, lo)
+        if any(np.degrees(np.arccos(np.clip(c @ q, -1, 1))) < VILLAGE_GAP for q in placed):
+            continue
+        placed.append(c)
+        size = float(rng.lognormal(0, 0.35))
+        town(la, lo, 0.22 * size, float(np.clip(0.32 * size, 0.2, 0.6)))
+        villages += 1
+    print(f"  {villages} villages")
+    # Hamlets: a sparse scatter on the uplands and the levees of the belts only.
+    lights += 0.15 * firm * smoothstep(0.99, 0.998, rank(fbm(n[2], p * 380 + 7.7, 2)))
     lights *= 1 - water
     d = angular_distance(g, *COMPLEX)
     nether += 0.4 * smoothstep(0.3, 0.0, d)  # dim, a few texels, no brighter than the main town
