@@ -122,6 +122,16 @@ export const TERRAN: BodyLook = {
 	atmosphere: { color: [0.5, 0.68, 0.95], strength: 0.85 }
 };
 
+/** The pink Dagobah: wine and rose swamp under a broken pink mist deck that fills the lowlands. */
+export const MYSTRA: BodyLook = {
+	name: 'Mystra',
+	radius: 1.15,
+	glow: 3,
+	// The mist sits in the basins and breaks over the uplands, so it doesn't drift.
+	clouds: { color: [0.75, 0.48, 0.6], opacity: 0.9, drift: 0, normal: true },
+	atmosphere: { color: [0.95, 0.55, 0.72], strength: 0.75 }
+};
+
 /**
  * "Nega-Terran", the Vegas of planets: a grimy rust-and-soot city by day under brown smog, and
  * at night four quadrants of different light (G2's neon blaze, G4's broken sodium orange).
