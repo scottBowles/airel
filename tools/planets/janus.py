@@ -29,7 +29,7 @@ from pathlib import Path
 
 import numpy as np
 
-from clouds import make_clouds, rank
+from clouds import billow, make_clouds, rank
 from planetgen import (
     Noise3,
     angular_distance,
@@ -83,6 +83,14 @@ def ellipse(g, lat, lon, ax, ay):
     return np.sqrt(dlat**2 + dlon**2)
 
 
+def geyser_fields(g):
+    """Where the geyser fields are on the dark side, 0..1 (also where its steam fog sits)."""
+    n = [Noise3(SEED * 10 + i) for i in range(3)]
+    p = g.xyz
+    warp = np.stack([fbm(n[0], p * 1.6 + 11, 5), fbm(n[1], p * 1.6 + 23, 5), fbm(n[2], p * 1.6 + 37, 5)], -1)
+    return smoothstep(0.82, 0.93, rank(fbm(n[2], p * 6 + warp * 1.5 + 9, 5)))
+
+
 def generate(width: int, out: Path) -> None:
     t0 = time.time()
     g = make_grid(width)
@@ -109,38 +117,45 @@ def generate(width: int, out: Path) -> None:
     fine = fbm(n[6], p * 60 + warp, 4)
 
     # --- The light side: an unbearably hot desert. ------------------------------------------
+    # Earth's hottest ground (the Lut, the Danakil) is not orange sand: it is dark, sun-baked
+    # rock and gravel (desert varnish), wind-carved ridges, and blinding salt flats. Sand piles
+    # up farther out. The red sunlight adds the red; the ground itself is browner and darker.
     desert = ramp(
-        rank(fbm(n[6], p * 4 + warp * 1.4, 6)) * 0.6 + 0.4 * e,
+        rank(fbm(n[6], p * 4 + warp * 1.4, 6)) * 0.55 + 0.45 * e,
         [
-            (0.0, (0.7, 0.6, 0.47)),  # dry lakebeds in the lows
-            (0.18, (0.66, 0.46, 0.28)),
-            (0.45, (0.58, 0.34, 0.19)),  # rust hamada
-            (0.7, (0.46, 0.27, 0.16)),
-            (1.0, (0.28, 0.19, 0.15)),  # dark highland rock
+            (0.0, (0.46, 0.38, 0.3)),  # gravel plains
+            (0.35, (0.36, 0.28, 0.21)),
+            (0.65, (0.27, 0.2, 0.16)),  # varnished rock
+            (1.0, (0.17, 0.13, 0.11)),  # dark highland rock
         ],
     )
-    # Playas: flat pale pans in the lowest ground, crusted with salt.
-    playa = smoothstep(0.07, 0.02, e + 0.05 * fine)
-    desert = desert * (1 - playa[..., None]) + np.array([0.8, 0.74, 0.63], np.float32) * playa[..., None]
-    # Dune seas: lines radiating from the sub-solar point, where every surface wind on a locked
-    # world converges. They fade out near the point itself and in the uplands.
+    desert = desert * (0.85 + 0.3 * fine[..., None])
+    # Salt flats: blinding white pans in the low basins, sharp-edged.
+    playa = smoothstep(0.065, 0.045, e + 0.03 * fine) * smoothstep(8, 20, sun)
+    desert = desert * (1 - playa[..., None]) + np.array([0.9, 0.88, 0.84], np.float32) * (0.92 + 0.1 * grain[..., None]) * playa[..., None]
+    # Every surface wind on a locked world runs toward the sub-solar point, so everything wind-made
+    # radiates from it: yardangs (long ridges carved from the rock) in the hot centre, dune seas
+    # in a ring farther out.
     ang = np.arctan2(p[..., 2], p[..., 1])
     ang_w = ang + 0.05 * fbm(n[7], p * 9 + warp, 4)
+    yard = 0.5 + 0.5 * np.sin(ang_w * 1500 + 3.0 * fbm(n[2], p * 50, 3))
+    carved = smoothstep(40, 58, sun) * smoothstep(0.3, 0.55, rank(fbm(n[3], p * 5 + warp + 7, 4)))
+    desert = desert * (1 - 0.45 * carved[..., None] * (1 - yard[..., None])) + 0.12 * carved[..., None] * yard[..., None]
     dunes = 0.5 + 0.5 * np.sin(ang_w * 520 + 2.0 * fbm(n[2], p * 30, 3))
-    erg = smoothstep(0.45, 0.7, rank(fbm(n[1], p * 3 + warp * 1.2 + 5, 5))) * smoothstep(0.6, 0.35, e)
-    erg = erg * smoothstep(80, 60, sun) * smoothstep(5, 15, sun)
-    sand = np.array([0.76, 0.52, 0.3], np.float32)
-    desert = desert * (1 - 0.8 * erg[..., None]) + sand * (0.82 + 0.25 * dunes[..., None]) * 0.8 * erg[..., None]
-    # Right under the sun: a scorched plain, darkened and glazed.
-    scorch = smoothstep(68, 84, sun + 4 * fbm(n[3], p * 8, 4))
-    desert = desert * (1 - 0.6 * scorch[..., None]) + np.array([0.22, 0.14, 0.11], np.float32) * 0.6 * scorch[..., None]
+    erg = smoothstep(0.5, 0.7, rank(fbm(n[1], p * 3 + warp * 1.2 + 5, 5))) * smoothstep(0.6, 0.35, e)
+    erg = erg * smoothstep(52, 38, sun) * smoothstep(6, 16, sun) * (1 - playa)
+    sand = np.array([0.7, 0.5, 0.31], np.float32)
+    desert = desert * (1 - 0.85 * erg[..., None]) + sand * (0.8 + 0.3 * dunes[..., None]) * 0.85 * erg[..., None]
+    # Right under the sun: a scorched black plain.
+    scorch = smoothstep(66, 82, sun + 4 * fbm(n[3], p * 8, 4))
+    desert = desert * (1 - 0.7 * scorch[..., None]) + np.array([0.1, 0.08, 0.07], np.float32) * 0.7 * scorch[..., None]
     # Dry riverbeds cut long ago, faint.
     wadis = veins(n[4], p * 10 + warp * 2, 0.05) * smoothstep(0.55, 0.75, rank(fbm(n[5], p * 3 + 2.2, 4)))
     desert = desert * (1 - 0.15 * wadis[..., None])
 
     # --- The dark side: dark rock, pale crust around the geyser fields, no ice. --------------
     rock = ramp(e, [(0.0, (0.2, 0.19, 0.18)), (0.5, (0.15, 0.14, 0.14)), (1.0, (0.11, 0.1, 0.11))])
-    fields = smoothstep(0.82, 0.93, rank(fbm(n[2], p * 6 + warp * 1.5 + 9, 5)))
+    fields = geyser_fields(g)
     vents = smoothstep(0.75, 0.95, rank(fbm(n[7], p * 140, 2))) * fields
     sinter = np.clip(0.55 * fields * (0.4 + 0.6 * smoothstep(-0.1, 0.3, fine)) + 0.6 * vents, 0, 1)
     rock = rock * (1 - sinter[..., None]) + np.array([0.62, 0.6, 0.56], np.float32) * sinter[..., None]
@@ -167,17 +182,24 @@ def generate(width: int, out: Path) -> None:
     lights = np.zeros(g.lat.shape, np.float32)
     cool = np.zeros(g.lat.shape, np.float32)
     speck = fbm(n[4], p * 320, 3)
-    # The habitable band: small towns strung along it, thickest near the visited arc.
-    towns = smoothstep(0.86, 0.95, rank(fbm(n[5], p * 45 + 3.3, 3)))
-    near_arc = 0.5 + 0.5 * smoothstep(60, 10, angular_distance(g, 0, -90))
-    towns = smoothstep(0.7, 0.9, rank(fbm(n[5], p * 45 + 3.3, 3)))
-    # Settled ground runs a little way into the dark (the House of Knowledge is a drive from the
-    # band), thinning out away from the terminator.
+    # The habitable band: a chain of small towns, oases with empty rock land between, all the
+    # way round, a little way into the dark; a faint scatter of homesteads and camps.
+    lat = np.degrees(g.lat)
+    for _ in range(46):
+        la = float(np.degrees(np.arcsin(rng.uniform(-0.94, 0.94))))
+        el = -rng.uniform(0.5, 9) ** 1.0  # solar elevation: how far into the dark
+        side = rng.choice([-1, 1])
+        c = np.sin(np.radians(el)) / np.cos(np.radians(la))
+        lo = side * float(np.degrees(np.arccos(np.clip(c, -1, 1))))
+        r = rng.uniform(0.3, 0.9)
+        rows = np.where(np.abs(lat[:, 0] - la) < 2 * r)[0]
+        sub = (slice(rows[0], rows[-1] + 1), slice(None))
+        t = angular_distance(g, la, lo)[sub] / r
+        lights[sub] += rng.uniform(0.5, 1.0) * smoothstep(1.4, 0.0, t) * smoothstep(-0.15, 0.25, speck[sub] + 0.3 * smoothstep(1.0, 0.0, t))
     settled = smoothstep(-12, -1.5, sun_w + 3 * fine) * smoothstep(3, 0, sun_w)
-    lights += 1.0 * settled * towns * near_arc * smoothstep(0.0, 0.3, speck + 0.2)
-    lights += 0.35 * settled * smoothstep(0.8, 0.95, rank(fbm(n[6], p * 400 + 7.7, 2)))  # homesteads
+    lights += 0.3 * settled * smoothstep(0.96, 0.995, rank(fbm(n[6], p * 400 + 7.7, 2)))  # homesteads
     for la, lo, s in [(HOUSE[0], HOUSE[1], 0.8), *DARK_TOWNS]:
-        t = angular_distance(g, la, lo) / (3.0 * s)
+        t = angular_distance(g, la, lo) / (1.6 * s)
         near = t < 1.5
         lights[near] += (0.5 + 0.6 * s) * smoothstep(1.5, 0.0, t[near]) * smoothstep(-0.1, 0.25, speck[near])
     # The Princes' cities: a bright core and a scatter of lit districts around it.
@@ -204,17 +226,27 @@ def generate(width: int, out: Path) -> None:
 
 
 def janus_clouds(g):
-    """Steam from the geysers over the dark side, thickest a little way past the terminator where
-    warm air meets the cold; storms along the Mezzolux (flash floods, lightning); the light side
-    almost clear."""
-    storms = [
-        dict(lat=20, lon=-100, ax=8, ay=6, swirl=1.2, inflow=0.6, strength=0.8),
-        dict(lat=-25, lon=97, ax=7, ay=5, swirl=-1.1, inflow=0.6, strength=0.8),
-    ]
-    clouds, thick = make_clouds(g, SEED, cover=0.35, storms=storms, veil=(0.0, 0.08), zoning=0.0)
-    sun = np.degrees(np.arcsin(np.clip(g.xyz[..., 0], -1, 1)))
-    where = 0.08 + 0.92 * smoothstep(4, -10, sun) * (0.55 + 0.45 * smoothstep(-70, -15, sun))
-    return clouds * where, thick * where
+    """A locked world's night side is mostly clear: its air cools and sinks, and flows along the
+    ground toward the day side. Cloud comes from the geysers: steam meeting cold air makes fog
+    banks and plumes over the geyser fields. A thin haze elsewhere, and a broken line of storms
+    along the Mezzolux, where the cold air meets the hot (the logs' flash floods and lightning).
+    The day side is dry and clear."""
+    n = [Noise3(SEED * 13 + i) for i in range(4)]
+    p = g.xyz
+    sun = np.degrees(np.arcsin(np.clip(p[..., 0], -1, 1)))
+    night = smoothstep(2, -4, sun)
+    texture, thick = make_clouds(g, SEED, cover=0.5, storms=[], veil=(0.0, 0.0), zoning=0.0)
+    puffs = billow(n[0], p * 30 + fbm(n[1], p * 6, 3)[..., None], 4)
+    # Fog over the geyser fields, spreading a little past them.
+    fields = geyser_fields(g)
+    near = smoothstep(0.0, 0.6, fields + 0.5 * fbm(n[2], p * 8, 3))
+    fog = near * (0.45 + 0.5 * puffs) * night
+    # Storms strung along the terminator, just on the dark side.
+    line = smoothstep(-9, -3, sun) * smoothstep(1, -1.5, sun) * smoothstep(0.45, 0.7, rank(fbm(n[3], p * 4, 4)))
+    storms = line * texture
+    haze = 0.05 * night * (0.5 + puffs)
+    alpha = np.clip(np.maximum.reduce([fog, storms, haze]), 0, 1)
+    return alpha.astype(np.float32), (thick * np.maximum(near, line) * night + 0.5 * fog).astype(np.float32)
 
 
 def save_clouds(out: Path, clouds, thickness) -> None:
