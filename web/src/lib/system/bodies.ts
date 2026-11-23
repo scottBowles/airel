@@ -17,6 +17,7 @@ export type BodyLook = {
 		drift?: number;
 		near?: number;
 		normal?: boolean;
+		glow?: number;
 	};
 	atmosphere?: AtmosphereLook;
 	/** Dusk light past the terminator (see Planet's `twilight`). */
@@ -129,7 +130,7 @@ export const MYSTRA: BodyLook = {
 	radius: 1.15,
 	glow: 3,
 	// The mist sits in the basins and breaks over the uplands, so it doesn't drift.
-	clouds: { color: [0.62, 0.4, 0.5], opacity: 0.9, drift: 0, normal: true },
+	clouds: { color: [0.62, 0.4, 0.5], opacity: 0.9, drift: 0, normal: true, glow: 0.5 },
 	atmosphere: { color: [0.95, 0.55, 0.72], strength: 0.75 }
 };
 

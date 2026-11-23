@@ -370,6 +370,7 @@ def generate(width: int, out: Path) -> None:
     save_rgb(out / "normal.webp", normal_map(height * 0.02, strength=1.0))
     print(f"maps {time.time() - t0:.1f}s, water {float((water > 0.5).mean()):.3f}, upland {float((up > 0.5).mean()):.3f}")
     save_clouds(out, *mystra_mist(g, low, up))
+    save_mist_glow(out, emissive)
     write_pins(out / "pins.json", "Mystra", PINS)
     print(f"done {time.time() - t0:.1f}s -> {out}")
 
@@ -444,6 +445,21 @@ def save_clouds(out: Path, clouds, thickness) -> None:
     save_gray(out / "clouds.webp", clouds)
     save_rgb(out / "clouds-normal.webp", normal_map(thickness * 0.006, strength=1.0))
     print(f"  mist: alpha>0.5 {float((clouds > 0.5).mean()):.3f}, alpha>0.8 {float((clouds > 0.8).mean()):.3f}, alpha<0.2 {float((clouds < 0.2).mean()):.3f}")
+
+
+def save_mist_glow(out: Path, emissive: np.ndarray) -> None:
+    """clouds-glow.webp: the lights as the mist above them shows them, scattered into soft halos
+    (~0.3° and ~1°) many times wider than the lights. The app adds it to the mist on the night
+    side, so towns under the deck show as smudges of light rather than vanishing. Saved at a
+    quarter of the width: it's blurry by nature."""
+    h, w = emissive.shape[:2]
+    small = emissive[: h - h % 4, : w - w % 4].reshape(h // 4, 4, w // 4, 4, 3).mean(axis=(1, 3))
+    px = (w // 4) / 360
+    glow = np.stack([0.6 * blur(small[..., c], 0.3 * px) + 0.4 * blur(small[..., c], 1.0 * px) for c in range(3)], -1)
+    # Scaled so the brightest town's halo fills the 8-bit range, and lifted (power < 1) so the
+    # halo's skirt stays visible rather than only its centre.
+    peak = float(np.percentile(glow.max(-1), 99.98))
+    save_rgb(out / "clouds-glow.webp", np.clip(glow / max(peak, 1e-6), 0, 1) ** 0.7)
 
 
 if __name__ == "__main__":

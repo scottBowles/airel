@@ -36,6 +36,12 @@
 			normal?: boolean;
 			/** How dark the clouds' shadows on the ground are, 0..1 (default 0.6). */
 			shadow?: number;
+			/**
+			 * Lights glowing up through the cloud at night, from clouds-glow.webp (the ground's
+			 * lights blurred, as fog scatters them): its brightness. Only for a layer that doesn't
+			 * drift, as the glow is mapped on the cloud mesh.
+			 */
+			glow?: number;
 		};
 		/** A glow around the rim, lit from `sun`. */
 		atmosphere?: AtmosphereLook;
@@ -155,10 +161,19 @@
 				opacity: clouds.opacity ?? 0.9,
 				depthWrite: false,
 				roughness: 1,
-				metalness: 0
+				metalness: 0,
+				...(clouds.glow
+					? { emissiveMap: load('clouds-glow.webp', true), emissive: new THREE.Color(1, 1, 1), emissiveIntensity: clouds.glow }
+					: {})
 			})
 		: null;
 	if (cloudMaterial) live.uniforms.uCloudMap.value = cloudMaterial.alphaMap;
+	// The glow through the cloud shows on the night side only, as the lights below do.
+	const cloudLive = cloudMaterial && clouds?.glow ? addEmissiveFlicker(cloudMaterial, 0) : null;
+	if (cloudLive) cloudLive.uniforms.uNightOnly.value = 1;
+	$effect(() => {
+		cloudLive?.uniforms.uSun.value.set(...sun);
+	});
 	const sunPosition = new THREE.Vector3();
 	// svelte-ignore state_referenced_locally
 	const airMaterial = atmosphere ? atmosphereMaterial(atmosphere, sunPosition) : null;
@@ -237,6 +252,7 @@
 		material.dispose();
 		cloudMaterial?.alphaMap?.dispose();
 		cloudMaterial?.normalMap?.dispose();
+		cloudMaterial?.emissiveMap?.dispose();
 		cloudMaterial?.dispose();
 		airMaterial?.dispose();
 		groundGeometry.dispose();
