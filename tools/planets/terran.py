@@ -38,7 +38,6 @@ from planetgen import (
     save_rgb,
     smoothstep,
     unit,
-    worley,
     write_pins,
 )
 
@@ -185,14 +184,29 @@ def generate(width: int, out: Path) -> None:
 
     # Districts: each one's street grid runs its own way (Chicago's grid, turned district by
     # district), so the city is a mosaic, not a planet-wide graticule.
-    _, _, cid = worley(p * 9 + warp * 0.6, SEED)
+    # Districts are the Voronoi cells of jittered seeds on the sphere, found in a warped space so
+    # their borders wander. (worley()'s cell ids can't be used: its hash repeats, so cells on
+    # opposite sides of the planet share an id, and a grid laid out for one tips edge-on in the
+    # other, which draws long stripes.)
+    count = 1100
+    k = np.arange(count) + 0.5
+    zs = 1 - 2 * k / count
+    az = np.pi * (1 + 5**0.5) * k + rng.uniform(-0.4, 0.4, count)
+    seeds = np.stack([np.sqrt(1 - zs**2) * np.cos(az), np.sqrt(1 - zs**2) * np.sin(az), zs], -1)
+    seeds += rng.normal(0, 0.03, seeds.shape)
+    seeds /= np.linalg.norm(seeds, axis=-1, keepdims=True)
+    seeds = seeds.astype(np.float32)
+    q = p + warp * 0.06
+    q = (q / np.linalg.norm(q, axis=-1, keepdims=True)).reshape(-1, 3).astype(np.float32)
+    inv = np.empty(len(q), np.int64)
+    for s in range(0, len(q), 1 << 16):
+        inv[s : s + (1 << 16)] = np.argmax(q[s : s + (1 << 16)] @ seeds.T, axis=1)
+    inv = inv.reshape(p.shape[:-1])
+    labels = np.arange(count)
     # Each district's grid is laid out in its own tangent plane: axes perpendicular to the
-    # district's centre, turned by a random angle. Laid out on random 3D axes instead, a grid
+    # district's seed, turned by a random angle. Laid out on random 3D axes instead, a grid
     # stretches into long strips wherever an axis points nearly straight up.
-    labels, inv = np.unique(cid, return_inverse=True)
-    inv = inv.reshape(cid.shape)
-    centre = np.stack([np.bincount(inv.ravel(), p[..., k].ravel(), len(labels)) for k in range(3)], -1)
-    centre /= np.linalg.norm(centre, axis=-1, keepdims=True) + 1e-9
+    centre = seeds.astype(np.float64)
     any_dir = np.where(np.abs(centre[:, 2:3]) < 0.9, np.array([[0, 0, 1.0]]), np.array([[1.0, 0, 0]]))
     e1 = np.cross(any_dir, centre)
     e1 /= np.linalg.norm(e1, axis=-1, keepdims=True)
@@ -216,7 +230,7 @@ def generate(width: int, out: Path) -> None:
         x = (x ^ (x >> 13)) * 1274126177
         return ((x ^ (x >> 16)) & 0xFFFF).astype(np.float32) / 0xFFFF
 
-    block = hashf(sx, sy, (cid * 1000).astype(np.int64))
+    block = hashf(sx, sy, inv)
 
     # Champion City: rings of boulevards and radial avenues, the Senate and the Arena.
     cd = angular_distance(g, *CHAMPION)
@@ -261,7 +275,7 @@ def generate(width: int, out: Path) -> None:
     belts = smoothstep(0.035, 0.012, np.abs(fbm(n[6], p * 5 + warp * 1.2, 4)))
     belts = belts * smoothstep(0.35, 0.6, rank(fbm(n[7], p * 3 + 4.4, 3)))
     wild = smoothstep(0.93, 0.97, rank(fbm(n[2], p * 9 + warp * 2, 5)))
-    planned = (hashf(bx, by, (cid * 1000).astype(np.int64) + 3) > 0.97) * smoothstep(0.35, 0.6, hubd)
+    planned = (hashf(bx, by, inv + 3) > 0.97) * smoothstep(0.35, 0.6, hubd)
     parks = np.maximum(np.maximum(belts, wild), planned).astype(np.float32)
     ring_d = np.abs(cd - 9)
     parks = np.maximum(parks, smoothstep(1.2, 0.6, ring_d) * (np.sin(ang * 4) > 0.2))
@@ -285,7 +299,7 @@ def generate(width: int, out: Path) -> None:
     land = ground * (1 - built) + city * built
     park = np.array([0.17, 0.27, 0.13], np.float32) * (0.8 + 0.4 * block[..., None]) * (0.85 + 0.3 * grain[..., None])
     land = land * (1 - parks[..., None]) + park * parks[..., None]
-    patch_id = hashf(bx, by, (cid * 1000).astype(np.int64) + 7)
+    patch_id = hashf(bx, by, inv + 7)
     patches = ramp(patch_id, [(0, (0.62, 0.52, 0.36)), (0.3, (0.14, 0.32, 0.12)), (0.55, (0.82, 0.85, 0.86)), (0.8, (0.42, 0.44, 0.24)), (1, (0.3, 0.22, 0.16))])
     land = land * (1 - testbed[..., None]) + patches * testbed[..., None]
     land = land * (1 - ice[..., None]) + np.array([0.8, 0.83, 0.86], np.float32) * ice[..., None]
