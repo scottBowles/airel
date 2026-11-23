@@ -135,6 +135,7 @@
 				glow={JANUS.glow}
 				clouds={JANUS.clouds}
 				atmosphere={JANUS.atmosphere}
+				twilight={JANUS.twilight}
 				nightLights
 				sun={JANUS_SUN}
 				face={-90}

@@ -21,6 +21,9 @@ export type Flicker = {
 		uCloudTurn: { value: number };
 		/** 0..1: break the glow into fine points of light as the camera comes close (cities). */
 		uDetail: { value: number };
+		/** Dusk light past the terminator (the sun is a disc, and air scatters): strength, colour. */
+		uTwilight: { value: number };
+		uTwilightColor: { value: THREE.Color };
 	};
 };
 
@@ -34,7 +37,9 @@ export function addEmissiveFlicker(material: THREE.MeshStandardMaterial, amount:
 		uShadow: { value: 0 },
 		uSunLocal: { value: new THREE.Vector3(0, 0, 1) },
 		uCloudTurn: { value: 0 },
-		uDetail: { value: 0 }
+		uDetail: { value: 0 },
+		uTwilight: { value: 0 },
+		uTwilightColor: { value: new THREE.Color(1, 0.6, 0.4) }
 	};
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms);
@@ -71,6 +76,8 @@ uniform float uShadow;
 uniform vec3 uSunLocal;
 uniform float uCloudTurn;
 uniform float uDetail;
+uniform float uTwilight;
+uniform vec3 uTwilightColor;
 // Cloud cover between this point and the sun. The shadow is cast from a little higher than the
 // cloud mesh really is, so the offset shows; a blurred mip makes its edges soft.
 float cloudShadow(vec3 p) {
@@ -134,6 +141,12 @@ float fnoise(vec3 x) {
   // City lights come on across dusk and are off in daylight.
   float sunward = dot(normalize(vWorldNormal), normalize(uSun - vWorldPos));
   totalEmissiveRadiance *= mix(1.0, smoothstep(0.12, -0.18, sunward), uNightOnly);
+  // Twilight: a dim glow on the ground from just inside the lit side to several degrees into the
+  // dark, peaking at the terminator; the direct light takes over further in.
+  if (uTwilight > 0.0) {
+    float dusk = smoothstep(-0.24, 0.02, sunward) * smoothstep(0.3, 0.02, sunward);
+    totalEmissiveRadiance += diffuseColor.rgb * uTwilightColor * uTwilight * dusk;
+  }
 }`
 			);
 	};

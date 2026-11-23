@@ -238,27 +238,43 @@ def generate(width: int, out: Path) -> None:
     # --- Lights: towns along the Mezzolux, a few dark-side settlements, the floating cities. --
     lights = np.zeros(g.lat.shape, np.float32)
     cool = np.zeros(g.lat.shape, np.float32)
-    speck = fbm(n[4], p * 320, 3)
+    lat = np.degrees(g.lat)
+    glint = np.random.default_rng(SEED + 1).random(g.lat.shape).astype(np.float32)
+
+    def town(la, lo, r, b):
+        """A small town seen at night from orbit: a solid bright centre, street lights thinning out
+        toward its edge, and a road or two leading away as a dotted line."""
+        rows = np.where(np.abs(lat[:, 0] - la) < 3.6 * r)[0]
+        sub = (slice(rows[0], rows[-1] + 1), slice(None))
+        d = angular_distance(g, la, lo)[sub]
+        t = d / r
+        c = unit(la, lo)
+        east = np.cross([0, 0, 1], c)
+        east /= np.linalg.norm(east)
+        north = np.cross(c, east)
+        a = np.arctan2(p[sub] @ north, p[sub] @ east)
+        core = smoothstep(0.45, 0.1, t)
+        streets = (glint[sub] > 0.3 + 0.5 * t) * smoothstep(1.4, 0.3, t)
+        roads = np.zeros_like(d)
+        for bearing in rng.uniform(0, 2 * np.pi, int(rng.integers(1, 4))):
+            perp = np.abs(d * np.sin(a - bearing))
+            along = d * np.cos(a - bearing)
+            roads = np.maximum(roads, smoothstep(0.05, 0.015, perp) * (along > 0) * smoothstep(3.5 * r, 1.2 * r, d) * (glint[sub] > 0.45))
+        lights[sub] += b * (0.7 * core + 0.5 * streets + 0.3 * roads)
+
     # The habitable band: a chain of small towns, oases with empty rock land between, all the
     # way round, a little way into the dark; a faint scatter of homesteads and camps.
-    lat = np.degrees(g.lat)
     for _ in range(46):
         la = float(np.degrees(np.arcsin(rng.uniform(-0.94, 0.94))))
-        el = -rng.uniform(0.5, 9) ** 1.0  # solar elevation: how far into the dark
+        el = -rng.uniform(0.5, 9)  # solar elevation: how far into the dark
         side = rng.choice([-1, 1])
-        c = np.sin(np.radians(el)) / np.cos(np.radians(la))
-        lo = side * float(np.degrees(np.arccos(np.clip(c, -1, 1))))
-        r = rng.uniform(0.3, 0.9)
-        rows = np.where(np.abs(lat[:, 0] - la) < 2 * r)[0]
-        sub = (slice(rows[0], rows[-1] + 1), slice(None))
-        t = angular_distance(g, la, lo)[sub] / r
-        lights[sub] += rng.uniform(0.5, 1.0) * smoothstep(1.4, 0.0, t) * smoothstep(-0.15, 0.25, speck[sub] + 0.3 * smoothstep(1.0, 0.0, t))
+        cl = np.sin(np.radians(el)) / np.cos(np.radians(la))
+        lo = side * float(np.degrees(np.arccos(np.clip(cl, -1, 1))))
+        town(la, lo, rng.uniform(0.3, 0.8), rng.uniform(0.6, 1.0))
     settled = smoothstep(-12, -1.5, sun_w + 3 * fine) * smoothstep(3, 0, sun_w)
     lights += 0.3 * settled * smoothstep(0.96, 0.995, rank(fbm(n[6], p * 400 + 7.7, 2)))  # homesteads
     for la, lo, s in [(HOUSE[0], HOUSE[1], 0.8), *DARK_TOWNS]:
-        t = angular_distance(g, la, lo) / (1.6 * s)
-        near = t < 1.5
-        lights[near] += (0.5 + 0.6 * s) * smoothstep(1.5, 0.0, t[near]) * smoothstep(-0.1, 0.25, speck[near])
+        town(la, lo, 0.9 * s + 0.2, 0.6 + 0.5 * s)
     # The Princes' cities: a bright core and a scatter of lit districts around it.
     dots = smoothstep(0.55, 0.85, rank(fbm(n[3], p * 220 + 4.4, 2)))
     for la, lo, s in FLOATING:

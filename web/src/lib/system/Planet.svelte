@@ -45,6 +45,8 @@
 		nightLights?: boolean;
 		/** 0..1: up close, break the glow into points of light finer than the map (cities). */
 		detail?: number;
+		/** Dusk light spilling past the terminator: strength (0 for none) and colour. */
+		twilight?: { strength: number; color?: [number, number, number] };
 	};
 	let {
 		slug,
@@ -60,7 +62,8 @@
 		atmosphere,
 		sun = [0, 0, 0],
 		nightLights = false,
-		detail = 0
+		detail = 0,
+		twilight
 	}: Props = $props();
 
 	const loader = new THREE.TextureLoader();
@@ -87,6 +90,8 @@
 		live.uniforms.uAmount.value = flicker;
 		live.uniforms.uNightOnly.value = nightLights ? 1 : 0;
 		live.uniforms.uDetail.value = detail;
+		live.uniforms.uTwilight.value = twilight?.strength ?? 0;
+		if (twilight?.color) live.uniforms.uTwilightColor.value.setRGB(...twilight.color);
 		live.uniforms.uSun.value.set(...sun);
 	});
 

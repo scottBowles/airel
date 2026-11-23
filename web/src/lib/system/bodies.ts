@@ -18,6 +18,8 @@ export type BodyLook = {
 		normal?: boolean;
 	};
 	atmosphere?: AtmosphereLook;
+	/** Dusk light past the terminator (see Planet's `twilight`). */
+	twilight?: { strength: number; color?: [number, number, number] };
 	/** For a moon: distance from its planet's centre and seconds per orbit. */
 	orbit?: { distance: number; period: number; phase: number; tilt?: number };
 };
@@ -129,7 +131,9 @@ export const JANUS: BodyLook = {
 	radius: 1.1,
 	glow: 2.5,
 	clouds: { color: [0.86, 0.86, 0.87], opacity: 0.85, drift: 0, normal: true },
-	atmosphere: { color: [0.95, 0.62, 0.42], strength: 0.6 }
+	atmosphere: { color: [0.95, 0.62, 0.42], strength: 0.6 },
+	// The Mezzolux is the penumbra: dusk under the Red Sun's disc, half above the horizon.
+	twilight: { strength: 0.8, color: [1.0, 0.55, 0.38] }
 };
 
 /** Two logs see it set over Mulgogi. Airless grey rock. */
