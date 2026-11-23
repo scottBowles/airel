@@ -145,12 +145,13 @@ def generate(width: int, out: Path) -> None:
     h = 0.35 * rank(fbm(n[3], p * 2.5 + warp * 1.3, 7))
     # Each sea is a few overlapping lobes with a warped shore, so none is an oval hole.
     for k, (la, lo, ax, ay) in enumerate(SEAS):
-        lobes = [(la, lo, ax, ay)] + [
-            (la + rng.uniform(-0.6, 0.6) * ay, lo + rng.uniform(-0.7, 0.7) * ax, ax * rng.uniform(0.35, 0.6), ay * rng.uniform(0.35, 0.7))
-            for _ in range(3)
+        # A smaller core and lobes reaching out past it as arms and inlets.
+        lobes = [(la, lo, ax * 0.6, ay * 0.6)] + [
+            (la + rng.uniform(-1, 1) * ay * 0.8, lo + rng.uniform(-1, 1) * ax * 0.9, ax * rng.uniform(0.2, 0.45), ay * rng.uniform(0.2, 0.5))
+            for _ in range(5)
         ]
-        d = np.min([ellipse(g, *lb) for lb in lobes], axis=0) * 1.0
-        h = h - 0.9 * smoothstep(1.4, 0.4, d + 0.5 * fbm(n[4], p * 4 + warp * 2.0 + k, 5))
+        d = np.min([ellipse(g, *lb) for lb in lobes], axis=0)
+        h = h - 0.9 * smoothstep(1.5, 0.5, d + 2.2 * fbm(n[4], p * 3 + warp * 2.5 + k, 5))
     coast = 0.25 * fbm(n[5], p * 60 + warp, 4)  # small bays and points along the hub's shores
     for b in (BAY, BAY_ARM):
         h = h - 0.9 * smoothstep(1.15, 0.85, ellipse(g, b["lat"], b["lon"], b["ax"], b["ay"]) + coast)
@@ -171,8 +172,9 @@ def generate(width: int, out: Path) -> None:
 
     # --- Quadrants: hemispheres split by the equator and the 0°/180° meridian, blended over a
     # degree or two with a ragged edge (an old city's boundary isn't ruled straight). ---------
-    edge_n = 11.0 * fbm(n[1], p * 2.0 + warp, 4) + 0.8 * fbm(n[1], p * 40, 3)
-    edge_e = 11.0 * fbm(n[2], p * 2.0 + warp, 4) + 0.8 * fbm(n[2], p * 40, 3)
+    # (fbm's spread is about ±0.17, so these swing the borders by ~6° with ~1° raggedness.)
+    edge_n = 35.0 * fbm(n[1], p * 2.0 + warp, 4) + 5.0 * fbm(n[1], p * 40, 3)
+    edge_e = 35.0 * fbm(n[2], p * 2.0 + warp, 4) + 5.0 * fbm(n[2], p * 40, 3)
     north = smoothstep(-3.0, 3.0, lat + edge_n)
     east = smoothstep(-0.05, 0.05, np.sin(np.radians(lon)) + np.radians(edge_e))
     G1 = north * (1 - east)
@@ -248,7 +250,7 @@ def generate(width: int, out: Path) -> None:
     grain = rank(fbm(n[3], p * 380, 2))
     tone = 0.85 + 0.3 * block * (0.6 + 0.4 * gridness)
     tone = tone * (0.9 + 0.2 * grain) * (1 - 0.25 * street_mark * smoothstep(0.2, 0.7, density))
-    tone = tone * (1 - 0.3 * arteries) * (1 + 0.15 * smoothstep(0.3, 0.9, hubd))
+    tone = tone * (1 + 0.15 * smoothstep(0.3, 0.9, hubd))  # highways don't show by day at this scale
     cast = (
         G1[..., None] * np.array([0.36, 0.32, 0.28], np.float32)
         + G2[..., None] * np.array([0.39, 0.33, 0.29], np.float32)
@@ -276,7 +278,7 @@ def generate(width: int, out: Path) -> None:
     sparkle = block**2.5 + 0.12
     lit = 1.5 * density * sparkle + 0.9 * hubd**1.3 * (0.6 + 0.4 * block)
     lit = lit * (0.75 + 0.25 * np.maximum(streets * gridness, big * smoothstep(0.1, 0.6, hubd)))
-    lit = lit + 0.6 * arteries * (0.5 + 0.5 * smoothstep(0.4, 0.8, rank(fbm(n[7], p * 120, 2))))
+    lit = lit + 0.4 * arteries * (0.5 + 0.5 * smoothstep(0.4, 0.8, rank(fbm(n[7], p * 120, 2))))
     # Quadrant character.
     blackout = smoothstep(0.42, 0.3, rank(fbm(n[6], p * 9 + warp, 4)))  # G4's dark tracts
     flicker = smoothstep(0.5, 0.75, block)  # G4: only some blocks lit at all

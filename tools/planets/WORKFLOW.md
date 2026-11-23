@@ -101,6 +101,9 @@ Write down the answers; don't just think them.
 - **Many separate systems layered** that don't join up. One coherent field driving several
   features beats several independent ones.
 - **Even-toned patches** read as farm fields.
+- **Noise too weak to matter:** `fbm` returns roughly ±0.17 (standard deviation), not ±1.
+  An amplitude chosen as if it were ±1 moves a border or coast by a sixth of what was meant,
+  and shapes stay ovals and straight lines. Measure what the noise actually does.
 - **Too regular placement:** things evenly spaced, or all the same size, look placed.
 
 ## Fresh-eyes review
