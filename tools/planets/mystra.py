@@ -58,7 +58,7 @@ from pathlib import Path
 
 import numpy as np
 
-from clouds import billow, rank
+from clouds import rank
 from felucia import meander
 from planetgen import (
     Noise3,
@@ -131,7 +131,7 @@ PINS = [
 ]
 
 LAMP = np.array([1.0, 0.7, 0.42], np.float32)
-NETHER = np.array([0.85, 0.35, 0.95], np.float32)
+NETHER = np.array([0.8, 0.45, 0.85], np.float32)
 
 
 def river_field(g, rng, warp):
@@ -217,84 +217,85 @@ def generate(width: int, out: Path) -> None:
     belt = smoothstep(belt_w, 0.0, rdist + 0.25 * belt_w * fbm(n[0], p * 25 + warp, 3)) ** 1.5 * (1 - up)
     print(f"rivers {time.time() - t0:.1f}s")
 
-    # Lakes: the deepest basins of the broad field, with lobed coasts.
+    # Lakes: the deepest basins of the broad field. Measured in a warped frame and edged by noise
+    # at three scales, so the shores are crisp but lobed, with arms, bays and a few islands.
     lake_d = np.full(g.lat.shape, 9.0, np.float32)
-    # Measured in a warped frame, so the lakes come out long and lobed, not round.
     qw = p + 0.18 * warp + 0.06 * np.stack([fbm(n[3], p * 6 + 1, 3), fbm(n[4], p * 6 + 2, 3), fbm(n[5], p * 6 + 3, 3)], -1)
     qw /= np.linalg.norm(qw, axis=-1, keepdims=True)
     for la, lo, r in LAKES:
         lake_d = np.minimum(lake_d, np.degrees(np.arccos(np.clip(qw @ unit(la, lo), -1, 1))) / r)
-    coast = lake_d + 0.4 * fbm(n[1], p * 6 + warp * 2.5, 6) + 0.1 * fbm(n[2], p * 30 + warp * 3, 3)
-    lake = smoothstep(0.98, 0.93, coast)
-    shallows = smoothstep(1.25, 0.93, coast) * (1 - lake)  # reed margins and algal shallows
+    coast = lake_d + 0.35 * fbm(n[1], p * 5 + warp * 2, 5) + 0.13 * fbm(n[2], p * 22 + warp * 3, 4) + 0.04 * fbm(n[6], p * 70, 2)
+    lake = smoothstep(0.95, 0.93, coast)
+    shoal = smoothstep(0.86, 0.94, coast) * lake  # a narrow band of shallows inside the shore
+    reeds = smoothstep(1.0, 0.95, coast) * (1 - lake)  # and a reed fringe just outside it
 
-    # Wetness across the swamp: one field, wetter in the low ground, along the belts and near lakes.
+    # Wetness across the swamp: one field, wetter in the low ground and along the belts.
     wet = rank(fbm(n[3], p * 5 + warp * 1.4, 5) - 1.2 * low)
-    wet = np.clip(0.8 * wet + 0.4 * belt + 0.15 * shallows, 0, 1) * (1 - up)
-    # Pools: clustered, at two sizes (several texels at the smallest), densest where wettest.
-    pm = rank(fbm(n[4], p * 45 + warp * 3, 3))
-    ps = rank(fbm(n[5], p * 110 + warp * 5, 2))
-    # Lake districts: pools gather in some stretches of swamp and are rare in others.
+    wet = np.clip(0.8 * wet + 0.4 * belt + 0.15 * reeds, 0, 1) * (1 - up)
+    # Pools gather in lake districts and are rare elsewhere; a few oxbows along the floodplains.
     district = smoothstep(0.45, 0.85, rank(fbm(n[2], p * 7 + warp * 2 + 5, 4))) * smoothstep(0.2, 0.5, wet)
-    district = np.maximum(district, 0.35 * belt)  # a few oxbows along the floodplains (more trace the river as a line)
-    pools = np.maximum(
-        smoothstep(1 - 0.16 * district - 0.004, 1 - 0.16 * district + 0.006, pm),
-        0.8 * smoothstep(1 - 0.09 * district**1.5 - 0.004, 1 - 0.09 * district**1.5 + 0.006, ps),
-    ) * smoothstep(0.05, 0.2, district)
+    district = np.maximum(district, 0.35 * belt)
+    # Three sizes, fewer of the larger; drawn out a little (a stretched frame, turned by the warp)
+    # as pools follow the contours. Each has a soft wet rim a texel or two wide.
+    aniso = np.array([1.0, 1.0, 1.7], np.float32)
+    pools = np.zeros(g.lat.shape, np.float32)
+    rim = np.zeros(g.lat.shape, np.float32)
+    for k, (freq, share, w) in enumerate(((40, 0.07, 0.006), (85, 0.09, 0.008), (160, 0.1, 0.01))):
+        f = rank(fbm(n[4 + k], p * aniso * freq + warp * (3 + k), 2))
+        t = 1 - share * district
+        pools = np.maximum(pools, smoothstep(t - 0.2 * w, t + 0.8 * w, f))
+        rim = np.maximum(rim, smoothstep(t - 2.5 * w, t, f))
+    pools *= smoothstep(0.05, 0.2, district)
+    rim = (rim * smoothstep(0.05, 0.2, district) - pools).clip(0, 1)
     water = np.clip(np.maximum(lake, pools), 0, 1)  # (river channels are too thin to draw)
     print(f"water {time.time() - t0:.1f}s")
 
     # --- Colour ---------------------------------------------------------------------------
-    # Vegetation: one ramp from wet to dry. Deep plum and wine in the wettest swamp forest, rose
-    # in the open mires and reed beds, mauve and dusty pink-tan on the drier ground. Bluer than
-    # the target: the Red Sun's light warms everything toward salmon.
-    # Dryness is one field across swamp and upland: the swamp grades into heath through a wide
-    # margin, rather than meeting it at an edge.
+    # Vegetation: one ramp from wet to dry, desaturated toward dark plum-brown with rose only in the
+    # fresher growth (rendered under the Red Sun, saturated crimson read as blood). Dryness is one
+    # field across swamp and upland, organised by the terrain and the drainage, low in contrast.
     hd = fbm(n[8], p * 12 + warp * 2, 4)
-    dry = rank(0.5 * fbm(n[6], p * 4 + warp * 1.6, 6) + 0.35 * (1 - wet) + 0.9 * smoothstep(0.45, 0.95, low + 0.06 * hd))
-    biome = dry
-    patch = fbm(n[7], p * 16 + warp * 2.5, 5)
+    dry = rank(0.25 * fbm(n[6], p * 4 + warp * 1.6, 5) + 0.4 * (1 - wet) + 0.9 * smoothstep(0.45, 0.95, low + 0.06 * hd))
     veg = ramp(
-        biome,
+        dry,
         [
-            (0.0, (0.2, 0.06, 0.14)),  # plum swamp forest
-            (0.3, (0.3, 0.09, 0.19)),  # wine
-            (0.6, (0.42, 0.16, 0.27)),  # rose mire
-            (0.8, (0.44, 0.22, 0.31)),  # mauve heath
-            (1.0, (0.46, 0.29, 0.35)),  # dusty pink-tan
+            (0.0, (0.15, 0.075, 0.1)),  # dark plum-brown swamp forest
+            (0.35, (0.22, 0.1, 0.14)),  # wine-brown
+            (0.65, (0.28, 0.13, 0.18)),  # rose mire
+            (0.85, (0.29, 0.18, 0.21)),  # mauve-brown heath
+            (1.0, (0.31, 0.23, 0.24)),  # dusty mauve-brown upland
         ],
     )
-    veg = veg * (0.86 + 0.28 * patch[..., None])
-    # Floodplain belts: fresher, lighter rose growth on the silt, as várzea is lighter than terra firme.
-    veg = veg * (1 - 0.45 * belt[..., None]) + np.array([0.5, 0.2, 0.3], np.float32) * 0.45 * belt[..., None]
-    # Uplands: drier heath, mauve-tan to grey-violet; lavender fields toward the convent; pale
-    # weathered stone on the Netherese plateau.
-    # Uplands: the same palette's dry end, textured by their relief: shaded valleys between
-    # lighter ridges, as dissected plateaus look from orbit.
-    heath = veg * (0.78 + 0.4 * ridges[..., None])
-    lav = smoothstep(1.6, 0.5, angular_distance(g, LAVENDER[0], LAVENDER[1]) / LAVENDER[2] + 0.4 * hd)
-    heath = heath * (1 - 0.3 * lav[..., None]) + np.array([0.4, 0.27, 0.42], np.float32) * 0.3 * lav[..., None]
+    # Floodplain belts: fresher rose growth on the silt, as várzea is lighter than terra firme.
+    veg = veg * (1 - 0.35 * belt[..., None]) + np.array([0.33, 0.15, 0.19], np.float32) * 0.35 * belt[..., None]
+    # Uplands: the same palette's dry end, with gentle relief shading; weathered stone on the
+    # Netherese plateau.
+    heath = veg * (0.9 + 0.2 * ridges[..., None])
     stone = smoothstep(1.3, 0.4, angular_distance(g, NETHERESE[0], NETHERESE[1]) / NETHERESE[2] + 0.4 * hd)
-    heath = heath * (1 - 0.35 * stone[..., None]) + np.array([0.5, 0.38, 0.41], np.float32) * 0.35 * stone[..., None]
+    heath = heath * (1 - 0.25 * stone[..., None]) + np.array([0.38, 0.31, 0.3], np.float32) * 0.25 * stone[..., None]
     land = veg * (1 - up[..., None]) + heath * up[..., None]
-    # Canopy texture: crowns bunched into clumps; a faint grain.
-    crowns = billow(n[9], p * 80 + warp * 3, 3)
-    grain = fbm(n[0], p * 300, 2)
-    land = land * (0.82 + 0.3 * crowns[..., None] + 0.05 * grain[..., None])
+    # Toward the convent, the faintest purple shift, with no edge (the lavender fields themselves
+    # are far too small to see).
+    lav = np.exp(-((angular_distance(g, LAVENDER[0], LAVENDER[1]) / (2.0 * LAVENDER[2])) ** 2))[..., None]
+    land = land * (1 + 0.08 * lav * np.array([-0.4, -0.2, 1.0], np.float32))
+    # Fine mottling from a few texels to ~20: stands of trees, mire and open water too small to
+    # draw one by one. Large-scale variation stays low.
+    mott = fbm(n[9], p * 90 + warp * 3, 2)
+    mid = fbm(n[0], p * 30 + warp * 2, 3)
+    land = land * (0.9 + 0.16 * mott[..., None] + 0.1 * mid[..., None])
+    land = land * (1 - 0.3 * reeds[..., None]) + np.array([0.27, 0.12, 0.16], np.float32) * 0.3 * reeds[..., None]
 
-    # Water: blackwater, violet-brown, rose in the shallows; faint algal swirls in the big lakes.
+    # Water: blackwater, violet-brown; a narrow rose-brown shoal inside each shore; faint algal
+    # swirls in the big lakes. Pools vary from black water to brown, half-overgrown.
     swirl = fbm(n[1], p * 18 + warp * 3, 4)
-    deep = np.array([0.2, 0.09, 0.15], np.float32) * (0.9 + 0.25 * swirl[..., None])
-    rosy = np.array([0.36, 0.14, 0.22], np.float32)
-    inner = smoothstep(0.93, 0.55, coast)  # 1 in a big lake's middle
-    bloom = smoothstep(0.0, 0.4, swirl) * inner * 0.5
-    water_rgb = deep * (1 - bloom[..., None]) + rosy * bloom[..., None]
-    edge = (1 - inner) * lake
-    water_rgb = water_rgb * (1 - 0.5 * edge[..., None]) + np.array([0.3, 0.13, 0.2], np.float32) * 0.5 * edge[..., None]
-    pool_rgb = np.array([0.18, 0.08, 0.13], np.float32)
-    water_rgb = np.where((lake < 0.5)[..., None], pool_rgb, water_rgb)
-    # Shallows: reed and algae margins, a darker, wetter rose.
-    land = land * (1 - 0.25 * shallows[..., None]) + np.array([0.4, 0.16, 0.25], np.float32) * 0.25 * shallows[..., None]
+    lake_rgb = np.array([0.13, 0.07, 0.1], np.float32) * (0.9 + 0.25 * swirl[..., None])
+    bloom = smoothstep(0.05, 0.4, swirl) * (1 - shoal) * 0.3
+    lake_rgb = lake_rgb * (1 - bloom[..., None]) + np.array([0.26, 0.11, 0.16], np.float32) * bloom[..., None]
+    lake_rgb = lake_rgb * (1 - 0.7 * shoal[..., None]) + np.array([0.24, 0.12, 0.15], np.float32) * 0.7 * shoal[..., None]
+    tone = smoothstep(-0.35, 0.35, fbm(n[7], p * 25 + 4.4, 3))[..., None]
+    pool_rgb = np.array([0.11, 0.06, 0.085], np.float32) * (1 - tone) + np.array([0.2, 0.11, 0.12], np.float32) * tone
+    water_rgb = np.where((lake > 0.5)[..., None], lake_rgb, pool_rgb)
+    land = land * (1 - 0.45 * rim[..., None]) + np.array([0.3, 0.13, 0.17], np.float32) * 0.45 * rim[..., None]
     rgb = land * (1 - water[..., None]) + water_rgb * water[..., None]
     print(f"colour {time.time() - t0:.1f}s")
 
@@ -331,11 +332,12 @@ def generate(width: int, out: Path) -> None:
     lights += 0.12 * firm * smoothstep(0.993, 0.999, rank(fbm(n[2], p * 380 + 7.7, 2)))
     lights *= 1 - water
     d = angular_distance(g, *COMPLEX)
-    nether += 0.5 * smoothstep(0.5, 0.0, d) + 0.25 * smoothstep(1.2, 0.2, d) * (glint > 0.7)
+    nether += 0.4 * smoothstep(0.3, 0.0, d)  # dim, a few texels, no brighter than the main town
     emissive = LAMP * np.clip(lights, 0, 1.1)[..., None] + NETHER * np.clip(nether, 0, 1)[..., None]
     print(f"lights {time.time() - t0:.1f}s")
 
-    rough = np.clip(0.9 - 0.5 * water - 0.1 * shallows, 0, 1)
+    # Lakes a soft, dull sheen (wind-ruffled, weedy water); pools no glint at all.
+    rough = np.clip(0.9 - 0.3 * lake, 0, 1)
     height = np.clip(h - 0.02 * water - 0.01 * belt, 0, 1)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
@@ -349,53 +351,67 @@ def generate(width: int, out: Path) -> None:
     print(f"done {time.time() - t0:.1f}s -> {out}")
 
 
-def mystra_mist(g, low=None, up=None):
-    """The pink mist: a thick, broken deck that hides most of the surface.
+def blur(x: np.ndarray, sigma: float) -> np.ndarray:
+    """Separable Gaussian blur (σ in texels), wrapping east–west."""
+    k = np.arange(-int(3 * sigma + 1), int(3 * sigma + 1) + 1)
+    wts = np.exp(-0.5 * (k / sigma) ** 2).astype(np.float32)
+    wts /= wts.sum()
+    out = np.zeros_like(x)
+    for sh, wt in zip(k, wts):
+        out += wt * np.roll(x, int(sh), axis=1)
+    pad = np.pad(out, ((len(k) // 2, len(k) // 2), (0, 0)), mode="edge")
+    res = np.zeros_like(x)
+    for i, wt in enumerate(wts):
+        res += wt * pad[i : i + x.shape[0]]
+    return res
 
-    One field decides where it lies: weather systems (broad, sheared along latitude by the
-    winds) plus the terrain (fog fills the swamp basins and thins over the uplands). Inside the
-    deck, rounded clumps at two scales and thick and thin patches, so its tops are uneven;
-    at its margins, detached puffs and wisps; in its gaps over the swamp, a thin streaky ground fog
-    still lies in the low ground. Over the uplands the gaps are clear."""
+
+def mystra_mist(g, low=None, up=None):
+    """The pink mist: a near-continuous deck, broken by rifts and pockets of holes, over a thin
+    ground fog that lies in every gap over the swamp.
+
+    Openness is one field: a few large rifts drawn out along the winds, clusters of smaller
+    pockets at two sizes, and clearings over the uplands, which poke through as the fog fills
+    the low ground. The deck thins through a wide belt around each opening, broken by soft cells
+    (about 10 and 30 texels at 4096), so its edges grade into separate lumps rather than crumbs.
+    Inside, the same cells give a pebbled tone and the tops ±20% thickness at a large scale.
+    No billow and no streaks: both drew contour lines and thread webs before."""
     if low is None:
         low, _, up, _, _ = terrain(g)
     n = [Noise3(SEED * 7 + i) for i in range(10)]
     p = g.xyz
-    shear = np.array([1.0, 1.0, 2.4], np.float32)
-    warp = np.stack([fbm(n[0], p * 2.2 + 3, 4), fbm(n[1], p * 2.2 + 9, 4), fbm(n[2], p * 2.2 + 17, 4)], -1)
-    qz = p * shear
-    qm = p * np.array([1.0, 1.0, 1.4], np.float32)
-
-    # Where the deck lies: weather, and the fog bed in the low ground.
-    weather = fbm(n[3], qz * 2.4 + warp * 1.5, 6)
+    warp = np.stack([fbm(n[0], p * 2.0 + 3, 4), fbm(n[1], p * 2.0 + 9, 4), fbm(n[2], p * 2.0 + 17, 4)], -1)
     fogbed = smoothstep(0.85, 0.45, low)  # 1 deep in the swamp lowlands
-    systems = rank(weather + 0.35 * fogbed - 0.25 * up)
-    edge = 1 - MIST_COVER
+    # High ground from the smooth broad field, so clearings over the uplands grade out, not cut.
+    upsoft = smoothstep(0.62, 0.95, low + 0.08 * fbm(n[2], p * 8 + warp, 3))
 
-    # Texture: rounded clumps at the large scale (billow); the finer scales are plain fbm, since
-    # billow's peaks follow the noise's zero-crossings and, cut thin, draw a web of bright threads.
-    clump = billow(n[4], qm * 12 + warp * 4, 3)
-    fine = 0.55 + 0.5 * fbm(n[5], qm * 40 + warp * 6, 3)
-    fray = fbm(n[6], qm * 110 + warp * 6, 3)
-    puffs = fbm(n[7], qm * 60 + warp * 6, 3)
+    # Soft cells at two sizes, and large thick/thin regions.
+    c1 = fbm(n[4], p * 22 + warp * 2, 3)
+    c2 = fbm(n[5], p * 60 + warp * 3, 2)
+    cells = np.clip(0.5 + 1.1 * (0.6 * c1 + 0.4 * c2), 0, 1)
+    body = np.clip(0.5 + 1.6 * fbm(n[3], p * 3 + warp, 4), 0, 1)
     print("  mist: texture")
 
-    density = (systems - edge) * 2.4 + 0.5 * (clump - 0.55) + 0.35 * (fine - 0.55) + 0.35 * fray
-    deck = smoothstep(-0.12, 0.45, density) ** 0.8
-    body = rank(fbm(n[9], qz * 6 + warp * 2.5, 5))  # mid-scale thick and thin patches in the sheet
-    deck = deck * (0.62 + 0.2 * body + 0.18 * smoothstep(0.3, 0.85, clump * 0.6 + fine * 0.4))
-    # The margins: small detached puffs and wisps drawn out along the wind, fading out into the
-    # gap. (Polygonal open cells were tried; up close they read as a honeycomb net.)
-    margin = smoothstep(edge - 0.3, edge, systems) * (1 - deck)
-    opencells = 0.6 * smoothstep(0.18, 0.42, puffs) * margin
-    # Broad, soft streaks (few octaves): finer ones read as a web of thin crinkled threads.
-    streak = 1 - np.abs(fbm(n[8], p * np.array([4.0, 4.0, 18.0], np.float32) + warp * 2, 2) * 2)
-    wisps = 0.35 * smoothstep(0.35, 0.9, streak) * margin * (0.6 + 0.4 * fine)
-    # Ground fog in the gaps over the swamp: thin, mottled and streaked, so the swamp shows through
-    # pink haze; none on the uplands.
-    groundfog = fogbed * (1 - up) * (0.12 + 0.22 * fine + 0.12 * smoothstep(0.5, 0.9, streak)) * (0.7 + 0.6 * (clump - 0.5))
-    alpha = np.maximum.reduce([deck, opencells, wisps, groundfog])
-    thickness = deck * (0.6 + 0.25 * clump + 0.15 * body) + 0.3 * opencells + 0.1 * wisps + 0.2 * groundfog
+    # Where it opens.
+    rifts = smoothstep(0.78, 0.97, rank(fbm(n[6], p * np.array([1.0, 1.0, 3.2], np.float32) * 2.2 + warp * 1.2, 5) - 0.2 * fogbed))
+    cluster = smoothstep(0.5, 0.85, rank(fbm(n[7], p * 5 + warp + 3.3, 4) - 0.2 * fogbed))
+    pockets = cluster * np.maximum(
+        smoothstep(0.1, 0.5, fbm(n[8], p * 14 + warp * 2, 3)),
+        0.8 * smoothstep(0.15, 0.55, fbm(n[9], p * 34 + warp * 2, 2)),
+    )
+    clearing = 0.85 * upsoft * smoothstep(0.4, 0.85, rank(fbm(n[6], p * 6 + warp + 9.1, 4)))
+    # Blurred so every opening is ringed by a thinning belt (the rank()ed fields above are steep
+    # wherever the noise is flat and would otherwise cut crisp holes): ~1.2° for the rifts and
+    # clearings, ~0.4° for the pockets, so their clusters stay clusters.
+    openness = np.maximum(blur(np.maximum(rifts, clearing), 1.2 * g.width / 360), blur(pockets, 0.4 * g.width / 360))
+    # The thinning belt: wide, and broken by the cells so the edge grades into separate lumps.
+    e = openness + 0.4 * (cells - 0.5)
+    deck = 1 - smoothstep(0.15, 0.7, e)
+    deck = deck * (0.66 + 0.34 * body) * (0.84 + 0.16 * cells)
+    # Ground fog in every gap over the swamp, mottled; thin over the uplands.
+    gfog = (0.45 - 0.28 * upsoft) * (0.75 + 0.6 * c1 + 0.3 * (cells - 0.5))
+    alpha = gfog + (1 - gfog) * deck
+    thickness = deck * (0.6 + 0.25 * cells + 0.15 * body) + 0.15 * gfog
     print("  mist: done")
     return np.clip(alpha, 0, 1).astype(np.float32), thickness.astype(np.float32)
 
