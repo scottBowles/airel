@@ -14,24 +14,31 @@ bodies/QUESTIONS.md, which override the brief):
 - The break was long ago: at most a small, weathered remnant shows (DM). So no glassed fracture
   face (the brief's proposal). Interpretation: the bean's indent IS the old break face, worn
   down over ages into a broad, shallow, dust-floored lowland (like Mars's Hellas basin: an
-  ancient scar that now reads as a bright dusty plain). The remnant is one small, eroded
-  crescent of dark knobby rock (old melt) on the basin floor, half buried in dust. The smaller
-  twin has the same, smaller and rounder. Both break faces sit at (0, 180), facing each other
-  (the pair is taken to be mutually tidally locked).
+  ancient scar whose floor now reads as a smooth, bright, low-contrast dust plain, ringed by
+  darker, rougher ground). The remnant is one small, eroded crescent of dark knobby rock (old
+  melt) on the basin floor, half buried in dust. The smaller twin has the same, smaller. Both
+  break faces sit at (0, 180), facing each other (the pair is taken to be mutually tidally
+  locked).
 - "Since the cataclysm ... the place is burned pretty deep" (Didymus Prime log): broad
-  charred, dark grey-brown ground, thickest around the old break and fading outward, mottled
-  and streaked by drifting dust (like Mars's dark albedo regions, e.g. Syrtis Major).
+  charred, warm brown-black ground (burned rock), thickest in a ring around the old break and
+  reaching outward in a few big lobes, streaked by drifting dust (like Mars's dark albedo
+  regions, e.g. Syrtis Major). One large-scale field drives it (distance from the break,
+  strongly warped, plus low-frequency noise), so it forms a few big provinces with graded
+  edges, not a print of same-sized blotches. The smaller twin is more charred: two or three
+  big dark provinces.
 - "Lots of sand ... very few living waters, so life is gathered around them" (DB notes);
   "dustbowl"; "how do you get water out of a rock?". Rust and red sand and stony plains (the
-  Simpson Desert's red dunes, the Pilbara's old iron-red ranges, Mars's butterscotch dust),
-  not Janus's pale tan Sahara. No salt or claypans (Janus's signature; tried, they read as
-  ragged pale decals). Old weathered craters with Mars-style wind streaks: the thin, dusty
-  air keeps them, and every streak points downwind.
+  Simpson Desert's red dunes, the Pilbara's old iron-red ranges), and Mars's contrast between
+  bright butterscotch dust provinces and the dark ones. Not Janus's pale tan Sahara. No salt
+  or claypans (Janus's signature; tried, they read as ragged pale decals). Old weathered
+  craters with Mars-style wind streaks: the thin, dusty air keeps them, and every streak
+  points downwind. The smaller twin gets a handful of larger craters, dust-floored on dark
+  ground, as eye anchors.
 - Living waters: Prime 4 (Goshen's the largest), the other twin 2 (brief: 4 / 2-3). Each is a
-  tiny dark lake with a dark olive fringe. Positions besides Goshen's are guesses.
-- Whidmore "is still buying up land ... to terraform and turn it into agriculture": a small
-  cluster of centre-pivot fields near Goshen (brief: farm patches near 30, 70), like the pivot
-  farms of Saudi Arabia's Wadi As-Sirhan. Invented look; the lore only says agriculture.
+  tiny round dark lake with a graded olive fringe. Positions besides Goshen's are guesses.
+- Whidmore "is still buying up land ... to terraform and turn it into agriculture": a few
+  small centre-pivot fields near Goshen (brief: farm patches near 30, 70), like Saudi Arabia's
+  pivot farms; light and few, so at disc scale they're tone, not dots. Invented look.
 - Lights: Goshen, "the biggest city on the planet", the one real cluster; Ashtown a dim speck
   (a ghost town); faint scattered specks (trailer towns, warehouses, call centres, nomad
   camps). The other twin barely inhabited (DM default): a few faint specks at its waters.
@@ -39,7 +46,8 @@ bodies/QUESTIONS.md, which override the brief):
 
 Shape: the app deforms the sphere into a bean (integration work). Taken here: long axis
 through the poles (about 1.45 : 1), indent centred on (0, 180). So nothing important sits
-poleward of about 55° or right in the indent's middle.
+poleward of about 55° or right in the indent's middle, and the poles (the bean's tips) get
+the same detail as everywhere else.
 """
 
 from __future__ import annotations
@@ -57,7 +65,6 @@ from planetgen import (
     make_grid,
     normal_map,
     ramp,
-    ridged,
     save_gray,
     save_rgb,
     smoothstep,
@@ -85,21 +92,30 @@ TWINS: dict[str, dict] = {
         seed=707,
         break_r=36,  # the worn break basin's radius, degrees
         remnant=dict(lat=7, lon=171, ax=2.2, ay=6.0, tilt=25),  # small eroded crescent of old melt
-        burned=0.24,  # share of the surface that is charred dark ground
-        sand=0.20,  # share in red sand seas
+        burned=0.26,  # share of the surface that is charred dark ground
+        # The char is one large field: distance from the break, warped by cap_warp degrees per
+        # unit of low-frequency fbm (about ±0.17 std, so ±19° here), plus an independent
+        # low-frequency field (weight char_far) for provinces that reach away from the break.
+        cap_warp=110,
+        cap_scale=90,  # degrees of distance per unit of the char field
+        char_far=1.2,  # small: Prime's burn hugs the break
+        bright=0.30,  # share in bright dust provinces (Mars's butterscotch regions)
+        sand=0.18,  # share in red sand seas
         ranges=0.22,  # share in old eroded ranges
         craters=46,
         small_craters=500,
-        char=[(0, (0.22, 0.18, 0.16)), (0.5, (0.28, 0.22, 0.19)), (1, (0.35, 0.27, 0.22))],
+        anchors=0,
+        # Warm brown-black char: burned rock, not grey soot.
+        char=[(0, (0.17, 0.12, 0.09)), (0.5, (0.24, 0.17, 0.12)), (1, (0.33, 0.23, 0.16))],
         # Living waters: (lat, lon, radius°). Goshen's is the largest (brief); others invented.
         waters=[(GOSHEN[0] - 0.5, GOSHEN[1] - 0.9, 0.75), (-9, 14, 0.4), (36, -38, 0.45), (-27, -86, 0.35)],
-        farms=dict(lat=29.5, lon=66, n=34, spread=(2.6, 5.5)),
+        farms=dict(lat=29.5, lon=66, n=12, spread=(2.6, 5.5)),
         # (lat, lon, radius°, brightness, roads). Goshen: the one real cluster, with its edge
         # settlements (the One Horn Riders' compound, construction sites, warehouses) around it.
         # Ashtown: a dim speck, a near ghost town.
         towns=[
-            (GOSHEN[0], GOSHEN[1], 0.95, 1.0, 3),
-            (23.6, 53.6, 0.22, 0.45, 1),
+            (GOSHEN[0], GOSHEN[1], 0.95, 1.0, 2),
+            (23.6, 53.6, 0.22, 0.45, 0),
             (25.2, 50.3, 0.18, 0.35, 0),
             (22.4, 50.9, 0.15, 0.3, 0),
             (26.0, 54.4, 0.14, 0.25, 0),
@@ -114,13 +130,17 @@ TWINS: dict[str, dict] = {
         seed=708,
         break_r=28,
         remnant=dict(lat=-5, lon=-174, ax=1.8, ay=4.5, tilt=-35),
-        burned=0.55,  # the smaller twin: darker, more charred, rockier, more craters
+        burned=0.50,  # the smaller twin: darker, more charred, rockier, more craters
+        cap_warp=130,
+        cap_scale=200,  # weak pull to the break: a threshold near 90° from it ran along a meridian
+        char_far=3.0,  # large: two or three big char provinces, not one cap
+        bright=0.14,
         sand=0.08,
         ranges=0.26,
-        craters=78,
+        craters=60,
         small_craters=420,
-        # Greyer, cooler char than Prime's: bare basalt-like ground the dust has blown off.
-        char=[(0, (0.19, 0.17, 0.16)), (0.5, (0.25, 0.21, 0.19)), (1, (0.32, 0.26, 0.22))],
+        anchors=6,  # a handful of larger craters to catch the eye
+        char=[(0, (0.15, 0.11, 0.08)), (0.5, (0.22, 0.15, 0.11)), (1, (0.31, 0.21, 0.15))],
         waters=[(-14, 38, 0.4), (21, -61, 0.3)],
         farms=None,
         towns=[],
@@ -138,6 +158,35 @@ def rank(x: np.ndarray) -> np.ndarray:
     u = np.empty(x.size, np.float32)
     u[np.argsort(x, axis=None)] = np.linspace(0, 1, x.size, dtype=np.float32)
     return u.reshape(x.shape)
+
+
+def _rotation(seed: int) -> np.ndarray:
+    q, _ = np.linalg.qr(np.random.default_rng(seed).normal(size=(3, 3)))
+    return q.astype(np.float32)
+
+
+ROT = (_rotation(1), _rotation(2))
+
+
+def fbm_iso(noise: Noise3, p: np.ndarray, octaves: int) -> np.ndarray:
+    """fbm with the lattice hidden, for the large-scale fields. Perlin noise's lowest octave
+    lines up with its lattice planes, and with an integer offset those pass through x, y, z = 0:
+    a field that is mostly one low octave drew a straight char edge along the ±90° meridians.
+    Two copies in different orientations, summed (same spread as one), have no shared planes."""
+    return (fbm(noise, p @ ROT[0], octaves) + fbm(noise, p @ ROT[1] + 0.5, octaves)) / np.sqrt(2)
+
+
+def soft_ridged(noise: Noise3, p: np.ndarray, octaves: int = 5) -> np.ndarray:
+    """Like planetgen.ridged, 0..1, but with rounded crests: a sharp crease in a low octave
+    shaded as a long hairline crack across tens of degrees."""
+    total, amp, freq, norm = 0.0, 1.0, 1.0, 0.0
+    for i in range(octaves):
+        v = noise(p * freq + i * 7.77)
+        total = total + amp * (1 - np.sqrt(v * v + 0.03)) ** 2
+        norm += amp
+        amp *= 0.5
+        freq *= 2.0
+    return np.clip(total / norm / 0.83, 0, 1)
 
 
 def frame(lat, lon):
@@ -166,26 +215,29 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     t0 = time.time()
     g = make_grid(width)
     rng = np.random.default_rng(m["seed"])
-    n = [Noise3(m["seed"] * 10 + i) for i in range(10)]
+    n = [Noise3(m["seed"] * 10 + i) for i in range(12)]
     p = g.xyz
-    lat = np.degrees(g.lat)
 
     # --- One warped field: relief, and from it everything else. ---------------------------
-    warp = np.stack([fbm(n[0], p * 1.5 + 11, 5), fbm(n[1], p * 1.5 + 23, 5), fbm(n[2], p * 1.5 + 37, 5)], -1)
+    warp = np.stack([fbm_iso(n[0], p * 1.5 + 11, 5), fbm_iso(n[1], p * 1.5 + 23, 5), fbm_iso(n[2], p * 1.5 + 37, 5)], -1)
     base = rank(fbm(n[3], p * 2.4 + warp * 1.2, 8))
     # Old ranges (the Pilbara's worn, folded iron ranges): provinces of the high ground.
-    province = rank(fbm(n[4], p * 1.8 + warp * 0.8 + 3, 5) + 0.6 * (base - 0.5))
+    province = rank(fbm_iso(n[4], p * 1.8 + warp * 0.8 + 3, 5) + 0.6 * (base - 0.5))
     rmask = smoothstep(1 - m["ranges"] - 0.06, 1 - m["ranges"] + 0.08, province)
-    ridges = ridged(n[5], p * 6 + warp * 0.8, 6)  # lightly warped: more bends and it swirls like a fingerprint
-    h = 0.78 * base + 0.3 * rmask * (ridges - 0.35)
+    # Rounded crests, lightly warped (more bends and it swirls like a fingerprint).
+    ridges = soft_ridged(n[5], p * 10 + warp * 0.8, 5)  # short crests: at 6 one ran 25° as a crack
+    h = 0.78 * base + 0.18 * rmask * (ridges - 0.35)
 
     # The worn break: a broad, shallow, smooth-floored basin facing the other twin, its rim
-    # ragged (driven by the same warp) so it isn't a drawn circle.
-    d_break = angular_distance(g, *BREAK) + 9 * fbm(n[6], p * 2.2 + warp, 5)
+    # ragged (the warp moves it several degrees) so it isn't a drawn circle.
+    d0 = angular_distance(g, *BREAK)
+    d_break = d0 + 28 * fbm_iso(n[6], p * 2.0 + warp, 5)
     R = m["break_r"]
     bowl = smoothstep(R * 1.15, R * 0.35, d_break)
-    floor = smoothstep(R * 0.8, R * 0.2, d_break)
-    h = h * (1 - 0.5 * floor) + 0.2 * (1 - 0.5 * floor) - 0.3 * bowl
+    floor = smoothstep(R * 1.0, R * 0.2, d_break)
+    # Around it, a ring of rougher, broken ground (Hellas's rim: Hellespontus, Promethei).
+    ring = smoothstep(R * 1.9, R * 1.15, d_break) * smoothstep(R * 0.55, R * 0.95, d_break)
+    h = h * (1 - 0.7 * floor) + 0.25 * (0.7 * floor) - 0.3 * bowl + 0.1 * ring * (ridges - 0.4)
 
     # The remnant: one small eroded crescent of dark knobby rock (old melt), off-centre.
     rm = m["remnant"]
@@ -195,21 +247,37 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     tl = np.radians(rm["tilt"])
     xr, yr = x * np.cos(tl) + y * np.sin(tl), -x * np.sin(tl) + y * np.cos(tl)
     bend = 0.06 * yr**2  # a crescent, bowed away from the basin's centre
-    ell = np.sqrt(((xr - bend) / rm["ax"]) ** 2 + (yr / rm["ay"]) ** 2) * ((p @ c) > 0)
+    ell = np.sqrt(((xr - bend) / rm["ax"]) ** 2 + (yr / rm["ay"]) ** 2)
     ell = np.where((p @ c) > 0, ell, 9)
-    knobs = ridged(n[7], p * 40 + warp, 4)
+    knobs = soft_ridged(n[7], p * 22 + warp, 3)
     remnant = smoothstep(1.15, 0.45, ell + 0.35 * fbm(n[8], p * 18, 4)) * (0.35 + 0.65 * smoothstep(0.35, 0.7, knobs))
     h = h + 0.12 * remnant
 
-    # Craters: old and weathered (soft rims, shallow), a power law of sizes.
-    z = rng.uniform(np.sin(np.radians(-62)), np.sin(np.radians(62)), m["craters"])
-    clat = np.degrees(np.arcsin(z))
-    clon = rng.uniform(-180, 180, m["craters"])
-    crad = 0.35 + 4.5 * rng.uniform(0, 1, m["craters"]) ** 3
+    # Craters: old and weathered (soft, low rims, shallow), a power law of sizes, at every
+    # latitude (the poles are the bean's tips and get seen).
+    k = m["craters"]
+    z = rng.uniform(np.sin(np.radians(-82)), np.sin(np.radians(82)), k)
+    clat = list(np.degrees(np.arcsin(z)))
+    clon = list(rng.uniform(-180, 180, k))
+    crad = list(0.35 + 4.5 * rng.uniform(0, 1, k) ** 3)
+    # Eye anchors (the smaller twin): a handful of larger craters, spread out, off the basin.
+    na = m["anchors"]
+    while na > 0:
+        la = float(np.degrees(np.arcsin(rng.uniform(-0.85, 0.85))))
+        lo = float(rng.uniform(-180, 180))
+        if np.degrees(np.arccos(np.clip(unit(la, lo) @ unit(*BREAK), -1, 1))) < R * 1.3:
+            continue
+        if any(np.degrees(np.arccos(np.clip(unit(la, lo) @ unit(a, b), -1, 1))) < 30 for a, b in zip(clat[k:], clon[k:])):
+            continue
+        clat.append(la)
+        clon.append(lo)
+        crad.append(float(rng.uniform(2.6, 6.0)))
+        na -= 1
     crat = np.zeros(g.lat.shape, np.float32)
     rimc = np.zeros(g.lat.shape, np.float32)
+    cfloor = np.zeros(g.lat.shape, np.float32)  # dust-filled floors of the large craters
     streak = np.zeros(g.lat.shape, np.float32)  # downwind tails
-    for la, lo, r in zip(clat, clon, crad):
+    for i, (la, lo, r) in enumerate(zip(clat, clon, crad)):
         reach = r * 9 + 1
         sub = rows_near(g, la, reach)
         cc, ce, cn = frame(la, lo)
@@ -218,8 +286,11 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         t = d / r
         wob = 1 + 0.12 * fbm(n[9], ps * (40 / max(r, 0.6)) + la, 3)
         tw = t * wob
-        crat[sub] += (-(1 - np.minimum(tw, 1) ** 2) * (tw < 1) * 0.6 + 0.25 * np.exp(-(((tw - 1) / 0.25) ** 2))) * (0.05 + 0.01 * r)
-        rimc[sub] = np.maximum(rimc[sub], np.exp(-(((tw - 1) / 0.22) ** 2)))
+        depth = 0.05 + 0.01 * r if i < k else 0.09 + 0.012 * r
+        crat[sub] += (-(1 - np.minimum(tw, 1) ** 2) * (tw < 1) * 0.6 + 0.15 * np.exp(-(((tw - 1) / 0.4) ** 2))) * depth
+        rimc[sub] = np.maximum(rimc[sub], np.exp(-(((tw - 1) / 0.4) ** 2)))
+        if i >= k:
+            cfloor[sub] = np.maximum(cfloor[sub], smoothstep(1.0, 0.1, tw))
         # Wind streak: a tapering tail downwind, as long as several crater widths.
         b = wind_bearing(la) + 0.25 * rng.normal()
         lx = np.degrees(np.arcsin(np.clip(ps @ ce, -1, 1)))
@@ -232,17 +303,19 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         tail = tail * np.exp(-((perp / widen) ** 2)) * ((ps @ cc) > 0)
         streak[sub] = np.maximum(streak[sub], tail * (0.6 + 0.4 * rng.uniform()))
     # Many small craters (no tails worth drawing): the fine pitting that keeps a close view
-    # crisp, more of them on the older, barer ground.
+    # crisp, at every latitude.
     k = m["small_craters"]
-    z = rng.uniform(np.sin(np.radians(-75)), np.sin(np.radians(75)), k)
+    z = rng.uniform(np.sin(np.radians(-86)), np.sin(np.radians(86)), k)
     for la, lo, r in zip(np.degrees(np.arcsin(z)), rng.uniform(-180, 180, k), 0.1 + 0.3 * rng.uniform(0, 1, k) ** 2):
         sub = rows_near(g, la, r * 2 + 0.2)
         t = np.degrees(np.arccos(np.clip(p[sub] @ unit(la, lo), -1, 1))) / r
         near = t < 2
         tn = t[near]
-        crat[sub][near] += (-(1 - np.minimum(tn, 1) ** 2) * (tn < 1) * 0.6 + 0.25 * np.exp(-(((tn - 1) / 0.25) ** 2))) * 0.05
-        rimc[sub][near] = np.maximum(rimc[sub][near], 0.7 * np.exp(-(((tn - 1) / 0.25) ** 2)))
-    h = h + crat
+        crat[sub][near] += (-(1 - np.minimum(tn, 1) ** 2) * (tn < 1) * 0.6 + 0.15 * np.exp(-(((tn - 1) / 0.35) ** 2))) * 0.05
+        rimc[sub][near] = np.maximum(rimc[sub][near], 0.6 * np.exp(-(((tn - 1) / 0.35) ** 2)))
+    # The basin floor is dust-smoothed: craters there are faint.
+    h = h + crat * (1 - 0.7 * floor)
+    rimc = rimc * (1 - 0.8 * floor)
     e = rank(h)
     print(f"  {slug}: relief {time.time() - t0:.1f}s")
 
@@ -257,16 +330,20 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     pw = p * np.array([1.0, 1.0, 2.0], np.float32)  # 3x read as brushed paint on the char
     drift = fbm(n[6], pw * 12 + warp * 2, 4)
 
-    # Charred ground: dark where the burn reached deepest, thickest toward the old break and
-    # fading outward; soft-edged and streaked by drifting dust, as Mars's dark regions are.
-    # Leaning toward the break side, broadly; the worn basin's floor a little less, since dust
-    # has since filled it (as on Mars). Gentle weights, so neither reads as a ring or a target.
-    near_break = smoothstep(R + 70, R * 0.5, d_break)
-    edge = 0.25 * fbm(n[8], p * 11 + warp * 2, 5)  # detail at every scale along the boundary
-    burn_f = rank(fbm(n[7], p * 2.0 + warp * 1.5 + 5, 7) + 0.4 * near_break - 0.3 * floor + 0.1 * drift + edge)
+    # Charred ground: one large-scale field. Distance from the break, warped strongly so the
+    # edge wanders 15-25° (fbm is only ±0.17), plus a low-frequency field of its own so a few
+    # big provinces reach out from it; finer noise only along the edges. The basin floor is
+    # dust-filled since (as on Mars), so the char rings it rather than covering it.
+    lowf = fbm_iso(n[10], p * 1.6 + warp * 0.6 + 5, 4) + 0.6 * fbm_iso(n[9], p * 3.5 + warp + 13, 3)
+    far = fbm_iso(n[11], p * 1.4 + warp * 0.8 + 41, 4)
+    cap = d0 + m["cap_warp"] * lowf
+    edge = fbm(n[7], p * 5 + warp * 1.5, 5)
+    burn_raw = -cap / m["cap_scale"] + m["char_far"] * far + 0.6 * edge + 0.15 * drift - 1.2 * floor
+    burn_f = rank(burn_raw)
     thr = 1 - m["burned"]
-    # Wide, graded edges, and darker the deeper into the burn: no flat two-tone print.
-    burned = smoothstep(thr - 0.22, thr + 0.16, burn_f) * (0.6 + 0.4 * smoothstep(thr, 1.0, burn_f))
+    # Wide, graded edges, and darker the deeper into the burn.
+    deep = smoothstep(thr, 1.0, burn_f)
+    burned = smoothstep(thr - 0.2, thr + 0.14, burn_f) * (0.6 + 0.4 * deep)
     burned = burned * (0.85 + 0.15 * smoothstep(-0.3, 0.3, drift))  # dust drifts over it in streaks
     # Around the living waters the ground has had water and life since; clear of char.
     for la, lo, r in m["waters"]:
@@ -275,75 +352,81 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         f = m["farms"]
         burned = burned * smoothstep(4, 9, angular_distance(g, f["lat"], f["lon"]) + 2.5 * fine)
 
+    # Bright dust provinces (Mars's butterscotch: Arabia, Tharsis): low-frequency, leaning to
+    # the low ground, never on the char.
+    dust_f = rank(fbm_iso(n[5], p * 1.3 + warp * 0.9 + 19, 5) + 0.15 * edge)  # no relief term: its fine valleys cut dark threads
+    bright = smoothstep(1 - m["bright"] - 0.12, 1 - m["bright"] + 0.08, dust_f) * (1 - burned)
+
     # Red sand seas: in the low ground, downwind (the drift field), never on the ranges.
-    sand_f = rank(fbm(n[1], pw * 2.2 + warp * 1.3 + 9, 6) - 0.9 * e - 0.6 * rmask + 0.2 * fbm(n[2], pw * 14 + warp, 4))
-    sand = smoothstep(1 - m["sand"] - 0.14, 1 - m["sand"] + 0.12, sand_f) * (1 - 0.8 * burned)
+    sand_f = rank(fbm_iso(n[1], pw * 2.2 + warp * 1.3 + 9, 6) - 0.9 * e - 0.6 * rmask + 0.2 * fbm(n[2], pw * 14 + warp, 4))
+    sand = smoothstep(1 - m["sand"] - 0.14, 1 - m["sand"] + 0.12, sand_f) * (1 - 0.8 * burned) * (1 - floor)
     sand = sand * (0.7 + 0.3 * smoothstep(-0.4, 0.4, drift))  # thinning in streaks, not a flat fill
 
     # No claypans or salt: drawn small they came out as ragged pale decals, and white pans
     # are Janus's signature. The low ground is dust and red sand instead.
+
+    # Texture contrast, damped on the dust-smoothed basin floor.
+    calm = (1 - 0.75 * floor)[..., None]
 
     # Base: stony rust plains, darker and browner up on the high ground (gibber and rock).
     tone = rank(fbm(n[2], p * 4 + warp * 1.4, 6)) * 0.5 + 0.5 * e
     rgb = ramp(
         tone,
         [
-            (0.0, (0.66, 0.46, 0.33)),  # dusty lowland
-            (0.4, (0.60, 0.40, 0.28)),  # rust plains (Mars's bright regions, butterscotch)
-            (0.75, (0.50, 0.33, 0.23)),  # stony upland
-            (1.0, (0.41, 0.27, 0.20)),  # old rock
+            (0.0, (0.70, 0.49, 0.35)),  # dusty lowland
+            (0.4, (0.62, 0.42, 0.29)),  # rust plains
+            (0.75, (0.52, 0.34, 0.24)),  # stony upland
+            (1.0, (0.43, 0.28, 0.20)),  # old rock
         ],
     )
-    rgb = rgb * (0.92 + 0.16 * fine[..., None])
+    rgb = rgb * (1 + 0.16 * fine[..., None] * calm)
     # The ranges: dark iron-red rock, crests catching light, gullies shaded.
     rock = np.array([0.42, 0.26, 0.18], np.float32) * (0.75 + 0.55 * ridges[..., None])
     rgb = rgb * (1 - 0.7 * rmask[..., None]) + rock * 0.7 * rmask[..., None]
-    # The basin floor: pale fine dust (Hellas), a little paler and pinker than the plains.
-    dust = np.array([0.70, 0.52, 0.40], np.float32) * (0.95 + 0.08 * drift[..., None])
-    rgb = rgb * (1 - 0.3 * floor[..., None]) + dust * 0.3 * floor[..., None]
-    # Red sand: redder and brighter than the plains, with faint wind streaking.
-    sand_c = np.array([0.73, 0.45, 0.28], np.float32) * (0.93 + 0.12 * drift[..., None])
+    # Bright butterscotch dust (luminance about 0.6).
+    bdust = np.array([0.87, 0.63, 0.45], np.float32) * (0.96 + 0.06 * drift[..., None])
+    rgb = rgb * (1 - 0.9 * bright[..., None]) + bdust * 0.9 * bright[..., None]
+    # The basin floor: smooth, bright, low-contrast fine dust (Hellas).
+    dust = np.array([0.78, 0.58, 0.44], np.float32) * (0.97 + 0.04 * drift[..., None])
+    fl = 0.8 * floor[..., None]
+    rgb = rgb * (1 - fl) + dust * fl
+    # Red sand: redder than the plains, with faint wind streaking.
+    sand_c = np.array([0.74, 0.46, 0.29], np.float32) * (0.93 + 0.12 * drift[..., None])
     rgb = rgb * (1 - 0.85 * sand[..., None]) + sand_c * 0.85 * sand[..., None]
-    # Charred ground: grey-brown, mottled.
-    char = ramp(rank(fbm(n[3], p * 9 + warp, 4)), m["char"])
-    rgb = rgb * (1 - 0.9 * burned[..., None]) + char * 0.9 * burned[..., None]
-    # Crater rims a touch paler; wind streaks pale on dark ground (dust laid in the lee) and
+    # Charred ground: warm brown-black, darkest deepest in the burn, varied at a broad scale.
+    ctone = np.clip(0.55 * (1 - deep) + 0.45 * rank(fbm(n[3], p * 3.5 + warp, 5)), 0, 1)
+    char = ramp(ctone, m["char"])
+    rgb = rgb * (1 - 0.92 * burned[..., None]) + char * 0.92 * burned[..., None]
+    # The large craters' floors: dust laid in them, pale on dark ground, so they stand out.
+    cf = (cfloor * (0.15 + 0.4 * burned))[..., None]
+    rgb = rgb * (1 - cf) + dust * 0.85 * cf
+    # Crater rims barely paler; wind streaks pale on dark ground (dust laid in the lee) and
     # dark on pale ground (dust scoured away).
-    rgb = rgb * (1 + 0.1 * rimc[..., None])
+    rgb = rgb * (1 + 0.04 * rimc[..., None])
     # (Which way is set by the smooth burn field: a threshold on brightness flipped the sign
     # inside a tail and cut ragged patches out of it.)
     sgn = (2 * smoothstep(0.15, 0.6, burned) - 1)[..., None]
-    rgb = rgb * (1 + 0.24 * sgn * streak[..., None])
+    rgb = rgb * (1 + 0.24 * sgn * streak[..., None] * calm)
     # The remnant: old dark melt, half dusted over.
-    melt = np.array([0.17, 0.14, 0.13], np.float32)
-    rmt = remnant * (0.75 + 0.25 * smoothstep(0.2, -0.2, drift))
+    melt = np.array([0.17, 0.13, 0.11], np.float32)
+    rmt = 0.6 * remnant * (0.7 + 0.3 * smoothstep(0.2, -0.2, drift))
     rgb = rgb * (1 - 0.8 * rmt[..., None]) + melt * 0.8 * rmt[..., None]
 
-    # Living waters: a tiny dark lake in a hollow, a dark olive fringe of life around it.
+    # Living waters: a small round dark lake in a hollow, a graded olive fringe of life around
+    # it (an oasis seen from orbit: a soft dark spot, not a line).
     water = np.zeros(g.lat.shape, np.float32)
     green = np.zeros(g.lat.shape, np.float32)
     for la, lo, r in m["waters"]:
         sub = rows_near(g, la, r * 5 + 1)
         ps = p[sub]
         d = angular_distance(g, la, lo)[sub]
-        # Drawn out along a hollow (as Siwa's lakes lie in a long depression): a string of
-        # small pools, and a ribbon of life along it reaching past them.
-        _, oe, on = frame(la, lo)
-        b = rng.uniform(0, np.pi)
-        lx = np.degrees(np.arcsin(np.clip(ps @ oe, -1, 1)))
-        ly = np.degrees(np.arcsin(np.clip(ps @ on, -1, 1)))
-        along = lx * np.cos(b) + ly * np.sin(b)
-        # A winding hollow, not a straight trough: bend it and let it wander.
-        across = -lx * np.sin(b) + ly * np.cos(b) + 0.1 * along**2 / r + 0.45 * r * fbm(n[4], ps * (4 / r) + lo, 3)
-        dd = np.sqrt((along / 3.0) ** 2 + across**2) * ((ps @ unit(la, lo)) > 0) + 9 * ((ps @ unit(la, lo)) <= 0)
-        jag = r * 0.35 * fbm(n[4], ps * (25 / r) + lo, 4)
-        pools = smoothstep(0.1, 0.5, fbm(n[5], ps * (12 / r) + la, 3) + 0.3)
-        water[sub] = np.maximum(water[sub], smoothstep(0.32 * r, 0.2 * r, dd + jag) * pools)
-        # Life reaches farther along the hollow than across it, in patches, not as a ring.
-        dg = np.sqrt((along / 5.0) ** 2 + across**2) * ((ps @ unit(la, lo)) > 0) + 9 * ((ps @ unit(la, lo)) <= 0)
-        patches = smoothstep(-0.25, 0.35, fbm(n[6], ps * (30 / r) + lo, 3))
-        green[sub] = np.maximum(green[sub], smoothstep(1.1 * r, 0.2 * r, dg + 2.0 * jag) * (0.25 + 0.75 * patches))
-    # Whidmore's farms: centre-pivot circles, some green, some fallow, strung along a line.
+        jag = r * 0.12 * fbm(n[4], ps * (25 / r) + lo, 4)
+        lob = r * 0.15 * fbm(n[5], ps * (6 / r) + la, 3)  # a little out of round
+        water[sub] = np.maximum(water[sub], smoothstep(0.5 * r, 0.3 * r, d + jag + lob))
+        patches = smoothstep(-0.3, 0.3, fbm(n[6], ps * (20 / r) + lo, 3))
+        fringe = smoothstep(2.4 * r, 0.4 * r, d + 4 * jag + 2 * lob)
+        green[sub] = np.maximum(green[sub], fringe * (0.5 + 0.5 * patches) * (0.4 + 0.6 * smoothstep(1.6 * r, 0.6 * r, d)))
+    # Whidmore's farms: a few small centre-pivot circles, pale olive, some fallow.
     pivots = np.zeros(g.lat.shape, np.float32)
     fallow = np.zeros(g.lat.shape, np.float32)
     if m["farms"]:
@@ -352,20 +435,20 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
             s = rng.uniform(-1, 1)
             la = f["lat"] + s * f["spread"][0] * 0.6 + rng.normal(0, 0.6)
             lo = f["lon"] + s * f["spread"][1] + rng.normal(0, 0.8)
-            r = rng.uniform(0.1, 0.22)
+            r = rng.uniform(0.1, 0.2)
             sub = rows_near(g, la, r * 2 + 0.5)
             d = angular_distance(g, la, lo)[sub]
-            disc = smoothstep(r, r * 0.8, d)
-            if rng.uniform() < 0.7:
-                pivots[sub] = np.maximum(pivots[sub], disc * rng.uniform(0.7, 1.0))
+            disc = smoothstep(r, r * 0.75, d)
+            if rng.uniform() < 0.6:
+                pivots[sub] = np.maximum(pivots[sub], disc * rng.uniform(0.5, 0.8))
             else:
                 fallow[sub] = np.maximum(fallow[sub], disc)
-    veg = np.array([0.20, 0.23, 0.13], np.float32)
-    rgb = rgb * (1 - 0.75 * green[..., None]) + veg * 0.75 * green[..., None]
-    rgb = rgb * (1 - pivots[..., None]) + np.array([0.26, 0.29, 0.17], np.float32) * pivots[..., None]
-    rgb = rgb * (1 - 0.5 * fallow[..., None]) + np.array([0.50, 0.38, 0.28], np.float32) * 0.5 * fallow[..., None]
-    rgb = rgb * (1 - water[..., None]) + np.array([0.05, 0.08, 0.09], np.float32) * water[..., None]
-    rgb = rgb * (1 + 0.05 * grain[..., None] + 0.1 * gibber[..., None] * (1 - water[..., None]))
+    veg = np.array([0.30, 0.29, 0.17], np.float32)
+    rgb = rgb * (1 - 0.7 * green[..., None]) + veg * 0.7 * green[..., None]
+    rgb = rgb * (1 - pivots[..., None]) + np.array([0.40, 0.38, 0.22], np.float32) * pivots[..., None]
+    rgb = rgb * (1 - 0.4 * fallow[..., None]) + np.array([0.56, 0.42, 0.30], np.float32) * 0.4 * fallow[..., None]
+    rgb = rgb * (1 - water[..., None]) + np.array([0.06, 0.08, 0.08], np.float32) * water[..., None]
+    rgb = rgb * (1 + (0.05 * grain[..., None] + 0.1 * gibber[..., None]) * calm * (1 - water[..., None]))
     print(f"  {slug}: colour {time.time() - t0:.1f}s")
 
     # --- Lights. ---------------------------------------------------------------------------
@@ -373,20 +456,21 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     glint = np.random.default_rng(m["seed"] + 1).random(g.lat.shape).astype(np.float32)
 
     def town(la, lo, r, b, n_roads):
-        """A bright core, street lights thinning outward, and roads as dotted lines."""
+        """A soft bright core, street lights thinning outward, and a road or two as dotted
+        lines (no ring of spokes: that reads as a reticle)."""
         sub = rows_near(g, la, 4.5 * r + 0.5)
         d = angular_distance(g, la, lo)[sub]
         t = d / r
         _, te, tn = frame(la, lo)
         a = np.arctan2(p[sub] @ tn, p[sub] @ te)
-        core = smoothstep(0.45, 0.1, t)
-        streets = (glint[sub] > 0.3 + 0.5 * t) * smoothstep(1.4, 0.3, t)
+        core = np.exp(-((t / 0.35) ** 2))
+        streets = (glint[sub] > 0.35 + 0.55 * t) * smoothstep(1.3, 0.2, t)
         roads = np.zeros_like(d)
         for bearing in rng.uniform(0, 2 * np.pi, n_roads):
             perp = np.abs(d * np.sin(a - bearing))
             along = d * np.cos(a - bearing)
-            roads = np.maximum(roads, smoothstep(0.05, 0.015, perp) * (along > 0) * smoothstep(4.0 * r, 1.2 * r, d) * (glint[sub] > 0.55))
-        lights[sub] += b * (0.7 * core + 0.5 * streets + 0.3 * roads)
+            roads = np.maximum(roads, smoothstep(0.04, 0.015, perp) * (along > 0) * smoothstep(3.0 * r, 0.8 * r, d) * (glint[sub] > 0.7))
+        lights[sub] += b * (0.7 * core + 0.4 * streets + 0.25 * roads)
 
     for la, lo, r, b, k in m["towns"]:
         town(la, lo, r, b, k)
@@ -410,7 +494,11 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     print(f"  {slug}: lights {time.time() - t0:.1f}s")
 
     rough = np.clip(0.92 - 0.6 * water, 0, 1)
-    height = np.clip(e * (1 - water) + 0.02 * pivots + 0.006 * gibber, 0, 1)
+    # Height from the relief itself, not its rank: ranking stretched the flat basin floor's
+    # tiny differences into steps that shaded as cliffs.
+    lo_, hi_ = np.percentile(h, [0.5, 99.5])
+    hn = np.clip((h - lo_) / (hi_ - lo_), 0, 1)
+    height = np.clip(hn * (1 - water) + 0.01 * pivots + 0.006 * gibber * calm[..., 0], 0, 1)
     out = out_root / slug
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
