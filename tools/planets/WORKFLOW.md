@@ -119,6 +119,14 @@ for each, and to say what the real analogue looks like. Then fix, or note why no
 the real renderer's lighting and cloud colour change how things read. (A subagent can't start
 another agent; if you're one, say so in your report and whoever integrates runs the review.)
 
+## Knowing when to stop
+
+A fresh reviewer will always find something. One review round per planet: fix what shows at a
+normal viewing distance (the whole planet on screen, or a modest zoom), note the rest in the
+hand-off, and show the user. Close-up detail matters less: the user views at moderate
+resolution, and detail that appears up close belongs to later flight work. Commit each
+improvement as it lands, so nothing is lost if a build or session stops.
+
 ## Shared code
 
 `planetgen.py`, `clouds.py`, everything in `web/` and the docs are shared by every planet. When
