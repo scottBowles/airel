@@ -11,7 +11,7 @@ Lore (see .ideas/projects/solar-system-3d/bodies/janus.md and QUESTIONS.md):
   surface winds of a locked world all run toward it), pale dry lakebeds, and a scorched,
   darkened plain right under the sun.
 - The Mezzolux: "desolate, desert-like … ashy grey cacti … rock land", buttes and spires,
-  flash-flood channels. About 40 miles across in the logs; drawn ~6° wide so it reads from
+  flash-flood channels (too small to draw). About 40 miles across in the logs; drawn ~6° wide so it reads from
   orbit. Its people (shepherds, Visparo) make it the habitable band, lit by a string of towns.
 - The dark side: temperate, kept from freezing by geysers whose steam makes its clouds. Dark
   rock, pale mineral crust around the geyser fields, no ice. A few surface settlements (the
@@ -42,7 +42,6 @@ from planetgen import (
     save_rgb,
     smoothstep,
     unit,
-    veins,
     write_pins,
 )
 
@@ -184,10 +183,15 @@ def generate(width: int, out: Path) -> None:
     # clay halo that fades into the tan. Never on the lava.
     basin = e + 0.05 * fbm(n[3], p * np.array([2.0, 2.0, 7.0], np.float32) * 3 + warp, 4)
     clear = smoothstep(0.0, 6.0, lava_gap)  # salt flats keep well away from the lava
-    playa = smoothstep(0.06, 0.04, basin) * smoothstep(8, 20, sun) * clear
-    clay = smoothstep(0.11, 0.06, basin) * smoothstep(8, 20, sun) * clear
+    playa = smoothstep(0.065, 0.035, basin) * smoothstep(8, 20, sun) * clear
+    clay = smoothstep(0.12, 0.05, basin) * smoothstep(8, 20, sun) * clear
     desert = desert * (1 - 0.45 * clay[..., None]) + np.array([0.84, 0.77, 0.64], np.float32) * 0.45 * clay[..., None]
-    desert = desert * (1 - playa[..., None]) + np.array([0.9, 0.88, 0.84], np.float32) * (0.92 + 0.1 * grain[..., None]) * playa[..., None]
+    # Smooth and bright, with broad soft water stains, and a brownish damp margin; no speckle.
+    stain = fbm(n[1], p * 14 + warp, 4)
+    salt = np.array([0.94, 0.92, 0.88], np.float32) * (0.93 + 0.07 * stain[..., None])
+    margin = smoothstep(0.0, 0.5, playa) * smoothstep(1.0, 0.5, playa)
+    salt = salt * (1 - 0.18 * margin[..., None]) + np.array([0.7, 0.6, 0.48], np.float32) * 0.18 * margin[..., None]
+    desert = desert * (1 - playa[..., None]) + salt * playa[..., None]
     # Every surface wind on a locked world runs toward the sub-solar point, so everything wind-made
     # radiates from it: yardangs (long ridges carved from the rock) in the hot centre, dune seas
     # in a ring farther out.
@@ -197,18 +201,22 @@ def generate(width: int, out: Path) -> None:
     yard = smoothstep(0.7, 1.0, 0.5 + 0.5 * np.sin(ang_w * 700 + 0.6 * fbm(n[2], p * 8, 3)))
     carved = smoothstep(40, 58, sun) * smoothstep(0.3, 0.55, rank(fbm(n[3], p * 5 + warp + 7, 4))) * (1 - clay) * (1 - volc)
     desert = desert * (1 - 0.14 * carved[..., None] * yard[..., None])
-    dunes = 0.5 + 0.5 * np.sin(ang_w * 520 + 2.0 * fbm(n[2], p * 30, 3))
+    # Linear dunes: thin crests with wide flat sand between, the spacing drifting from place to
+    # place, crests forking where the spacing changes (Y-junctions), and broken into lengths.
+    phase = ang_w * 440 + 9.0 * fbm(n[2], p * 5 + warp, 3) + 1.2 * fbm(n[5], p * 30, 3)
+    crest = smoothstep(0.45, 1.0, 0.5 + 0.5 * np.sin(phase))
+    crest = crest * smoothstep(-0.15, 0.2, fbm(n[4], p * 35 + warp * 2, 3))
+    dunes = crest * (0.6 + 0.4 * smoothstep(-0.2, 0.3, fbm(n[6], p * 9 + 3.3, 3)))
     erg = smoothstep(0.5, 0.7, rank(fbm(n[1], p * 3 + warp * 1.2 + 5, 5))) * smoothstep(0.6, 0.35, e)
     erg = erg * smoothstep(52, 38, sun) * smoothstep(6, 16, sun) * (1 - playa)
     sand = np.array([0.8, 0.62, 0.42], np.float32)
-    desert = desert * (1 - 0.85 * erg[..., None]) + sand * (0.8 + 0.3 * dunes[..., None]) * 0.85 * erg[..., None]
+    desert = desert * (1 - 0.85 * erg[..., None]) + sand * (0.86 + 0.2 * dunes[..., None]) * 0.85 * erg[..., None]
     # Right under the sun: a smaller, softer scorched plain (fiction: nothing on Earth is hot
     # enough to darken ground like this, but it marks the hottest point at a glance).
     scorch = smoothstep(74, 86, sun + 4 * fbm(n[3], p * 8, 4))
     desert = desert * (1 - 0.5 * scorch[..., None]) + np.array([0.22, 0.16, 0.13], np.float32) * 0.5 * scorch[..., None]
-    # Dry riverbeds cut long ago, faint.
-    wadis = veins(n[4], p * 10 + warp * 2, 0.05) * smoothstep(0.55, 0.75, rank(fbm(n[5], p * 3 + 2.2, 4)))
-    desert = desert * (1 - 0.15 * wadis[..., None])
+    # No dry riverbeds: real wadis are far below what reads from orbit, and noise lines drawn big
+    # enough to see wander in closed loops like worm tracks instead of draining downhill.
 
     # --- The dark side: dark rock, pale crust around the geyser fields, no ice. --------------
     rock = ramp(e, [(0.0, (0.2, 0.19, 0.18)), (0.5, (0.15, 0.14, 0.14)), (1.0, (0.11, 0.1, 0.11))])
@@ -224,15 +232,14 @@ def generate(width: int, out: Path) -> None:
     mesa_field = rank(fbm(n[1], p * 70 + warp * 2, 4))
     mesas = smoothstep(0.66, 0.7, mesa_field) * bc
     ash = ash * (1 - 0.35 * mesas[..., None]) + np.array([0.34, 0.27, 0.22], np.float32) * 0.35 * mesas[..., None]
-    channels = np.maximum(veins(n[3], p * 40 + warp * 3, 0.06), 0.7 * veins(n[6], p * 90 + warp * 4, 0.08))
-    ash = ash * (1 - 0.25 * channels[..., None])
+    # (The flash-flood channels of the logs are too small to see from orbit; not drawn.)
     # The Wastelands: bleached and bare, south along the band.
     waste = smoothstep(1.2, 0.7, ellipse(g, WASTELANDS["lat"], WASTELANDS["lon"], WASTELANDS["ax"], WASTELANDS["ay"]) + 0.3 * fine)
     ash = ash * (1 - 0.6 * waste[..., None]) + np.array([0.66, 0.63, 0.57], np.float32) * 0.6 * waste[..., None]
 
     rgb = rock * (1 - day[..., None]) + desert * day[..., None]
     rgb = rgb * (1 - band[..., None]) + ash * band[..., None]
-    rgb = rgb * (0.92 + 0.12 * grain[..., None])
+    rgb = rgb * (1 + 0.06 * grain[..., None] * (1 - playa[..., None] * day[..., None]))
     print(f"colour {time.time() - t0:.1f}s")
 
     # --- Lights: towns along the Mezzolux, a few dark-side settlements, the floating cities. --
@@ -286,7 +293,7 @@ def generate(width: int, out: Path) -> None:
     print(f"lights {time.time() - t0:.1f}s")
 
     rough = 0.9 - 0.2 * playa * day - 0.15 * scorch
-    height = np.clip(e + 0.12 * volc * day + 0.08 * mesas - 0.04 * channels * band - 0.03 * wadis * day, 0, 1)
+    height = np.clip(e + 0.12 * volc * day + 0.08 * mesas - 0.004 * dunes * erg, 0, 1)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
     save_rgb(out / "emissive.webp", emissive)
