@@ -143,7 +143,7 @@ export const DIDYMUS_PRIME: BodyLook & { shape: Shape } = {
 	radius: 0.6,
 	glow: 4,
 	atmosphere: { color: [0.85, 0.45, 0.3], strength: 0.35 },
-	shape: { stretch: 1.45, indent: 0.15, indentLon: 180 }
+	shape: { stretch: 1.45, indent: 0.24, indentLon: 180 }
 };
 export const DIDYMUS: BodyLook = {
 	name: 'Didymus',
