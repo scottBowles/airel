@@ -23,9 +23,11 @@ Interpretation (mine, from the brief's defaults):
 - Nega-Terran: Terran is planned (district street grids, parks, silver by day, gold at
   night). Genussa is grimy and unplanned: rust-brown and soot by day, no green anywhere, smog,
   polluted grey-green water, junkyard and slag toward the poles. At night each quadrant has its
-  own light: G1 an even warm-white grid; G2 the brightest, a mix of neon colours by district
-  with the Strip blazing; G3 crisp clean white, orderly, as bright as G1 with the brightest cores; G4 dim, broken,
-  sodium-orange with blacked-out tracts and scattered fires.
+  own light, like Berlin's east and west still showing from orbit in different streetlamps: one
+  grid everywhere, differing by era and money, blending over wide zones (user, Nov 2026). G1 an
+  even warm amber; G2 the brightest, its casino centres and the Strip blazing, pinker; G3 clean
+  white LED, orderly, the brightest cores; G4 older sodium orange, dimmer and patchy, a few
+  dark tracts and scattered fires, but clearly lit.
 - A few seas ("Eleven Oceans" is the only hint of oceans): a southern sea that the bay opens
   into, and three more. Yafel's chasm: a dark unlit rift in G4, placed by guess.
 """
@@ -178,7 +180,9 @@ def generate(width: int, out: Path) -> None:
     settle = smoothstep(1.5, 10.0, angular_distance(g, 0, 0))
     edge_n *= settle
     edge_e *= settle
-    blend = 1.0 + 7.0 * settle  # degrees either side
+    # Wide gradients: each quadrant's character is strongest at its heart and blends into the next
+    # over ~15-30°, sharper only near the hub where the party's places sit.
+    blend = 1.5 + 14.0 * settle  # degrees either side
     north = smoothstep(-blend, blend, lat + edge_n)
     east = smoothstep(-np.radians(blend), np.radians(blend), np.sin(np.radians(lon)) + np.radians(edge_e))
     G1 = north * (1 - east)
@@ -309,25 +313,29 @@ def generate(width: int, out: Path) -> None:
     lit = 1.5 * density * sparkle + 0.6 * hubd**1.3 * (0.5 + 0.5 * sparkle)
     lit = lit * (0.8 + 0.2 * np.maximum(streets * gridness, big * smoothstep(0.1, 0.6, hubd)))
     web = 0.55 * arteries * (0.55 + 0.45 * grain)
-    blackout = smoothstep(0.42, 0.3, rank(fbm(n[6], p * 9 + warp, 4)))  # G4's dark tracts
+    blackout = smoothstep(0.16, 0.08, rank(fbm(n[6], p * 9 + warp, 4)))  # G4's few dark tracts
     flicker = smoothstep(0.5, 0.75, block)  # G4: only some blocks lit at all
     fires = smoothstep(0.985, 1.0, rank(fbm(n[1], p * 300, 2))) * smoothstep(0.1, 0.4, density)
-    g4 = (lit * 0.5 * flicker + 0.6 * web) * (1 - 0.9 * blackout) + 0.9 * fires
-    g2 = lit * 1.5 + 0.3 * hubd + web + 1.8 * strip
+    # G4: the same grid, older and patchier (Berlin's east still shows in sodium from orbit):
+    # dimmer, blocks unevenly lit, a few dark tracts where it fails, fires. Clearly electrified.
+    g4 = (lit * 1.0 * (0.6 + 0.4 * flicker) + 0.55 * web) * (1 - 0.85 * blackout) + 0.9 * fires
+    # G2: the brightest, its casino and nightlife centres blazing as hot spots, and the Strip.
+    g2 = lit * 1.35 + 1.0 * hubd**1.5 + web + 1.8 * strip
     # The money district: bright, even and clean. Its light follows the density smoothly, with
     # little of the block-by-block sparkle (which, white and grainy, read as frost).
     # Even: the gaps between dense districts are lit too (they read as camouflage when dark).
     calm = (0.35 + 0.65 * density) * (0.8 + 0.2 * block) + 0.5 * hubd**1.3
     g3 = (0.25 * lit + 0.6 * calm) * (1.0 + 0.6 * core) + 0.5 * web
     g1 = lit + web
-    lit = G1 * g1 + G2 * g2 + G3 * g3 + G4 * g4
+    # Balanced so G2 is the brightest, G1 and G3 alike, G4 dimmer but plainly on the same grid.
+    lit = G1 * g1 + 1.1 * G2 * g2 + 0.55 * G3 * g3 + 1.7 * G4 * g4
     # The crummy shore the party drove along: lights flicker, if they're on at all.
     crummy = smoothstep(1.9, 1.1, ellipse(g, BAY_ARM["lat"], BAY_ARM["lon"], BAY_ARM["ax"], BAY_ARM["ay"]))
     lit = lit * (1 - 0.6 * crummy * (1 - flicker))
     lit = lit * (1 - water) * (1 - chasm) * polar
     lit = lit + 0.3 * shore * smoothstep(0.2, 0.5, density) * (1 - G4)
-    # Colour: the corridors orange; G2 drifts rosy in broad areas and on the Strip.
-    rosy = np.clip(0.4 * smoothstep(0.4, 0.8, rank(fbm(n[5], p * 5 + warp, 4))) + strip, 0, 1)[..., None]
+    # Colour: the corridors orange; G2's hot spots and the Strip pinker (neon), the rest as G1.
+    rosy = np.clip(0.7 * smoothstep(0.3, 0.8, hubd) + strip, 0, 1)[..., None]
     g2c = WARM_WHITE * (1 - 0.5 * rosy) + ROSE * 0.5 * rosy
     colour = G1[..., None] * WARM_WHITE + G2[..., None] * g2c + G3[..., None] * COOL_WHITE + G4[..., None] * SODIUM
     corridor = np.clip(web / (lit + 1e-4), 0, 1)[..., None] * (1 - 0.6 * G3[..., None])
