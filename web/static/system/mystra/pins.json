@@ -1,0 +1,11 @@
+{
+  "body": "Mystra",
+  "pins": [
+    {
+      "name": "Tomb of Teresias",
+      "lat": 18,
+      "lon": -40,
+      "confidence": "guess"
+    }
+  ]
+}
