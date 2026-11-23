@@ -3,7 +3,7 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
-	import { FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import { DIDYMUS, DIDYMUS_PRIME, FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -20,6 +20,7 @@
 		{ id: 'genussa', label: 'Genussa' },
 		{ id: 'janus', label: 'Janus' },
 		{ id: 'mystra', label: 'Mystra' },
+		{ id: 'didymus', label: 'Didymus' },
 		{ id: 'hyang-wan', label: 'Hyang Wan' },
 		{ id: 'gonhirrim', label: 'Gonhirrim' }
 	];
@@ -32,10 +33,10 @@
 
 	/** The body whose places can be pinned in this view, if any. */
 	const focus = $derived(
-		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' || view === 'genussa' || view === 'janus' || view === 'mystra' ? view : view.startsWith('moon:') ? view.slice(5) : null
+		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' || view === 'genussa' || view === 'janus' || view === 'mystra' ? view : view === 'didymus' ? 'didymus-prime' : view.startsWith('moon:') ? view.slice(5) : null
 	);
 	const moon = $derived(focus && view.startsWith('moon:') ? GONHIRRIM_MOONS[focus] : null);
-	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : view === 'genussa' ? GENUSSA.name : view === 'mystra' ? MYSTRA.name : view === 'janus' ? JANUS.name : 'Magmus');
+	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : view === 'genussa' ? GENUSSA.name : view === 'mystra' ? MYSTRA.name : view === 'didymus' ? DIDYMUS_PRIME.name : view === 'janus' ? JANUS.name : 'Magmus');
 	const inGonhirrim = $derived(view === 'gonhirrim' || view.startsWith('moon:'));
 
 	$effect(() => {
@@ -64,6 +65,8 @@
 					? { at: [0, 0.6, 4.4], min: 1.45 }
 				: view === 'mystra'
 					? { at: [0, 0.6, 4.4], min: 1.5 }
+				: view === 'didymus'
+					? { at: [0, 0.5, 4.2], min: 1.0 }
 				: moon
 					? { at: [0, 0.25, moon.radius * 3.6], min: moon.radius * 1.3 }
 					: { at: [0, 0.6, 3.4], min: 1.3 }
@@ -162,6 +165,33 @@
 				spin={0.003}
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'didymus'}
+			<!-- The twins, each with its worn break face (lon 180) turned to the other. -->
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={RED_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="didymus-prime"
+				position={[-0.75, 0, 0]}
+				radius={DIDYMUS_PRIME.radius}
+				shape={DIDYMUS_PRIME.shape}
+				glow={DIDYMUS_PRIME.glow}
+				atmosphere={DIDYMUS_PRIME.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={90}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+			<Planet
+				slug="didymus"
+				position={[1.05, 0, 0]}
+				radius={DIDYMUS.radius}
+				glow={DIDYMUS.glow}
+				atmosphere={DIDYMUS.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={-90}
 			/>
 		{:else if view === 'janus'}
 			<!-- A little more than the other planets get, so the dark side's rock and steam can be made out. -->

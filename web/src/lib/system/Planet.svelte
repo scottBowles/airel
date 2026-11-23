@@ -5,7 +5,7 @@
 	import * as THREE from 'three';
 	import { atmosphereMaterial, type AtmosphereLook } from './atmosphere';
 	import { addEmissiveFlicker } from './emissiveFlicker';
-	import { latLonToVector, type Pin } from './geo';
+	import { latLonToVector, shapePoint, type Pin, type Shape } from './geo';
 	import { layoutLabels, type Placement } from './labels';
 
 	type Props = {
@@ -47,6 +47,8 @@
 		detail?: number;
 		/** Dusk light spilling past the terminator: strength (0 for none) and colour. */
 		twilight?: { strength: number; color?: [number, number, number] };
+		/** A non-spherical body (Didymus Prime's kidney bean). */
+		shape?: Shape;
 	};
 	let {
 		slug,
@@ -63,8 +65,55 @@
 		sun = [0, 0, 0],
 		nightLights = false,
 		detail = 0,
-		twilight
+		twilight,
+		shape
 	}: Props = $props();
+
+	/** A unit sphere, or the shaped body, with normals worked out from the shape itself (not
+	 * from the mesh, which would leave a seam where the sphere's texture wraps). */
+	function body(segments: number, rings: number, grow = 1) {
+		const g = new THREE.SphereGeometry(1, segments, rings);
+		if (!shape) return g;
+		const pos = g.attributes.position;
+		const nrm = g.attributes.normal;
+		const at = (v: THREE.Vector3) => new THREE.Vector3(...shapePoint([v.x, v.y, v.z], shape)).multiplyScalar(grow);
+		const u = new THREE.Vector3();
+		const e = new THREE.Vector3();
+		const n = new THREE.Vector3();
+		const eps = 1e-3;
+		for (let i = 0; i < pos.count; i++) {
+			u.fromBufferAttribute(pos, i).normalize();
+			const p = at(u);
+			pos.setXYZ(i, p.x, p.y, p.z);
+			// Tangents east and north of the point, through the shape.
+			e.set(-u.z, 0, u.x);
+			if (e.lengthSq() < 1e-8) {
+				nrm.setXYZ(i, 0, Math.sign(u.y), 0);
+				continue;
+			}
+			e.normalize();
+			n.crossVectors(u, e).normalize();
+			const de = at(u.clone().addScaledVector(e, eps).normalize()).sub(at(u.clone().addScaledVector(e, -eps).normalize()));
+			const dn = at(u.clone().addScaledVector(n, eps).normalize()).sub(at(u.clone().addScaledVector(n, -eps).normalize()));
+			const out = new THREE.Vector3().crossVectors(de, dn).normalize();
+			if (out.dot(p) < 0) out.negate();
+			nrm.setXYZ(i, out.x, out.y, out.z);
+		}
+		pos.needsUpdate = true;
+		nrm.needsUpdate = true;
+		return g;
+	}
+	/** Where a place sits on the surface (local coordinates, before `radius`). */
+	function surface(lat: number, lon: number): [number, number, number] {
+		const p = latLonToVector(lat, lon);
+		return shape ? shapePoint(p, shape) : p;
+	}
+	// svelte-ignore state_referenced_locally
+	const groundGeometry = body(128, 64);
+	// svelte-ignore state_referenced_locally
+	const cloudGeometry = body(128, 64);
+	// svelte-ignore state_referenced_locally
+	const airGeometry = body(96, 48);
 
 	const loader = new THREE.TextureLoader();
 	function load(file: string, srgb: boolean) {
@@ -159,7 +208,7 @@
 		const { width, height } = size.current;
 		const at = pins.map((pin) => {
 			normal.set(...latLonToVector(pin.lat, pin.lon));
-			world.copy(normal).multiplyScalar(radius * 1.01);
+			world.set(...surface(pin.lat, pin.lon)).multiplyScalar(radius * 1.01);
 			group!.localToWorld(world);
 			normal.transformDirection(group!.matrixWorld);
 			toCamera.copy(camera.current.position).sub(world).normalize();
@@ -190,26 +239,23 @@
 		cloudMaterial?.normalMap?.dispose();
 		cloudMaterial?.dispose();
 		airMaterial?.dispose();
+		groundGeometry.dispose();
+		cloudGeometry.dispose();
+		airGeometry.dispose();
 	});
 </script>
 
 <T.Group bind:ref={group} {position} rotation.y={(-(face + 90) * Math.PI) / 180}>
-	<T.Mesh bind:ref={ground} scale={radius} {material}>
-		<T.SphereGeometry args={[1, 128, 64]} />
-	</T.Mesh>
+	<T.Mesh bind:ref={ground} scale={radius} {material} geometry={groundGeometry} />
 	{#if cloudMaterial}
-		<T.Mesh bind:ref={cloudMesh} scale={radius * 1.006} material={cloudMaterial}>
-			<T.SphereGeometry args={[1, 128, 64]} />
-		</T.Mesh>
+		<T.Mesh bind:ref={cloudMesh} scale={radius * 1.006} material={cloudMaterial} geometry={cloudGeometry} />
 	{/if}
 	{#if airMaterial}
-		<T.Mesh scale={radius * 1.035} material={airMaterial}>
-			<T.SphereGeometry args={[1, 96, 48]} />
-		</T.Mesh>
+		<T.Mesh scale={radius * 1.035} material={airMaterial} geometry={airGeometry} />
 	{/if}
 	{#each pins as pin, i (pin.name)}
 		{#if facing[i]}
-			<HTML position={latLonToVector(pin.lat, pin.lon, radius * 1.01)} center zIndexRange={[10, 0]}>
+			<HTML position={surface(pin.lat, pin.lon).map((c) => c * radius * 1.01) as [number, number, number]} center zIndexRange={[10, 0]}>
 				<div class="pin pin-{pin.confidence}">
 					<button class="dot" aria-label={labelOf(pin)} onclick={() => onpin?.(pin)}></button>
 					<button

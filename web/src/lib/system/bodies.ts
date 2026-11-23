@@ -1,3 +1,4 @@
+import type { Shape } from './geo';
 // Render settings for each body, keyed by the folder its textures live in (web/static/system/<slug>,
 // made by tools/planets). Which bodies exist and what they orbit will come from the DB; how they
 // look stays here with the textures. Sizes and orbits are for the display, not to scale.
@@ -130,6 +131,25 @@ export const MYSTRA: BodyLook = {
 	// The mist sits in the basins and breaks over the uplands, so it doesn't drift.
 	clouds: { color: [0.75, 0.48, 0.6], opacity: 0.9, drift: 0, normal: true },
 	atmosphere: { color: [0.95, 0.55, 0.72], strength: 0.75 }
+};
+
+/**
+ * Didymus, one small planet broken in two long ago: Prime, the larger, kidney-bean shaped and
+ * home to every known place; and its smaller, rounder, more charred twin. Each keeps its worn
+ * break face (lon 180) toward the other. Thin red-brown dust haze, no clouds.
+ */
+export const DIDYMUS_PRIME: BodyLook & { shape: Shape } = {
+	name: 'Didymus Prime',
+	radius: 0.6,
+	glow: 4,
+	atmosphere: { color: [0.85, 0.45, 0.3], strength: 0.35 },
+	shape: { stretch: 1.45, indent: 0.15, indentLon: 180 }
+};
+export const DIDYMUS: BodyLook = {
+	name: 'Didymus',
+	radius: 0.4,
+	glow: 4,
+	atmosphere: { color: [0.8, 0.45, 0.32], strength: 0.3 }
 };
 
 /**
