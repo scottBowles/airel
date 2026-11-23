@@ -9,6 +9,8 @@ export type AtmosphereLook = {
 	color: [number, number, number];
 	/** Overall brightness; 1 is a clear blue-sky world, lower for thin air. */
 	strength?: number;
+	/** The shell's size relative to the planet (default 1.035); thin air hugs the ground. */
+	height?: number;
 };
 
 export function atmosphereMaterial(look: AtmosphereLook, sun: THREE.Vector3) {

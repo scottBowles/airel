@@ -271,7 +271,7 @@
 		<T.Mesh bind:ref={cloudMesh} scale={radius * 1.006} material={cloudMaterial} geometry={cloudGeometry} />
 	{/if}
 	{#if airMaterial}
-		<T.Mesh scale={radius * 1.035} material={airMaterial} geometry={airGeometry} />
+		<T.Mesh scale={radius * (atmosphere?.height ?? 1.035)} material={airMaterial} geometry={airGeometry} />
 	{/if}
 	{#each pins as pin, i (pin.name)}
 		{#if facing[i]}
