@@ -276,6 +276,7 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     crat = np.zeros(g.lat.shape, np.float32)
     rimc = np.zeros(g.lat.shape, np.float32)
     cfloor = np.zeros(g.lat.shape, np.float32)  # dust-filled floors of the large craters
+    acrat = np.zeros(g.lat.shape, np.float32)  # their sharper relief, added to the height map
     streak = np.zeros(g.lat.shape, np.float32)  # downwind tails
     for i, (la, lo, r) in enumerate(zip(clat, clon, crad)):
         reach = r * 9 + 1
@@ -286,11 +287,13 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         t = d / r
         wob = 1 + 0.12 * fbm(n[9], ps * (40 / max(r, 0.6)) + la, 3)
         tw = t * wob
-        depth = 0.05 + 0.01 * r if i < k else 0.09 + 0.012 * r
+        depth = 0.05 + 0.01 * r if i < k else 0.13 + 0.018 * r
         crat[sub] += (-(1 - np.minimum(tw, 1) ** 2) * (tw < 1) * 0.6 + 0.15 * np.exp(-(((tw - 1) / 0.4) ** 2))) * depth
         rimc[sub] = np.maximum(rimc[sub], np.exp(-(((tw - 1) / 0.4) ** 2)))
         if i >= k:
-            cfloor[sub] = np.maximum(cfloor[sub], smoothstep(1.0, 0.1, tw))
+            cfloor[sub] = np.maximum(cfloor[sub], smoothstep(1.1, 0.1, tw))
+            # Flat dust floor, a steep wall, a low soft rim: enough slope to shade at disc scale.
+            acrat[sub] += -smoothstep(1.0, 0.7, tw) + 0.3 * np.exp(-(((tw - 1.05) / 0.2) ** 2))
         # Wind streak: a tapering tail downwind, as long as several crater widths.
         b = wind_bearing(la) + 0.25 * rng.normal()
         lx = np.degrees(np.arcsin(np.clip(ps @ ce, -1, 1)))
@@ -398,8 +401,8 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     char = ramp(ctone, m["char"])
     rgb = rgb * (1 - 0.92 * burned[..., None]) + char * 0.92 * burned[..., None]
     # The large craters' floors: dust laid in them, pale on dark ground, so they stand out.
-    cf = (cfloor * (0.15 + 0.4 * burned))[..., None]
-    rgb = rgb * (1 - cf) + dust * 0.85 * cf
+    cf = (cfloor * (0.25 + 0.35 * burned))[..., None]
+    rgb = rgb * (1 - cf) + dust * 0.95 * cf
     # Crater rims barely paler; wind streaks pale on dark ground (dust laid in the lee) and
     # dark on pale ground (dust scoured away).
     rgb = rgb * (1 + 0.04 * rimc[..., None])
@@ -422,10 +425,10 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         d = angular_distance(g, la, lo)[sub]
         jag = r * 0.12 * fbm(n[4], ps * (25 / r) + lo, 4)
         lob = r * 0.15 * fbm(n[5], ps * (6 / r) + la, 3)  # a little out of round
-        water[sub] = np.maximum(water[sub], smoothstep(0.5 * r, 0.3 * r, d + jag + lob))
+        water[sub] = np.maximum(water[sub], smoothstep(0.6 * r, 0.2 * r, d + jag + lob))
         patches = smoothstep(-0.3, 0.3, fbm(n[6], ps * (20 / r) + lo, 3))
-        fringe = smoothstep(2.4 * r, 0.4 * r, d + 4 * jag + 2 * lob)
-        green[sub] = np.maximum(green[sub], fringe * (0.5 + 0.5 * patches) * (0.4 + 0.6 * smoothstep(1.6 * r, 0.6 * r, d)))
+        fringe = smoothstep(3.4 * r, 0.5 * r, d + 4 * jag + 2 * lob)
+        green[sub] = np.maximum(green[sub], fringe * (0.6 + 0.4 * patches) * (0.5 + 0.5 * smoothstep(2.2 * r, 0.7 * r, d)))
     # Whidmore's farms: a few small centre-pivot circles, pale olive, some fallow.
     pivots = np.zeros(g.lat.shape, np.float32)
     fallow = np.zeros(g.lat.shape, np.float32)
@@ -498,7 +501,7 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
     # tiny differences into steps that shaded as cliffs.
     lo_, hi_ = np.percentile(h, [0.5, 99.5])
     hn = np.clip((h - lo_) / (hi_ - lo_), 0, 1)
-    height = np.clip(hn * (1 - water) + 0.01 * pivots + 0.006 * gibber * calm[..., 0], 0, 1)
+    height = np.clip(hn * (1 - water) + 0.25 * acrat + 0.01 * pivots + 0.006 * gibber * calm[..., 0], 0, 1)
     out = out_root / slug
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
