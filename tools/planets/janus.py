@@ -56,8 +56,6 @@ CASTLE = (30, -125)  # House Roderick's floating castle, over a large mountain
 BUTTE_COUNTRY = dict(lat=5, lon=-90, ax=2.5, ay=11)
 WASTELANDS = dict(lat=-11, lon=-90, ax=3.5, ay=19)
 
-# Volcanic provinces on the day side: (lat, lon, radius°).
-VOLCANIC = [(25, 30, 9), (-30, -40, 8), (10, -55, 7), (45, -15, 7), (-15, 55, 8)]
 # The Princes' floating cities: (lat, lon, size).
 FLOATING = [(30, -125, 0.7), (-18, -132, 1.0), (42, -160, 0.8), (8, 150, 1.0), (-38, 118, 0.7), (22, 112, 0.6), (-52, -172, 0.5)]
 # Dark-side surface settlements besides the House of Knowledge.
@@ -84,6 +82,28 @@ def ellipse(g, lat, lon, ax, ay):
     dlat = (np.degrees(g.lat) - lat) / ay
     dlon = ((np.degrees(g.lon) - lon + 180) % 360 - 180) * np.cos(np.radians(lat)) / ax
     return np.sqrt(dlat**2 + dlon**2)
+
+
+def volcanic_sites(g, e, sun, count=5):
+    """Centres (lat, lon, radius°) of the day side's volcanic provinces: the highest broad ground,
+    spread apart, away from the terminator and the scorched centre."""
+    h, w = e.shape
+    k = h // 32
+    coarse = e[: h // k * k, : w // k * k].reshape(h // k, k, w // k, k).mean(axis=(1, 3))
+    s = sun[k // 2 :: k, k // 2 :: k][: coarse.shape[0], : coarse.shape[1]]
+    lat = np.degrees(g.lat[k // 2 :: k, 0])[: coarse.shape[0]]
+    lon = np.degrees(g.lon[0, k // 2 :: k])[: coarse.shape[1]]
+    score = np.where((s > 18) & (s < 66), coarse, -1)
+    picked = []
+    for i in np.argsort(score, axis=None)[::-1]:
+        r, c = np.unravel_index(i, score.shape)
+        if score[r, c] < 0 or len(picked) == count:
+            break
+        u = np.array([np.cos(np.radians(lat[r])) * np.cos(np.radians(lon[c])), np.cos(np.radians(lat[r])) * np.sin(np.radians(lon[c])), np.sin(np.radians(lat[r]))])
+        if all(np.degrees(np.arccos(np.clip(u @ q, -1, 1))) > 32 for _, q in picked):
+            picked.append(((float(lat[r]), float(lon[c])), u))
+    sizes = [9, 8, 8, 7, 7]
+    return [(la, lo, sizes[i]) for i, ((la, lo), _) in enumerate(picked)]
 
 
 def geyser_fields(g):
@@ -136,12 +156,14 @@ def generate(width: int, out: Path) -> None:
     # Volcanic provinces: a few big lava fields on high ground, like the Sahara's Tibesti and
     # Haruj. Each is a dark core with lobed flows reaching outward and a scatter of cones.
     volc = np.zeros(g.lat.shape, np.float32)
-    for k, (la, lo, r) in enumerate(VOLCANIC):
+    lava_gap = np.full(g.lat.shape, 99.0, np.float32)  # degrees beyond the nearest province's rim
+    for k, (la, lo, r) in enumerate(volcanic_sites(g, e, sun)):
         c = unit(la, lo)
         east = np.cross([0, 0, 1], c)
         east /= np.linalg.norm(east)
         north = np.cross(c, east)
         d = angular_distance(g, la, lo)
+        lava_gap = np.minimum(lava_gap, d - r)
         near = d < 1.6 * r
         a = np.arctan2(p[near] @ north, p[near] @ east)
         ring = np.stack([np.cos(a) * 0.9, np.sin(a) * 0.9, np.full_like(a, k * 3.7)], -1)
@@ -161,8 +183,9 @@ def generate(width: int, out: Path) -> None:
     # Dry lake beds in the lowest basins, drawn out long (a stretched field), each ringed by a pale
     # clay halo that fades into the tan. Never on the lava.
     basin = e + 0.05 * fbm(n[3], p * np.array([2.0, 2.0, 7.0], np.float32) * 3 + warp, 4)
-    playa = smoothstep(0.06, 0.04, basin) * smoothstep(8, 20, sun) * (1 - volc)
-    clay = smoothstep(0.11, 0.06, basin) * smoothstep(8, 20, sun) * (1 - volc)
+    clear = smoothstep(0.0, 6.0, lava_gap)  # salt flats keep well away from the lava
+    playa = smoothstep(0.06, 0.04, basin) * smoothstep(8, 20, sun) * clear
+    clay = smoothstep(0.11, 0.06, basin) * smoothstep(8, 20, sun) * clear
     desert = desert * (1 - 0.45 * clay[..., None]) + np.array([0.84, 0.77, 0.64], np.float32) * 0.45 * clay[..., None]
     desert = desert * (1 - playa[..., None]) + np.array([0.9, 0.88, 0.84], np.float32) * (0.92 + 0.1 * grain[..., None]) * playa[..., None]
     # Every surface wind on a locked world runs toward the sub-solar point, so everything wind-made
@@ -246,7 +269,7 @@ def generate(width: int, out: Path) -> None:
     print(f"lights {time.time() - t0:.1f}s")
 
     rough = 0.9 - 0.2 * playa * day - 0.15 * scorch
-    height = np.clip(e + 0.08 * mesas - 0.04 * channels * band - 0.03 * wadis * day, 0, 1)
+    height = np.clip(e + 0.12 * volc * day + 0.08 * mesas - 0.04 * channels * band - 0.03 * wadis * day, 0, 1)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)
     save_rgb(out / "emissive.webp", emissive)
