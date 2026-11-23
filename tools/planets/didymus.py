@@ -35,7 +35,7 @@ bodies/QUESTIONS.md, which override the brief):
   points downwind. The smaller twin gets a handful of larger craters, dust-floored on dark
   ground, as eye anchors.
 - Living waters: Prime 4 (Goshen's the largest), the other twin 2 (brief: 4 / 2-3). Each is a
-  tiny round dark lake with a graded olive fringe. Positions besides Goshen's are guesses.
+  small dark teal-grey lake in a wide graded olive fringe (black lakes read as holes). Positions besides Goshen's are guesses.
 - Whidmore "is still buying up land ... to terraform and turn it into agriculture": a few
   small centre-pivot fields near Goshen (brief: farm patches near 30, 70), like Saudi Arabia's
   pivot farms; light and few, so at disc scale they're tone, not dots. Invented look.
@@ -108,7 +108,7 @@ TWINS: dict[str, dict] = {
         # Warm brown-black char: burned rock, not grey soot.
         char=[(0, (0.17, 0.12, 0.09)), (0.5, (0.24, 0.17, 0.12)), (1, (0.33, 0.23, 0.16))],
         # Living waters: (lat, lon, radius°). Goshen's is the largest (brief); others invented.
-        waters=[(GOSHEN[0] - 0.5, GOSHEN[1] - 0.9, 0.75), (-9, 14, 0.4), (36, -38, 0.45), (-27, -86, 0.35)],
+        waters=[(GOSHEN[0] - 0.5, GOSHEN[1] - 0.9, 1.0), (-9, 14, 0.55), (36, -38, 0.6), (-27, -86, 0.5)],
         farms=dict(lat=29.5, lon=66, n=12, spread=(2.6, 5.5)),
         # (lat, lon, radius°, brightness, roads). Goshen: the one real cluster, with its edge
         # settlements (the One Horn Riders' compound, construction sites, warehouses) around it.
@@ -141,7 +141,7 @@ TWINS: dict[str, dict] = {
         small_craters=420,
         anchors=6,  # a handful of larger craters to catch the eye
         char=[(0, (0.15, 0.11, 0.08)), (0.5, (0.22, 0.15, 0.11)), (1, (0.31, 0.21, 0.15))],
-        waters=[(-14, 38, 0.4), (21, -61, 0.3)],
+        waters=[(-14, 38, 0.55), (21, -61, 0.45)],
         farms=None,
         towns=[],
         specks=4,
@@ -425,9 +425,9 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
         d = angular_distance(g, la, lo)[sub]
         jag = r * 0.12 * fbm(n[4], ps * (25 / r) + lo, 4)
         lob = r * 0.15 * fbm(n[5], ps * (6 / r) + la, 3)  # a little out of round
-        water[sub] = np.maximum(water[sub], smoothstep(0.6 * r, 0.2 * r, d + jag + lob))
+        water[sub] = np.maximum(water[sub], smoothstep(0.55 * r, 0.1 * r, d + jag + lob))
         patches = smoothstep(-0.3, 0.3, fbm(n[6], ps * (20 / r) + lo, 3))
-        fringe = smoothstep(3.4 * r, 0.5 * r, d + 4 * jag + 2 * lob)
+        fringe = smoothstep(4.5 * r, 0.5 * r, d + 4 * jag + 2 * lob)
         green[sub] = np.maximum(green[sub], fringe * (0.6 + 0.4 * patches) * (0.5 + 0.5 * smoothstep(2.2 * r, 0.7 * r, d)))
     # Whidmore's farms: a few small centre-pivot circles, pale olive, some fallow.
     pivots = np.zeros(g.lat.shape, np.float32)
@@ -446,11 +446,13 @@ def generate(slug: str, m: dict, width: int, out_root: Path) -> None:
                 pivots[sub] = np.maximum(pivots[sub], disc * rng.uniform(0.5, 0.8))
             else:
                 fallow[sub] = np.maximum(fallow[sub], disc)
-    veg = np.array([0.30, 0.29, 0.17], np.float32)
-    rgb = rgb * (1 - 0.7 * green[..., None]) + veg * 0.7 * green[..., None]
+    # An oasis from orbit is a green-brown smudge with a darker heart, not a hole: the fringe is
+    # what you see first, and the water is dark teal-grey, never black.
+    veg = np.array([0.27, 0.30, 0.16], np.float32)
+    rgb = rgb * (1 - 0.8 * green[..., None]) + veg * 0.8 * green[..., None]
     rgb = rgb * (1 - pivots[..., None]) + np.array([0.40, 0.38, 0.22], np.float32) * pivots[..., None]
     rgb = rgb * (1 - 0.4 * fallow[..., None]) + np.array([0.56, 0.42, 0.30], np.float32) * 0.4 * fallow[..., None]
-    rgb = rgb * (1 - water[..., None]) + np.array([0.06, 0.08, 0.08], np.float32) * water[..., None]
+    rgb = rgb * (1 - water[..., None]) + np.array([0.13, 0.17, 0.17], np.float32) * water[..., None]
     rgb = rgb * (1 + (0.05 * grain[..., None] + 0.1 * gibber[..., None]) * calm * (1 - water[..., None]))
     print(f"  {slug}: colour {time.time() - t0:.1f}s")
 

@@ -24,7 +24,7 @@ Interpretation (mine, from the brief's defaults):
   night). Genussa is grimy and unplanned: rust-brown and soot by day, no green anywhere, smog,
   polluted grey-green water, junkyard and slag toward the poles. At night each quadrant has its
   own light: G1 an even warm-white grid; G2 the brightest, a mix of neon colours by district
-  with the Strip blazing; G3 crisp cool white, orderly, the brightest cores; G4 dim, broken,
+  with the Strip blazing; G3 crisp clean white, orderly, as bright as G1 with the brightest cores; G4 dim, broken,
   sodium-orange with blacked-out tracts and scattered fires.
 - A few seas ("Eleven Oceans" is the only hint of oceans): a southern sea that the bay opens
   into, and three more. Yafel's chasm: a dark unlit rift in G4, placed by guess.
@@ -87,7 +87,7 @@ PINS = [
 # Night light colours.
 WARM_WHITE = np.array([1.0, 0.84, 0.6], np.float32)  # G1
 SODIUM = np.array([1.0, 0.55, 0.22], np.float32)  # G4
-COOL_WHITE = np.array([0.93, 0.95, 1.0], np.float32)  # G3: neutral LED white (bluer read as snow)
+COOL_WHITE = np.array([1.0, 0.96, 0.9], np.float32)  # G3: clean white (bluer read as snow, grey as frost)
 ROSE = np.array([1.0, 0.62, 0.68], np.float32)  # G2's neon, as a drift of the whole blaze
 
 
@@ -304,7 +304,11 @@ def generate(width: int, out: Path) -> None:
     fires = smoothstep(0.985, 1.0, rank(fbm(n[1], p * 300, 2))) * smoothstep(0.1, 0.4, density)
     g4 = (lit * 0.5 * flicker + 0.6 * web) * (1 - 0.9 * blackout) + 0.9 * fires
     g2 = lit * 1.5 + 0.3 * hubd + web + 1.8 * strip
-    g3 = lit * (0.55 + 0.5 * core) + 0.8 * web
+    # The money district: bright, even and clean. Its light follows the density smoothly, with
+    # little of the block-by-block sparkle (which, white and grainy, read as frost).
+    # Even: the gaps between dense districts are lit too (they read as camouflage when dark).
+    calm = (0.35 + 0.65 * density) * (0.8 + 0.2 * block) + 0.5 * hubd**1.3
+    g3 = (0.25 * lit + 0.6 * calm) * (1.0 + 0.6 * core) + 0.5 * web
     g1 = lit + web
     lit = G1 * g1 + G2 * g2 + G3 * g3 + G4 * g4
     # The crummy shore the party drove along: lights flicker, if they're on at all.
@@ -319,7 +323,7 @@ def generate(width: int, out: Path) -> None:
     corridor = np.clip(web / (lit + 1e-4), 0, 1)[..., None] * (1 - 0.6 * G3[..., None])
     colour = colour * (1 - corridor) + SODIUM * corridor
     colour = colour * (1 - fires[..., None] * G4[..., None]) + np.array([1.0, 0.45, 0.15], np.float32) * (fires * G4)[..., None]
-    emissive = warm_dim(colour * np.clip(lit, 0, 1.3)[..., None] * 0.72)
+    emissive = warm_dim(colour * np.clip(lit, 0, 1.3)[..., None] * 0.72, keep=G3)
     # The Orange Star's beacon: one small orange point on its islet.
     beacon = smoothstep(0.12, 0.0, angular_distance(g, *ISLET))
     emissive = emissive * (1 - beacon[..., None]) + np.array([1.0, 0.5, 0.15], np.float32) * beacon[..., None]
@@ -341,13 +345,16 @@ def generate(width: int, out: Path) -> None:
 AMBER = np.array([1.0, 0.6, 0.28], np.float32)
 
 
-def warm_dim(emissive: np.ndarray) -> np.ndarray:
+def warm_dim(emissive: np.ndarray, keep: np.ndarray | None = None) -> np.ndarray:
     """Dim light drifts to amber. Warm white at low brightness is a dark yellow, which reads as
     olive-green (the follow-up review saw a mossy camouflage over G1 and G2 at night); real city
     light seen dimly from orbit is orange, as the dimmer lamps are sodium. Only the bright cores
-    stay white."""
+    stay white. `keep` (0..1) exempts an area: G3's LED white stays white when dim, as neutral
+    white dims to grey, not olive."""
     lum = emissive.mean(-1, keepdims=True)
     k = smoothstep(0.08, 0.4, lum)
+    if keep is not None:
+        k = np.maximum(k, keep[..., None])
     return emissive * k + AMBER * lum / float(AMBER.mean()) * (1 - k)
 
 
