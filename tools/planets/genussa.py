@@ -319,7 +319,7 @@ def generate(width: int, out: Path) -> None:
     corridor = np.clip(web / (lit + 1e-4), 0, 1)[..., None] * (1 - 0.6 * G3[..., None])
     colour = colour * (1 - corridor) + SODIUM * corridor
     colour = colour * (1 - fires[..., None] * G4[..., None]) + np.array([1.0, 0.45, 0.15], np.float32) * (fires * G4)[..., None]
-    emissive = colour * np.clip(lit, 0, 1.3)[..., None] * 0.72
+    emissive = warm_dim(colour * np.clip(lit, 0, 1.3)[..., None] * 0.72)
     # The Orange Star's beacon: one small orange point on its islet.
     beacon = smoothstep(0.12, 0.0, angular_distance(g, *ISLET))
     emissive = emissive * (1 - beacon[..., None]) + np.array([1.0, 0.5, 0.15], np.float32) * beacon[..., None]
@@ -336,6 +336,19 @@ def generate(width: int, out: Path) -> None:
     save_clouds(out, *genussa_clouds(g))
     write_pins(out / "pins.json", "Genussa", PINS)
     print(f"done {time.time() - t0:.1f}s -> {out}")
+
+
+AMBER = np.array([1.0, 0.6, 0.28], np.float32)
+
+
+def warm_dim(emissive: np.ndarray) -> np.ndarray:
+    """Dim light drifts to amber. Warm white at low brightness is a dark yellow, which reads as
+    olive-green (the follow-up review saw a mossy camouflage over G1 and G2 at night); real city
+    light seen dimly from orbit is orange, as the dimmer lamps are sodium. Only the bright cores
+    stay white."""
+    lum = emissive.mean(-1, keepdims=True)
+    k = smoothstep(0.08, 0.4, lum)
+    return emissive * k + AMBER * lum / float(AMBER.mean()) * (1 - k)
 
 
 def genussa_clouds(g):

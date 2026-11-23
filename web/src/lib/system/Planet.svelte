@@ -163,14 +163,18 @@
 				roughness: 1,
 				metalness: 0,
 				...(clouds.glow
-					? { emissiveMap: load('clouds-glow.webp', true), emissive: new THREE.Color(1, 1, 1), emissiveIntensity: clouds.glow }
+					? { emissiveMap: load('clouds-glow.webp', true), emissive: new THREE.Color(1, 0.78, 0.55), emissiveIntensity: clouds.glow }
 					: {})
 			})
 		: null;
 	if (cloudMaterial) live.uniforms.uCloudMap.value = cloudMaterial.alphaMap;
 	// The glow through the cloud shows on the night side only, as the lights below do.
 	const cloudLive = cloudMaterial && clouds?.glow ? addEmissiveFlicker(cloudMaterial, 0) : null;
-	if (cloudLive) cloudLive.uniforms.uNightOnly.value = 1;
+	if (cloudLive) {
+		cloudLive.uniforms.uNightOnly.value = 1;
+		// Lit mist outshines the glow from below: it comes on only well past the terminator.
+		cloudLive.uniforms.uDusk.value = 0.15;
+	}
 	$effect(() => {
 		cloudLive?.uniforms.uSun.value.set(...sun);
 	});

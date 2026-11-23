@@ -11,6 +11,8 @@ export type Flicker = {
 		uAmount: { value: number };
 		/** 1: show the glow only on the side facing away from uSun. */
 		uNightOnly: { value: number };
+		/** How far past the terminator (as a cosine) night-only glow waits before it comes on. */
+		uDusk: { value: number };
 		uSun: { value: THREE.Vector3 };
 		/** The cloud layer's alpha map; its shadow strength (0 for none). */
 		uCloudMap: { value: THREE.Texture | null };
@@ -32,6 +34,7 @@ export function addEmissiveFlicker(material: THREE.MeshStandardMaterial, amount:
 		uTime: { value: 0 },
 		uAmount: { value: amount },
 		uNightOnly: { value: 0 },
+		uDusk: { value: 0 },
 		uSun: { value: new THREE.Vector3() },
 		uCloudMap: { value: null as THREE.Texture | null },
 		uShadow: { value: 0 },
@@ -82,6 +85,7 @@ uniform sampler2D uCloudMap;
 uniform float uShadow;
 uniform vec3 uSunLocal;
 uniform float uCloudTurn;
+uniform float uDusk;
 uniform float uDetail;
 uniform float uTwilight;
 uniform vec3 uTwilightColor;
@@ -147,7 +151,7 @@ float fnoise(vec3 x) {
   if (uDetail > 0.0) totalEmissiveRadiance *= mix(1.0, cityDetail(q), uDetail);
   // City lights come on across dusk and are off in daylight.
   float sunward = dot(normalize(vWorldNormal), normalize(uSun - vWorldPos));
-  totalEmissiveRadiance *= mix(1.0, smoothstep(0.12, -0.18, sunward), uNightOnly);
+  totalEmissiveRadiance *= mix(1.0, smoothstep(0.12 - uDusk, -0.18 - uDusk, sunward), uNightOnly);
   // Twilight: a dim glow on the ground from just inside the lit side to several degrees into the
   // dark, peaking at the terminator; the direct light takes over further in.
   if (uTwilight > 0.0) {
