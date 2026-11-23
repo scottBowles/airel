@@ -123,6 +123,18 @@ export const TERRAN: BodyLook = {
 };
 
 /**
+ * "Nega-Terran", the Vegas of planets: a grimy rust-and-soot city by day under brown smog, and
+ * at night four quadrants of different light (G2's neon blaze, G4's broken sodium orange).
+ */
+export const GENUSSA: BodyLook = {
+	name: 'Genussa',
+	radius: 1.3,
+	glow: 3,
+	clouds: { color: [0.62, 0.56, 0.5], opacity: 0.75, drift: 0.003, normal: true },
+	atmosphere: { color: [0.82, 0.58, 0.42], strength: 0.85 }
+};
+
+/**
  * Tidally locked to the Red Sun: one half always in its light, one always dark, the Mezzolux
  * between. Its clouds stay put over the dark side (steam from the geysers), so they don't drift.
  */

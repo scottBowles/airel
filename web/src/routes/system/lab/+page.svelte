@@ -3,7 +3,7 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
-	import { FELUCIA, GONHIRRIM, JANUS, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import { FELUCIA, GENUSSA, GONHIRRIM, JANUS, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -17,6 +17,7 @@
 		{ id: 'magmus', label: 'Magmus' },
 		{ id: 'felucia', label: 'Felucia' },
 		{ id: 'terran', label: 'Terran' },
+		{ id: 'genussa', label: 'Genussa' },
 		{ id: 'janus', label: 'Janus' },
 		{ id: 'hyang-wan', label: 'Hyang Wan' },
 		{ id: 'gonhirrim', label: 'Gonhirrim' }
@@ -30,10 +31,10 @@
 
 	/** The body whose places can be pinned in this view, if any. */
 	const focus = $derived(
-		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' || view === 'janus' ? view : view.startsWith('moon:') ? view.slice(5) : null
+		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' || view === 'genussa' || view === 'janus' ? view : view.startsWith('moon:') ? view.slice(5) : null
 	);
 	const moon = $derived(focus && view.startsWith('moon:') ? GONHIRRIM_MOONS[focus] : null);
-	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : view === 'janus' ? JANUS.name : 'Magmus');
+	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : view === 'genussa' ? GENUSSA.name : view === 'janus' ? JANUS.name : 'Magmus');
 	const inGonhirrim = $derived(view === 'gonhirrim' || view.startsWith('moon:'));
 
 	$effect(() => {
@@ -56,7 +57,7 @@
 					? { at: [0, 0.8, 5.4], min: 1.9 }
 				: view === 'felucia'
 					? { at: [0, 0.7, 4.6], min: 1.6 }
-				: view === 'terran'
+				: view === 'terran' || view === 'genussa'
 					? { at: [0, 0.8, 5.4], min: 1.9 }
 				: view === 'janus'
 					? { at: [0, 0.6, 4.4], min: 1.45 }
@@ -121,6 +122,24 @@
 				detail={1}
 				sun={SUN_AT}
 				face={20}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'genussa'}
+			<!-- It orbits the Red Sun, so it's lit red. -->
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={RED_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="genussa"
+				radius={GENUSSA.radius}
+				glow={GENUSSA.glow}
+				clouds={GENUSSA.clouds}
+				atmosphere={GENUSSA.atmosphere}
+				nightLights
+				detail={1}
+				sun={SUN_AT}
+				face={0}
 				spin={0.003}
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
