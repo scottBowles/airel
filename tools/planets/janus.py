@@ -41,6 +41,7 @@ from planetgen import (
     save_gray,
     save_rgb,
     smoothstep,
+    unit,
     veins,
     write_pins,
 )
@@ -55,6 +56,8 @@ CASTLE = (30, -125)  # House Roderick's floating castle, over a large mountain
 BUTTE_COUNTRY = dict(lat=5, lon=-90, ax=2.5, ay=11)
 WASTELANDS = dict(lat=-11, lon=-90, ax=3.5, ay=19)
 
+# Volcanic provinces on the day side: (lat, lon, radius°).
+VOLCANIC = [(25, 30, 9), (-30, -40, 8), (10, -55, 7), (45, -15, 7), (-15, 55, 8)]
 # The Princes' floating cities: (lat, lon, size).
 FLOATING = [(30, -125, 0.7), (-18, -132, 1.0), (42, -160, 0.8), (8, 150, 1.0), (-38, 118, 0.7), (22, 112, 0.6), (-52, -172, 0.5)]
 # Dark-side surface settlements besides the House of Knowledge.
@@ -130,11 +133,37 @@ def generate(width: int, out: Path) -> None:
         ],
     )
     desert = desert * (0.9 + 0.2 * fine[..., None])
-    # Dark accents: volcanic fields and varnished plateaus, a few, irregular.
-    volc = smoothstep(0.8, 0.88, rank(fbm(n[7], p * 3.5 + warp * 1.5 + 13, 5))) * (0.7 + 0.3 * smoothstep(-0.2, 0.2, fine))
-    desert = desert * (1 - 0.75 * volc[..., None]) + np.array([0.16, 0.13, 0.12], np.float32) * 0.75 * volc[..., None]
+    # Volcanic provinces: a few big lava fields on high ground, like the Sahara's Tibesti and
+    # Haruj. Each is a dark core with lobed flows reaching outward and a scatter of cones.
+    volc = np.zeros(g.lat.shape, np.float32)
+    for k, (la, lo, r) in enumerate(VOLCANIC):
+        c = unit(la, lo)
+        east = np.cross([0, 0, 1], c)
+        east /= np.linalg.norm(east)
+        north = np.cross(c, east)
+        d = angular_distance(g, la, lo)
+        near = d < 1.6 * r
+        a = np.arctan2(p[near] @ north, p[near] @ east)
+        ring = np.stack([np.cos(a) * 0.9, np.sin(a) * 0.9, np.full_like(a, k * 3.7)], -1)
+        edge = r * (0.6 + 0.4 * np.clip(0.5 + 1.4 * fbm(n[7], ring, 2), 0, 1))
+        dd = d[near] + 0.8 * fbm(n[5], p[near] * 25, 4)
+        lava = smoothstep(edge, edge * 0.9, dd)
+        # Flows of different ages: patches of lighter and darker lava, darker toward the core.
+        flows = smoothstep(-0.25, 0.25, fbm(n[6], p[near] * 18, 3))
+        volc[near] = np.maximum(volc[near], lava * (0.75 + 0.25 * flows) * (0.8 + 0.2 * smoothstep(r, 0, dd)))
+        for _ in range(int(r * 1.5)):
+            ca, cb = rng.normal(0, 0.35 * r, 2)
+            cone = angular_distance(g, la + ca, lo + cb / np.cos(np.radians(la)))
+            m = cone < 0.6
+            volc[m] = np.maximum(volc[m], smoothstep(0.5, 0.15, cone[m]))
+    desert = desert * (1 - 0.8 * volc[..., None]) + np.array([0.14, 0.12, 0.11], np.float32) * 0.8 * volc[..., None]
     # Salt flats: blinding white pans in the low basins, sharp-edged.
-    playa = smoothstep(0.065, 0.045, e + 0.03 * fine) * smoothstep(8, 20, sun)
+    # Dry lake beds in the lowest basins, drawn out long (a stretched field), each ringed by a pale
+    # clay halo that fades into the tan. Never on the lava.
+    basin = e + 0.05 * fbm(n[3], p * np.array([2.0, 2.0, 7.0], np.float32) * 3 + warp, 4)
+    playa = smoothstep(0.06, 0.04, basin) * smoothstep(8, 20, sun) * (1 - volc)
+    clay = smoothstep(0.11, 0.06, basin) * smoothstep(8, 20, sun) * (1 - volc)
+    desert = desert * (1 - 0.45 * clay[..., None]) + np.array([0.84, 0.77, 0.64], np.float32) * 0.45 * clay[..., None]
     desert = desert * (1 - playa[..., None]) + np.array([0.9, 0.88, 0.84], np.float32) * (0.92 + 0.1 * grain[..., None]) * playa[..., None]
     # Every surface wind on a locked world runs toward the sub-solar point, so everything wind-made
     # radiates from it: yardangs (long ridges carved from the rock) in the hot centre, dune seas
