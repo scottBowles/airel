@@ -62,6 +62,13 @@ vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
 if (uShadow > 0.0) diffuseColor.rgb *= 1.0 - uShadow * cloudShadow(normalize(vObjPos));`
 			)
 			.replace(
+				'#include <lights_fragment_end>',
+				/* glsl */ `#include <lights_fragment_end>
+// No sun glint where cloud stands between the ground and the sun: without this a lake under
+// mist flashed white through the cloud layer once it thinned close in.
+if (uShadow > 0.0) reflectedLight.directSpecular *= 1.0 - cloudShadow(normalize(vObjPos));`
+			)
+			.replace(
 				'#include <common>',
 				/* glsl */ `#include <common>
 varying vec3 vObjPos;
