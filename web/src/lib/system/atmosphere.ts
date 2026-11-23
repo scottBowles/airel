@@ -37,7 +37,10 @@ export function atmosphereMaterial(look: AtmosphereLook, sun: THREE.Vector3) {
 				vec3 n = normalize(vNormal);
 				vec3 v = normalize(cameraPosition - vPos);
 				vec3 l = normalize(uSun - vPos);
-				float rim = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+				float nv = max(dot(n, v), 0.0);
+				// Brightest a little inside the shell's edge and fading to nothing at it, as haze
+				// does; peaking right at the edge drew a hard band, like a glass shell.
+				float rim = pow(1.0 - nv, 3.0) * smoothstep(0.0, 0.22, nv);
 				float lit = smoothstep(-0.3, 0.45, dot(n, l));
 				gl_FragColor = vec4(uColor * rim * lit * uStrength, 1.0);
 			}`,
