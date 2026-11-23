@@ -101,6 +101,10 @@ Write down the answers; don't just think them.
 - **Many separate systems layered** that don't join up. One coherent field driving several
   features beats several independent ones.
 - **Even-toned patches** read as farm fields.
+- **Bright thread webs** (Mystra): `billow` (`1 - |noise|`) at fine scale, or thresholded,
+  peaks along the noise's zero-crossings and draws a net of thin bright threads over cloud.
+  Use plain fbm for the fine scales.
+- **Honeycomb or chicken wire** (Mystra): Worley cells in cloud read as a net up close.
 - **Noise too weak to matter:** `fbm` returns roughly ±0.17 (standard deviation), not ±1.
   An amplitude chosen as if it were ±1 moves a border or coast by a sixth of what was meant,
   and shapes stay ovals and straight lines. Measure what the noise actually does.
@@ -111,7 +115,9 @@ Write down the answers; don't just think them.
 Before showing the user, have a separate reviewer (a fresh agent with no stake in the work)
 look at the inspector images and the flat map, with this file and the lore brief. Ask it to
 list everything a picky viewer would notice, most noticeable first, with the image and spot
-for each, and to say what the real analogue looks like. Then fix, or note why not.
+for each, and to say what the real analogue looks like. Then fix, or note why not. Include in-app screenshots if the planet is wired into the lab:
+the real renderer's lighting and cloud colour change how things read. (A subagent can't start
+another agent; if you're one, say so in your report and whoever integrates runs the review.)
 
 ## Shared code
 
