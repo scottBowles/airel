@@ -5,7 +5,8 @@
 Renders the textures onto a lit sphere (sun-lit albedo with the normal map, clouds, and the
 emissive lights on the night side) and writes PNG contact sheets to the output folder:
 
-- `discs.png`: the whole planet from four sides, roughly as the lab shows it.
+- `discs.png`: the whole planet from four sides, roughly as the lab shows it, and (for a
+  planet with lights and a turning day) the same four sides at night.
 - `places.png`: close-ups of each pinned place, at about the closest zoom the app allows
   (one texel ≈ two screen pixels on a retina screen), lit and at night.
 - `suspects.png`: the albedo tiles that score worst on a few automatic checks for faults the
@@ -203,6 +204,9 @@ def main() -> None:
     discs = []
     for lon in (-90, 0, 90, 180):
         discs.append(label(pl.render((15, lon), 1.05, 640, sun_for(15, lon)), f"lon {lon}"))
+    if pl.emissive is not None and not fixed:
+        for lon in (-90, 0, 90, 180):
+            discs.append(label(pl.render((15, lon), 1.05, 640, (-15, lon + 180), night_only=True), f"lon {lon}, night"))
     sheet(discs, 4).save(a.out / "discs.png")
 
     places = []
