@@ -193,9 +193,10 @@ def generate(width: int, out: Path) -> None:
     # in a ring farther out.
     ang = np.arctan2(p[..., 2], p[..., 1])
     ang_w = ang + 0.05 * fbm(n[7], p * 9 + warp, 4)
-    yard = 0.5 + 0.5 * np.sin(ang_w * 1500 + 3.0 * fbm(n[2], p * 50, 3))
-    carved = smoothstep(40, 58, sun) * smoothstep(0.3, 0.55, rank(fbm(n[3], p * 5 + warp + 7, 4)))
-    desert = desert * (1 - 0.3 * carved[..., None] * (1 - yard[..., None])) + 0.06 * carved[..., None] * yard[..., None]
+    # Thin, nearly straight ridges a few texels apart: finer or wigglier and they shimmer as moiré.
+    yard = smoothstep(0.7, 1.0, 0.5 + 0.5 * np.sin(ang_w * 700 + 0.6 * fbm(n[2], p * 8, 3)))
+    carved = smoothstep(40, 58, sun) * smoothstep(0.3, 0.55, rank(fbm(n[3], p * 5 + warp + 7, 4))) * (1 - clay) * (1 - volc)
+    desert = desert * (1 - 0.14 * carved[..., None] * yard[..., None])
     dunes = 0.5 + 0.5 * np.sin(ang_w * 520 + 2.0 * fbm(n[2], p * 30, 3))
     erg = smoothstep(0.5, 0.7, rank(fbm(n[1], p * 3 + warp * 1.2 + 5, 5))) * smoothstep(0.6, 0.35, e)
     erg = erg * smoothstep(52, 38, sun) * smoothstep(6, 16, sun) * (1 - playa)
