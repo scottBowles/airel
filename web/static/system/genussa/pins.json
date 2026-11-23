@@ -1,0 +1,65 @@
+{
+  "body": "Genussa",
+  "pins": [
+    {
+      "name": "G1",
+      "lat": 40,
+      "lon": -90,
+      "confidence": "layout"
+    },
+    {
+      "name": "G2",
+      "lat": 40,
+      "lon": 90,
+      "confidence": "layout"
+    },
+    {
+      "name": "G3",
+      "lat": -40,
+      "lon": -90,
+      "confidence": "layout"
+    },
+    {
+      "name": "G4",
+      "lat": -40,
+      "lon": 90,
+      "confidence": "layout"
+    },
+    {
+      "name": "Dock A9 (Genussa)",
+      "lat": 0.3,
+      "lon": 0.3,
+      "confidence": "layout"
+    },
+    {
+      "name": "Genussan Bank with Espresso",
+      "lat": -0.8,
+      "lon": -2.0,
+      "confidence": "layout"
+    },
+    {
+      "name": "Orange Star",
+      "lat": -2.0,
+      "lon": -3.4,
+      "confidence": "layout"
+    },
+    {
+      "name": "Blue Coconut",
+      "lat": 1.2,
+      "lon": 1.5,
+      "confidence": "layout"
+    },
+    {
+      "name": "Manticore Green (Genussa)",
+      "lat": 1.9,
+      "lon": 3.4,
+      "confidence": "layout"
+    },
+    {
+      "name": "Meagel University",
+      "lat": 2.6,
+      "lon": 1.0,
+      "confidence": "layout"
+    }
+  ]
+}
