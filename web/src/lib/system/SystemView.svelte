@@ -2,11 +2,12 @@
 	// The whole system: both suns, the planets on their orbits, the belt with Hielo, Chromium on
 	// its figure-eight. Each body has a label to click; clicking flies the camera to it and follows
 	// it round its orbit. Layout and speeds are in layout.ts.
-	import { T, useTask } from '@threlte/core';
+	import { T, useTask, useThrelte } from '@threlte/core';
 	import { HTML, OrbitControls, Stars } from '@threlte/extras';
 	import { onDestroy } from 'svelte';
 	import * as THREE from 'three';
 	import type { OrbitControls as Controls } from 'three/examples/jsm/controls/OrbitControls.js';
+	import { mapUrl, type MapSize } from './assets';
 	import AsteroidBelt from './AsteroidBelt.svelte';
 	import { CHROMIUM, DIDYMUS, DIDYMUS_PRIME, GONHIRRIM_MOONS, HIELO, HYANG_WAN_MOON, type BodyLook } from './bodies';
 	import type { Pin } from './geo';
@@ -36,16 +37,20 @@
 		focus?: string | null;
 		showPins?: boolean;
 		onpin?: (pin: Pin) => void;
+		/** Map size for the body in focus: full, or mid on a phone (full maps can crash it). */
+		focusMaps?: MapSize;
+		/** For phones: fewer belt rocks, dust and stars. */
+		lite?: boolean;
 	};
-	let { rate = 1, focus = $bindable(null), showPins = true, onpin }: Props = $props();
+	let { rate = 1, focus = $bindable(null), showPins = true, onpin, focusMaps = 'full', lite = false }: Props = $props();
 
 	const MOONS = Object.entries(GONHIRRIM_MOONS);
 	const SUN_REACH = 0.7 * D;
 	const sunAt = (s: 'yellow' | 'red') => (s === 'yellow' ? YELLOW_AT : RED_AT);
 
 	/** Planet props from a body's look, at the system view's size. */
-	const looks = (l: BodyLook, size = SIZE) => ({
-		radius: l.radius * size,
+	const looks = (l: BodyLook, scale = SIZE) => ({
+		radius: l.radius * scale,
 		glow: l.glow ?? 1,
 		flicker: l.flicker ?? 0,
 		metalness: l.metalness ?? 0,
@@ -78,7 +83,7 @@
 		pins = [];
 		const slug = focus === 'didymus' ? 'didymus-prime' : focus;
 		if (!slug || slug === 'yellow' || slug === 'red') return;
-		fetch(`/system/${slug}/pins.json`)
+		fetch(mapUrl(slug, 'pins.json'))
 			.then((r) => (r.ok ? r.json() : { pins: [] }))
 			.then((d) => {
 				const now = focus === 'didymus' ? 'didymus-prime' : focus;
@@ -86,7 +91,8 @@
 			});
 	});
 	const pinsFor = (slug: string) => (showPins && (focus === slug || (focus === 'didymus' && slug === 'didymus-prime')) ? pins : []);
-	const far = (slug: string) => focus !== slug && !(focus === 'didymus' && slug === 'didymus-prime');
+	/** Small maps for every body but the one in focus. */
+	const size = (slug: string): MapSize => (focus === slug || (focus === 'didymus' && slug === 'didymus-prime') ? focusMaps : 'far');
 
 	// Chromium runs its figure-eight; its "sun" (for the night side) is whichever is nearer.
 	let chromium = $state<THREE.Group>();
@@ -110,7 +116,15 @@
 	const chromiumLine = line(0x9a90d0, 0.16);
 
 	// --- Camera: an overview, or flying to and following a body ---------------------------
-	const HOME_CAM = new THREE.Vector3(0, 230, 300);
+	const HOME = new THREE.Vector3(0, 230, 300);
+	const { size: viewport } = useThrelte();
+	/** The overview's camera: further back on a tall, narrow screen, so both suns fit across it. */
+	function homeCam(out: THREE.Vector3) {
+		const { width, height } = viewport.current;
+		const aspect = width && height ? width / height : 1.6;
+		return out.copy(HOME).multiplyScalar(Math.max(1, 1.5 / aspect));
+	}
+	const HOME_CAM = homeCam(new THREE.Vector3());
 	const HOME_TARGET = new THREE.Vector3(0, 0, 0);
 	let controls = $state<Controls>();
 	let camera = $state<THREE.PerspectiveCamera>();
@@ -144,7 +158,7 @@
 			if (body) {
 				// Come in from where we are, to a few radii out.
 				goalCam.copy(startCam).sub(goal).normalize().multiplyScalar(RADIUS[focus!] * 5).add(goal);
-			} else goalCam.copy(HOME_CAM);
+			} else homeCam(goalCam);
 			camera.position.lerpVectors(startCam, goalCam, e);
 			controls.target.lerpVectors(startTarget, goal, e);
 		} else if (body) {
@@ -209,10 +223,10 @@
 		bind:ref={controls}
 		enableDamping
 		minDistance={focus ? RADIUS[focus] * 1.3 : 20}
-		maxDistance={1200}
+		maxDistance={2500}
 	/>
 </T.PerspectiveCamera>
-<Stars count={6000} radius={2500} depth={400} />
+<Stars count={lite ? 3000 : 6000} radius={2500} depth={400} />
 <T.AmbientLight intensity={0.05} />
 
 <!-- The suns: each light fades out before it reaches the other sun's inner planets, so a planet
@@ -234,10 +248,10 @@
 			{#if p.slug === 'didymus'}
 				<!-- The twins circle each other, each keeping its break face to the other. -->
 				<Orbit period={200} {rate}>
-					{#key far('didymus-prime')}
+					{#key size('didymus-prime')}
 						<Planet
 							slug="didymus-prime"
-							far={far('didymus-prime')}
+							maps={size('didymus-prime')}
 							position={[-0.75 * SIZE, 0, 0]}
 							{...looks(DIDYMUS_PRIME)}
 							shape={DIDYMUS_PRIME.shape}
@@ -248,29 +262,29 @@
 							{onpin}
 						/>
 					{/key}
-					{#key far('didymus')}
-						<Planet slug="didymus" far={far('didymus')} position={[1.05 * SIZE, 0, 0]} {...looks(DIDYMUS)} nightLights {sun} face={-90} />
+					{#key size('didymus')}
+						<Planet slug="didymus" maps={size('didymus')} position={[1.05 * SIZE, 0, 0]} {...looks(DIDYMUS)} nightLights {sun} face={-90} />
 					{/key}
 				</Orbit>
 			{:else if p.slug === 'gonhirrim'}
-				{#key far('gonhirrim')}
-					<Planet slug="gonhirrim" far={far('gonhirrim')} {...looks(p.look, 1)} {sun} face={40} spin={0.006} />
+				{#key size('gonhirrim')}
+					<Planet slug="gonhirrim" maps={size('gonhirrim')} {...looks(p.look, 1)} {sun} face={40} spin={0.006} />
 				{/key}
 				{#each MOONS as [slug, m] (slug)}
 					<Orbit period={m.orbit!.period} phase={m.orbit!.phase} tilt={m.orbit!.tilt} {rate}>
 						<T.Group bind:ref={refs[slug]} position={[m.orbit!.distance, 0, 0]}>
-							{#key far(slug)}
-								<Planet {slug} far={far(slug)} {...looks(m, 1)} nightLights {sun} face={90} pins={pinsFor(slug)} {onpin} />
+							{#key size(slug)}
+								<Planet {slug} maps={size(slug)} {...looks(m, 1)} nightLights {sun} face={90} pins={pinsFor(slug)} {onpin} />
 							{/key}
 							{#if inGonhirrim}{@render label(slug, m.name, 'moon')}{/if}
 						</T.Group>
 					</Orbit>
 				{/each}
 			{:else}
-				{#key far(p.slug)}
+				{#key size(p.slug)}
 					<Planet
 						slug={p.slug}
-						far={far(p.slug)}
+						maps={size(p.slug)}
 						{...looks(p.look)}
 						nightLights={p.nightLights}
 						detail={focus === p.slug && (p.slug === 'terran' || p.slug === 'genussa') ? 1 : 0}
@@ -284,7 +298,7 @@
 				{#if p.slug === 'hyang-wan'}
 					<Orbit period={HYANG_WAN_MOON.orbit!.period} phase={HYANG_WAN_MOON.orbit!.phase} tilt={HYANG_WAN_MOON.orbit!.tilt} {rate}>
 						<T.Group bind:ref={refs['hyang-wan-moon']} position={[HYANG_WAN_MOON.orbit!.distance * SIZE, 0, 0]}>
-							<Planet slug="hyang-wan-moon" far {...looks(HYANG_WAN_MOON)} face={90} {sun} />
+							<Planet slug="hyang-wan-moon" maps="far" {...looks(HYANG_WAN_MOON)} face={90} {sun} />
 						</T.Group>
 					</Orbit>
 				{/if}
@@ -298,8 +312,8 @@
 <T.LineLoop geometry={chromiumPath} material={chromiumLine} />
 <T.Group bind:ref={chromium}>
 	<T.Group bind:ref={refs.chromium}>
-		{#key far('chromium')}
-			<Planet slug="chromium" far={far('chromium')} {...looks(CHROMIUM)} sun={chromiumSun} spin={0.003} />
+		{#key size('chromium')}
+			<Planet slug="chromium" maps={size('chromium')} {...looks(CHROMIUM)} sun={chromiumSun} spin={0.003} />
 		{/key}
 		{@render label('chromium', 'Chromium')}
 	</T.Group>
@@ -307,8 +321,8 @@
 
 <!-- The belt, between the suns and nearer the Yellow one, with Hielo in it. It orbits nothing. -->
 <T.Group bind:ref={refs.hielo} position={HIELO_AT}>
-	{#key far('hielo')}
-		<Planet slug="hielo" far={far('hielo')} {...looks(HIELO)} nightLights sun={YELLOW_AT} face={-160} spin={0.002} />
+	{#key size('hielo')}
+		<Planet slug="hielo" maps={size('hielo')} {...looks(HIELO)} nightLights sun={YELLOW_AT} face={-160} spin={0.002} />
 	{/key}
 	{@render label('hielo', 'Hielo')}
 </T.Group>
@@ -318,9 +332,9 @@
 	arc={BELT.arc}
 	width={BELT.width}
 	thickness={BELT.thickness}
-	count={9000}
+	count={lite ? 3500 : 9000}
 	size={[0.02, 0.3]}
-	dust={5000}
+	dust={lite ? 3000 : 5000}
 	clear={[{ at: HIELO_AT, radius: 3, shield: true }]}
 	crowd={{ at: HIELO_AT, radius: 20, factor: 2 }}
 />
@@ -348,12 +362,20 @@
 		color: #ffd58a;
 	}
 	.ring {
+		position: relative;
 		width: 18px;
 		height: 18px;
 		border-radius: 50%;
 		border: 1px solid currentColor;
 		opacity: 0.55;
 		flex: none;
+	}
+	/* A finger-sized target round the ring. */
+	.ring::before {
+		content: '';
+		position: absolute;
+		inset: -12px;
+		border-radius: 50%;
 	}
 	.tag-sun .ring {
 		width: 18px;

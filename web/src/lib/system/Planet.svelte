@@ -3,6 +3,7 @@
 	import { HTML } from '@threlte/extras';
 	import { onDestroy } from 'svelte';
 	import * as THREE from 'three';
+	import { mapUrl, type MapSize } from './assets';
 	import { atmosphereMaterial, type AtmosphereLook } from './atmosphere';
 	import { addEmissiveFlicker } from './emissiveFlicker';
 	import { latLonToVector, shapePoint, type Pin, type Shape } from './geo';
@@ -62,8 +63,9 @@
 		twilight?: { strength: number; color?: [number, number, number] };
 		/** A non-spherical body (Didymus Prime's kidney bean). */
 		shape?: Shape;
-		/** Load the small maps (made by tools/planets/far_maps.py): for a body seen from afar. */
-		far?: boolean;
+		/** Which size of maps to load (see assets.ts; the smaller ones are made by
+		 * tools/planets/far_maps.py): far for a body seen from afar, mid for one in focus on a phone. */
+		maps?: MapSize;
 	};
 	let {
 		slug,
@@ -83,7 +85,7 @@
 		detail = 0,
 		twilight,
 		shape,
-		far = false
+		maps = 'full'
 	}: Props = $props();
 
 	/** A unit sphere, or the shaped body, with normals worked out from the shape itself (not
@@ -135,7 +137,7 @@
 	const loader = new THREE.TextureLoader();
 	// The maps are fixed for the planet's lifetime: to switch to or from the small ones, re-create it.
 	function load(file: string, srgb: boolean) {
-		const tex = loader.load(`/system/${slug}/${far ? 'far/' : ''}${file}`);
+		const tex = loader.load(mapUrl(slug, file, maps));
 		tex.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
 		tex.anisotropy = 8;
 		return tex;
@@ -325,12 +327,20 @@
 		cursor: pointer;
 	}
 	.pin .dot {
+		position: relative;
 		display: block;
 		width: 7px;
 		height: 7px;
 		border-radius: 50%;
 		background: currentColor;
 		box-shadow: 0 0 0 1.5px #000;
+	}
+	/* A finger-sized target round the small dot. */
+	.pin .dot::before {
+		content: '';
+		position: absolute;
+		inset: -10px;
+		border-radius: 50%;
 	}
 	.label {
 		position: absolute;
