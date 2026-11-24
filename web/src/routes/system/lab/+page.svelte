@@ -3,7 +3,8 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
-	import { CHROMIUM, DIDYMUS, DIDYMUS_PRIME, FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import { CHROMIUM, DIDYMUS, HIELO, DIDYMUS_PRIME, FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import AsteroidBelt from '$lib/system/AsteroidBelt.svelte';
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -22,6 +23,7 @@
 		{ id: 'mystra', label: 'Mystra' },
 		{ id: 'didymus', label: 'Didymus' },
 		{ id: 'chromium', label: 'Chromium' },
+		{ id: 'hielo', label: 'Hielo' },
 		{ id: 'hyang-wan', label: 'Hyang Wan' },
 		{ id: 'gonhirrim', label: 'Gonhirrim' }
 	];
@@ -68,6 +70,8 @@
 					? { at: [0, 0.6, 4.4], min: 1.5 }
 				: view === 'didymus'
 					? { at: [0, 0.5, 4.2], min: 1.0 }
+				: view === 'hielo'
+					? { at: [0.4, 0.5, 2.6], min: 0.8 }
 				: view === 'chromium'
 					? { at: [0, 0.6, 4.3], min: 1.45 }
 				: moon
@@ -169,6 +173,25 @@
 				spin={0.003}
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'hielo'}
+			<!-- Hielo in the belt. The belt's arc runs through it, left to right. -->
+			<T.AmbientLight intensity={0.05} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet slug="hielo" radius={HIELO.radius} glow={HIELO.glow} atmosphere={HIELO.atmosphere} nightLights sun={SUN_AT} face={140} spin={0.002} />
+			<AsteroidBelt
+				centre={[0, 0, -30]}
+				radius={30}
+				arc={[-Math.PI / 2 - 0.7, -Math.PI / 2 + 0.7]}
+				width={1.4}
+				thickness={0.3}
+				count={5000}
+				size={[0.006, 0.16]}
+				clear={[
+					{ at: [0, 0, 0], radius: 1.1 },
+					{ at: [0.4, 0.5, 2.6], radius: 2.2 }
+				]}
+				crowd={{ at: [0, 0, 0], radius: 6, factor: 3 }}
 			/>
 		{:else if view === 'chromium'}
 			<!-- Uncharted: no places. -->

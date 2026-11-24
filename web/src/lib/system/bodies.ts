@@ -160,6 +160,18 @@ export const CHROMIUM: BodyLook = {
 };
 
 /**
+ * Hielo, "the Pluto of this world": the asteroid belt's largest body, an icy, cratered dwarf with
+ * a bright smooth plain, dark rough land, a field of chasms (the ice caves) and a few outpost
+ * lights. A thin blue haze at the rim, as Pluto has.
+ */
+export const HIELO: BodyLook = {
+	name: 'Hielo',
+	radius: 0.6,
+	glow: 1.5,
+	atmosphere: { color: [0.55, 0.7, 1.0], strength: 0.25, height: 1.02 }
+};
+
+/**
  * Didymus, one small planet broken in two long ago: Prime, the larger, kidney-bean shaped and
  * home to every known place; and its smaller, rounder, more charred twin. Each keeps its worn
  * break face (lon 180) toward the other. Thin red-brown dust haze, no clouds.
