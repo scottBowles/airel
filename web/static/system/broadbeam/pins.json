@@ -1,0 +1,11 @@
+{
+  "body": "Broadbeam",
+  "pins": [
+    {
+      "name": "Gliten's Floating Cube Chapel",
+      "lat": 35,
+      "lon": -40,
+      "confidence": "guess"
+    }
+  ]
+}

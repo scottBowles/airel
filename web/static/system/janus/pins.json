@@ -1,0 +1,65 @@
+{
+  "body": "Janus",
+  "pins": [
+    {
+      "name": "Mezzolux",
+      "lat": 0,
+      "lon": -90,
+      "confidence": "lore"
+    },
+    {
+      "name": "The Penumbra",
+      "lat": 14,
+      "lon": -90,
+      "confidence": "layout"
+    },
+    {
+      "name": "The House of Knowledge",
+      "lat": 12,
+      "lon": -96,
+      "confidence": "layout"
+    },
+    {
+      "name": "Visparo's Hut",
+      "lat": 12,
+      "lon": -90.4,
+      "confidence": "layout"
+    },
+    {
+      "name": "Janus Underground",
+      "lat": 11.5,
+      "lon": -90.9,
+      "confidence": "layout"
+    },
+    {
+      "name": "Black Lake",
+      "lat": 11.5,
+      "lon": -93,
+      "confidence": "layout"
+    },
+    {
+      "name": "The Wastelands",
+      "lat": -11,
+      "lon": -90,
+      "confidence": "layout"
+    },
+    {
+      "name": "Butte on Janus",
+      "lat": 8,
+      "lon": -90.0,
+      "confidence": "layout"
+    },
+    {
+      "name": "Sarcophagus of Gliten",
+      "lat": 7.4,
+      "lon": -89.7,
+      "confidence": "lore"
+    },
+    {
+      "name": "House Roderick's castle",
+      "lat": 30,
+      "lon": -125,
+      "confidence": "guess"
+    }
+  ]
+}

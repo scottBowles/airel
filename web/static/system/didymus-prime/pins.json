@@ -1,0 +1,41 @@
+{
+  "body": "Didymus Prime",
+  "pins": [
+    {
+      "name": "Goshen",
+      "lat": 24.0,
+      "lon": 52.0,
+      "confidence": "guess"
+    },
+    {
+      "name": "The Labyrinth",
+      "lat": 23.6,
+      "lon": 53.6,
+      "confidence": "guess"
+    },
+    {
+      "name": "Ashtown",
+      "lat": 14.0,
+      "lon": 118.0,
+      "confidence": "guess"
+    },
+    {
+      "name": "Copper Kettle",
+      "lat": 14.0,
+      "lon": 118.0,
+      "confidence": "layout"
+    },
+    {
+      "name": "Daedalus Headquarters",
+      "lat": 14.05,
+      "lon": 118.15,
+      "confidence": "layout"
+    },
+    {
+      "name": "Ashtown Bomb Shelter",
+      "lat": 13.95,
+      "lon": 118.0,
+      "confidence": "layout"
+    }
+  ]
+}

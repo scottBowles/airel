@@ -218,6 +218,13 @@ body::before {
 	background-size: 256px 256px;
 }
 
+/* Pages with a clear view of space (the solar system) turn the screen effects off: the
+   scanlines and grain dim fine detail and shimmer over a moving 3D scene. */
+body.clear-view::before,
+body.clear-view::after {
+	display: none;
+}
+
 /* Selection */
 ::selection {
 	background-color: rgba(255, 176, 0, 0.3);

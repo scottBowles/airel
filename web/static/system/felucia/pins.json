@@ -1,0 +1,35 @@
+{
+  "body": "Felucia",
+  "pins": [
+    {
+      "name": "The Wildlands",
+      "lat": -10,
+      "lon": 120,
+      "confidence": "guess"
+    },
+    {
+      "name": "High elven forest",
+      "lat": 35,
+      "lon": -60,
+      "confidence": "guess"
+    },
+    {
+      "name": "Libraries of Felucia",
+      "lat": 14,
+      "lon": -16,
+      "confidence": "guess"
+    },
+    {
+      "name": "Volcano of Mazo\u00eb's sarcophagus",
+      "lat": 5,
+      "lon": 40,
+      "confidence": "guess"
+    },
+    {
+      "name": "Hot springs",
+      "lat": 0,
+      "lon": 44,
+      "confidence": "guess"
+    }
+  ]
+}

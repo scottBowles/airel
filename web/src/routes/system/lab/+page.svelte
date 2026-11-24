@@ -1,0 +1,498 @@
+<script lang="ts">
+	// A workbench for the solar-system models: look at each sun and planet on its own.
+	import { Canvas, T } from '@threlte/core';
+	import { NeutralToneMapping } from 'three';
+	import { OrbitControls, Stars } from '@threlte/extras';
+	import { CHROMIUM, DIDYMUS, HIELO, DIDYMUS_PRIME, FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import AsteroidBelt from '$lib/system/AsteroidBelt.svelte';
+	import Orbit from '$lib/system/Orbit.svelte';
+	import Planet from '$lib/system/Planet.svelte';
+	import Sun from '$lib/system/Sun.svelte';
+	import SystemView from '$lib/system/SystemView.svelte';
+	import type { Pin } from '$lib/system/geo';
+	import { RED_SUN, YELLOW_SUN } from '$lib/system/sunShader';
+
+	const VIEWS = [
+		{ id: 'system', label: 'The system' },
+		{ id: 'suns', label: 'Both suns' },
+		{ id: 'yellow', label: 'The Yellow Sun' },
+		{ id: 'red', label: 'The Red Sun' },
+		{ id: 'magmus', label: 'Magmus' },
+		{ id: 'felucia', label: 'Felucia' },
+		{ id: 'terran', label: 'Terran' },
+		{ id: 'genussa', label: 'Genussa' },
+		{ id: 'janus', label: 'Janus' },
+		{ id: 'mystra', label: 'Mystra' },
+		{ id: 'didymus', label: 'Didymus' },
+		{ id: 'chromium', label: 'Chromium' },
+		{ id: 'hielo', label: 'Hielo' },
+		{ id: 'hyang-wan', label: 'Hyang Wan' },
+		{ id: 'gonhirrim', label: 'Gonhirrim' }
+	];
+	const MOONS = Object.entries(GONHIRRIM_MOONS);
+
+	let view = $state('system');
+	// The system view: how fast time runs, and the body the camera follows.
+	let rate = $state(1);
+	let follow = $state<string | null>(null);
+	const RATES = [
+		{ rate: 0, label: 'Pause' },
+		{ rate: 1, label: '1×' },
+		{ rate: 10, label: '10×' },
+		{ rate: 60, label: '60×' }
+	];
+	const DESTINATIONS = [
+		{ id: 'yellow', label: 'Yellow Sun' },
+		{ id: 'magmus', label: 'Magmus' },
+		{ id: 'felucia', label: 'Felucia' },
+		{ id: 'terran', label: 'Terran' },
+		{ id: 'hyang-wan', label: 'Hyang Wan' },
+		{ id: 'gonhirrim', label: 'Gonhirrim' },
+		{ id: 'hielo', label: 'Hielo' },
+		{ id: 'chromium', label: 'Chromium' },
+		{ id: 'mystra', label: 'Mystra' },
+		{ id: 'genussa', label: 'Genussa' },
+		{ id: 'janus', label: 'Janus' },
+		{ id: 'didymus', label: 'Didymus' },
+		{ id: 'red', label: 'Red Sun' }
+	];
+	const followName = $derived(
+		DESTINATIONS.find((d) => d.id === follow)?.label ?? (follow && GONHIRRIM_MOONS[follow]?.name) ?? ''
+	);
+	let showPins = $state(true);
+	let selected = $state<Pin | null>(null);
+	let pins = $state<Pin[]>([]);
+
+	/** The body whose places can be pinned in this view, if any. */
+	const focus = $derived(
+		view === 'magmus' || view === 'hyang-wan' || view === 'felucia' || view === 'terran' || view === 'genussa' || view === 'janus' || view === 'mystra' ? view : view === 'didymus' ? 'didymus-prime' : view.startsWith('moon:') ? view.slice(5) : null
+	);
+	const moon = $derived(focus && view.startsWith('moon:') ? GONHIRRIM_MOONS[focus] : null);
+	const focusName = $derived(moon ? moon.name : view === 'hyang-wan' ? HYANG_WAN.name : view === 'felucia' ? FELUCIA.name : view === 'terran' ? TERRAN.name : view === 'genussa' ? GENUSSA.name : view === 'mystra' ? MYSTRA.name : view === 'didymus' ? DIDYMUS_PRIME.name : view === 'janus' ? JANUS.name : 'Magmus');
+	const inGonhirrim = $derived(view === 'gonhirrim' || view.startsWith('moon:'));
+
+	$effect(() => {
+		pins = [];
+		const slug = focus;
+		if (!slug) return;
+		fetch(`/system/${slug}/pins.json`)
+			.then((r) => r.json())
+			.then((d) => {
+				if (slug === focus) pins = d.pins;
+			});
+	});
+
+	const camera = $derived(
+		view === 'suns'
+			? { at: [0, 2, 14], min: 1.3 }
+			: view === 'gonhirrim'
+				? { at: [0, 7, 30], min: 5 }
+				: view === 'hyang-wan'
+					? { at: [0, 0.8, 5.4], min: 1.9 }
+				: view === 'felucia'
+					? { at: [0, 0.7, 4.6], min: 1.6 }
+				: view === 'terran' || view === 'genussa'
+					? { at: [0, 0.8, 5.4], min: 1.9 }
+				: view === 'janus'
+					? { at: [0, 0.6, 4.4], min: 1.45 }
+				: view === 'mystra'
+					? { at: [0, 0.6, 4.4], min: 1.5 }
+				: view === 'didymus'
+					? { at: [0, 0.5, 4.2], min: 1.0 }
+				: view === 'hielo'
+					? { at: [0.4, 0.5, 2.6], min: 0.8 }
+				: view === 'chromium'
+					? { at: [0, 0.6, 4.3], min: 1.45 }
+				: moon
+					? { at: [0, 0.25, moon.radius * 3.6], min: moon.radius * 1.3 }
+					: { at: [0, 0.6, 3.4], min: 1.3 }
+	);
+
+	// The Yellow Sun, off to the side of whatever we're looking at.
+	const SUN_AT: [number, number, number] = [-26, 3, 14];
+	// Janus keeps one face to the Red Sun: put it square to the side, so the default view looks
+	// straight at the Mezzolux, light to the east (right), dark to the west.
+	const JANUS_SUN: [number, number, number] = [30, 2, 0];
+	const GONHIRRIM_SUN: [number, number, number] = [-80, 8, 45];
+
+	function pick(id: string) {
+		view = id;
+		selected = null;
+	}
+</script>
+
+<svelte:head><title>System lab</title></svelte:head>
+
+<div class="lab">
+	<!-- At most 2× pixel density: phones are often 3×, which costs half again more pixels per frame for little visible gain. -->
+	<Canvas toneMapping={NeutralToneMapping} dpr={[1, 2]}>
+		{#if view === 'system'}
+			<SystemView {rate} bind:focus={follow} {showPins} onpin={(p) => (selected = p)} />
+		{:else}
+		{#key view}
+			<T.PerspectiveCamera makeDefault position={camera.at as [number, number, number]} fov={45}>
+				<OrbitControls enableDamping minDistance={camera.min} maxDistance={90} />
+			</T.PerspectiveCamera>
+		{/key}
+		<Stars count={4000} radius={150} />
+		{/if}
+		{#if view === 'suns'}
+			<Sun look={YELLOW_SUN} position={[-3, 0, 0]} />
+			<Sun look={RED_SUN} position={[3, 0, 0]} />
+		{:else if view === 'yellow'}
+			<Sun look={YELLOW_SUN} />
+		{:else if view === 'red'}
+			<Sun look={RED_SUN} />
+		{:else if view === 'magmus'}
+			<T.AmbientLight intensity={0.08} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.2} />
+			<Planet
+				slug="magmus"
+				glow={1.0}
+				face={0}
+				flicker={1}
+				spin={0.004}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'terran'}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="terran"
+				radius={TERRAN.radius}
+				glow={TERRAN.glow}
+				clouds={TERRAN.clouds}
+				atmosphere={TERRAN.atmosphere}
+				nightLights
+				detail={1}
+				sun={SUN_AT}
+				face={20}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'genussa'}
+			<!-- It orbits the Red Sun, so it's lit red. -->
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={RED_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="genussa"
+				radius={GENUSSA.radius}
+				glow={GENUSSA.glow}
+				metalness={GENUSSA.metalness}
+				clouds={GENUSSA.clouds}
+				atmosphere={GENUSSA.atmosphere}
+				nightLights
+				detail={1}
+				sun={SUN_AT}
+				face={0}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'mystra'}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={RED_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="mystra"
+				radius={MYSTRA.radius}
+				glow={MYSTRA.glow}
+				clouds={MYSTRA.clouds}
+				atmosphere={MYSTRA.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={0}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'hielo'}
+			<!-- Hielo in the belt. The belt's arc runs through it, left to right. -->
+			<T.AmbientLight intensity={0.05} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet slug="hielo" radius={HIELO.radius} glow={HIELO.glow} atmosphere={HIELO.atmosphere} nightLights sun={SUN_AT} face={-160} spin={0.002} />
+			<AsteroidBelt
+				centre={[0, 0, -30]}
+				radius={30}
+				arc={[-Math.PI / 2 - 0.7, -Math.PI / 2 + 0.7]}
+				width={1.4}
+				thickness={0.12}
+				count={12000}
+				size={[0.003, 0.12]}
+				clear={[
+					{ at: [0, 0, 0], radius: 1.1, shield: true },
+					{ at: [0.4, 0.5, 2.6], radius: 2.2 }
+				]}
+				crowd={{ at: [0, 0, 0], radius: 6, factor: 3 }}
+			/>
+		{:else if view === 'chromium'}
+			<!-- Uncharted: no places. -->
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="chromium"
+				radius={CHROMIUM.radius}
+				glow={CHROMIUM.glow}
+				flicker={CHROMIUM.flicker}
+				clouds={CHROMIUM.clouds}
+				atmosphere={CHROMIUM.atmosphere}
+				sun={SUN_AT}
+				face={0}
+				spin={0.003}
+			/>
+		{:else if view === 'didymus'}
+			<!-- The twins, each with its worn break face (lon 180) turned to the other. -->
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={RED_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="didymus-prime"
+				position={[-0.75, 0, 0]}
+				radius={DIDYMUS_PRIME.radius}
+				shape={DIDYMUS_PRIME.shape}
+				glow={DIDYMUS_PRIME.glow}
+				atmosphere={DIDYMUS_PRIME.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={90}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+			<Planet
+				slug="didymus"
+				position={[1.05, 0, 0]}
+				radius={DIDYMUS.radius}
+				glow={DIDYMUS.glow}
+				atmosphere={DIDYMUS.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={-90}
+			/>
+		{:else if view === 'janus'}
+			<!-- A little more than the other planets get, so the dark side's rock and steam can be made out. -->
+			<T.AmbientLight intensity={0.14} />
+			<Sun look={RED_SUN} radius={1.2} position={JANUS_SUN} intensity={1.6} />
+			<Planet
+				slug="janus"
+				radius={JANUS.radius}
+				glow={JANUS.glow}
+				clouds={JANUS.clouds}
+				atmosphere={JANUS.atmosphere}
+				twilight={JANUS.twilight}
+				nightLights
+				sun={JANUS_SUN}
+				face={-90}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'felucia'}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="felucia"
+				radius={FELUCIA.radius}
+				glow={FELUCIA.glow}
+				clouds={FELUCIA.clouds}
+				atmosphere={FELUCIA.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={-10}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'hyang-wan'}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="hyang-wan"
+				radius={HYANG_WAN.radius}
+				glow={HYANG_WAN.glow}
+				clouds={HYANG_WAN.clouds}
+				atmosphere={HYANG_WAN.atmosphere}
+				nightLights
+				sun={SUN_AT}
+				face={-24}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+			<Orbit period={HYANG_WAN_MOON.orbit!.period} phase={HYANG_WAN_MOON.orbit!.phase} tilt={HYANG_WAN_MOON.orbit!.tilt}>
+				<Planet
+					slug="hyang-wan-moon"
+					radius={HYANG_WAN_MOON.radius}
+					position={[HYANG_WAN_MOON.orbit!.distance, 0, 0]}
+					face={90}
+					sun={SUN_AT}
+				/>
+			</Orbit>
+		{:else if view === 'gonhirrim'}
+			<T.AmbientLight intensity={0.05} />
+			<Sun look={YELLOW_SUN} radius={3} position={GONHIRRIM_SUN} intensity={1.6} />
+			<Planet
+				slug="gonhirrim"
+				radius={GONHIRRIM.radius}
+				glow={GONHIRRIM.glow}
+				flicker={GONHIRRIM.flicker}
+				atmosphere={GONHIRRIM.atmosphere}
+				sun={GONHIRRIM_SUN}
+				face={40}
+				spin={0.006}
+			/>
+			{#each MOONS as [slug, m] (slug)}
+				<Orbit period={m.orbit!.period} phase={m.orbit!.phase} tilt={m.orbit!.tilt}>
+					<Planet
+						{slug}
+						radius={m.radius}
+						position={[m.orbit!.distance, 0, 0]}
+						face={90}
+						glow={m.glow ?? 1}
+						clouds={m.clouds}
+						atmosphere={m.atmosphere}
+						nightLights
+						sun={GONHIRRIM_SUN}
+					/>
+				</Orbit>
+			{/each}
+		{:else if moon}
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<!-- A planet loads its textures once, so switching moons needs a fresh one. -->
+			{#key focus}
+				<Planet
+				slug={focus!}
+				radius={moon.radius}
+				glow={moon.glow ?? 1}
+				clouds={moon.clouds}
+				atmosphere={moon.atmosphere}
+					nightLights
+				sun={SUN_AT}
+				face={pins[0]?.lon ?? 0}
+				spin={0.003}
+				pins={showPins ? pins : []}
+				onpin={(p) => (selected = p)}
+			/>
+			{/key}
+		{/if}
+	</Canvas>
+
+	<nav class="panel">
+		{#each VIEWS as v (v.id)}
+			<button class:active={view === v.id} onclick={() => pick(v.id)}>{v.label}</button>
+		{/each}
+		{#if view === 'system'}
+			<div class="moons">
+				{#each RATES as r (r.rate)}
+					<button class:active={rate === r.rate} onclick={() => (rate = r.rate)}>{r.label}</button>
+				{/each}
+				<button class:active={follow === null} onclick={() => ((follow = null), (selected = null))}>Overview</button>
+				<label><input type="checkbox" bind:checked={showPins} /> Places</label>
+			</div>
+			<div class="moons">
+				{#each DESTINATIONS as d (d.id)}
+					<button class:active={follow === d.id} onclick={() => ((follow = d.id), (selected = null))}>{d.label}</button>
+				{/each}
+			</div>
+			{#if follow === 'gonhirrim' || (follow && follow in GONHIRRIM_MOONS)}
+				<div class="moons">
+					{#each MOONS as [slug, m] (slug)}
+						<button class:active={follow === slug} onclick={() => ((follow = slug), (selected = null))}>{m.name}</button>
+					{/each}
+				</div>
+			{/if}
+		{/if}
+		{#if focus}
+			<label><input type="checkbox" bind:checked={showPins} /> Places</label>
+		{/if}
+		{#if inGonhirrim}
+			<div class="moons">
+				{#each MOONS as [slug, m] (slug)}
+					<button class:active={view === `moon:${slug}`} onclick={() => pick(`moon:${slug}`)}>{m.name}</button>
+				{/each}
+			</div>
+		{/if}
+	</nav>
+
+	{#if selected}
+		<aside class="readout">
+			<div class="kicker">{view === 'system' ? followName : focusName} · {selected.lat.toFixed(1)}°, {selected.lon.toFixed(1)}°</div>
+			<h2>{selected.name}</h2>
+			<p>
+				Position: <strong>{selected.confidence}</strong>
+				{#if selected.confidence === 'lore'}(fixed by the session logs){:else if selected.confidence === 'layout'}(area from the logs){:else}(not in the lore yet){/if}
+			</p>
+			<button onclick={() => (selected = null)}>Close</button>
+		</aside>
+	{/if}
+</div>
+
+<style>
+	.lab {
+		position: relative;
+		flex: 1;
+		min-height: 0;
+		background: radial-gradient(ellipse at center, #0b0d18 0%, #03040a 70%);
+		color: #e8e4d8;
+	}
+	.panel {
+		position: absolute;
+		top: 12px;
+		left: 12px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		align-items: center;
+		max-width: calc(100% - 24px);
+	}
+	.panel button,
+	.panel label,
+	.readout button {
+		font: 500 12px/1 ui-monospace, monospace;
+		padding: 7px 10px;
+		border: 1px solid #3a3d52;
+		border-radius: 4px;
+		background: #0d0f1ccc;
+		color: inherit;
+		cursor: pointer;
+	}
+	.moons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		flex-basis: 100%;
+	}
+	.panel button.active {
+		border-color: #e8b45a;
+		color: #ffd58a;
+	}
+	.readout {
+		position: absolute;
+		right: 12px;
+		bottom: 12px;
+		width: min(320px, calc(100% - 24px));
+		padding: 14px 16px;
+		border: 1px solid #e8b45a66;
+		border-radius: 6px;
+		background: #0a0c16e6;
+		font: 13px/1.45 ui-monospace, monospace;
+		overflow: hidden;
+	}
+	/* The ship's computer keeps its screen look; the view of space behind it stays clear. */
+	.readout::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.22) 2px 4px);
+	}
+	.readout .kicker {
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #e8b45a;
+	}
+	.readout h2 {
+		margin: 4px 0 8px;
+		font-size: 17px;
+	}
+</style>

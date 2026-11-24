@@ -1,0 +1,23 @@
+{
+  "body": "Ironfist",
+  "pins": [
+    {
+      "name": "Lady's Ladle",
+      "lat": -20.4,
+      "lon": 59.4,
+      "confidence": "layout"
+    },
+    {
+      "name": "Colosseum of Mazo\u00eb",
+      "lat": -19.6,
+      "lon": 60.7,
+      "confidence": "layout"
+    },
+    {
+      "name": "Golly mines",
+      "lat": -16.5,
+      "lon": 64,
+      "confidence": "layout"
+    }
+  ]
+}
