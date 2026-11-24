@@ -17,13 +17,13 @@ Real analogue, and how it's translated:
   equatorial regions; grey-blue methane-frosted uplands; a blue haze (set in the app). Pluto's dark
   terrain is red-brown tholin; here it's kept a muted grey-brown, as the user pictured a grey-white
   body and broad strong colour reads as damage.
-- Charon and Ariel: long chasms and graben in fractured ice. Here the ice-cave country is a field
-  of such chasms, drawn as relief (the normal map), with fresher bluish ice in the floors, not as
-  dark lines.
+- The ice caves aren't drawn: they're underground, and every surface version tried (graben,
+  a branching canyon, pit chains) read as scratches or lines from orbit (user, Nov 2026). Only
+  Whidmore's faint light marks where they are.
 - Callisto and Ganymede: bright-rayed fresh craters on dark ice; a few here.
 
 Interpretations (all guesses, from the brief): the plain at (10, 175); dark rough land around
-(-20, -120); the chasm field at (16, -38); the Hiobium works (5, 10), the science station
+(-20, -120); the ice caves at (16, -38) (unmarked but for a light); the Hiobium works (5, 10), the science station
 (-10, 60) and Bode's camp (50, -90) as faint points of light; soft polar frost.
 """
 
@@ -34,8 +34,6 @@ import time
 from pathlib import Path
 
 import numpy as np
-
-from clouds import rank
 from moons import crater, random_points
 from planetgen import (
     Noise3,
@@ -57,7 +55,6 @@ SEED = 1616
 PLAIN = (10, 175, 30)
 PLAIN2 = (-6, 157, 20)  # a second, offset lobe: the plain is heart-like, not a disc  # centre and radius°: the bright smooth ice plain
 DARK = (-15, -120, 48)  # the dark rough land
-CHASMS = (16, -38, 12)  # the ice-cave country
 CRATERS = 1200
 RAYED = 6
 LIGHTS = [
@@ -132,58 +129,16 @@ def generate(width: int, out: Path) -> None:
     f1, f2, cid = worley(p * 10 + 0.6 * warp + 0.05 * np.stack([fbm(n[9], p * 60, 2)] * 3, -1), SEED)
     # Soft rounded domes with broad shallow troughs, not tiles: a sharp edge drew a crazed web.
     cell_edge = smoothstep(0.0, 0.5, f2 - f1)  # 0 at the troughs
-    cell_tone = (cid % 97) / 96.0
 
-    # The ice-cave country: one winding canyon with two side branches at different angles (as
-    # Mars's Noctis Labyrinthus or Charon's chasmata branch), and two chains of collapse pits, where
-    # cave roofs have fallen in (pit chains mark caves and lava tubes on Mars and the Moon). Four
-    # parallel troughs read as eight parallel lines (a lit wall and a dark wall each).
-    # Laid out in the surface's own frame at the cave country, coordinates ~radians.
-    c = unit(CHASMS[0], CHASMS[1])
-    east = np.cross([0, 0, 1], c)
-    east /= np.linalg.norm(east)
-    north = np.cross(c, east)
-    front = p @ c > 0.8
-    x = np.where(front, p @ east, 9.0) + 0.012 * fbm(n[10], p * 9, 3)  # walls wander a little
-    y = np.where(front, p @ north, 9.0) + 0.012 * fbm(n[11], p * 9, 3)
+    print(f"plain {time.time() - t0:.1f}s")
 
-    def canyon(pts, w0, w1):
-        """Distance-based trough along a polyline (x, y), half-width w0 at the start to w1 at the
-        end, tapering shut at both tips; flat floor, steep walls."""
-        out = np.zeros(g.lat.shape, np.float32)
-        total = sum(np.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts[:-1], pts[1:]))
-        run = 0.0
-        for a, b in zip(pts[:-1], pts[1:]):
-            ab = np.array(b) - np.array(a)
-            ln = float(np.hypot(*ab))
-            t = np.clip(((x - a[0]) * ab[0] + (y - a[1]) * ab[1]) / ln**2, 0, 1)
-            d = np.hypot(x - a[0] - t * ab[0], y - a[1] - t * ab[1])
-            u = (run + t * ln) / total  # 0..1 along the whole canyon
-            w = (w0 + (w1 - w0) * u) * np.clip(np.sin(np.pi * u) * 2.2, 0.15, 1)
-            out = np.maximum(out, smoothstep(w, 0.6 * w, d))
-            run += ln
-        return out
-
-    trough = canyon([(-0.17, -0.07), (-0.09, -0.02), (-0.02, -0.01), (0.05, 0.03), (0.15, 0.06)], 0.022, 0.03)
-    trough = np.maximum(trough, canyon([(-0.04, -0.01), (-0.03, 0.06), (0.01, 0.12), (0.0, 0.17)], 0.016, 0.01))
-    trough = np.maximum(trough, canyon([(0.07, 0.035), (0.1, -0.03), (0.09, -0.1)], 0.014, 0.009))
-    # Pit chains: round collapse pits in a row, unevenly sized and spaced, some merging.
-    for a, b, k in (((-0.16, 0.05), (-0.05, 0.13), 8), ((-0.12, -0.13), (0.02, -0.15), 7)):
-        for i in range(k):
-            t = (i + rng.uniform(-0.3, 0.3)) / (k - 1)
-            px = a[0] + (b[0] - a[0]) * t + rng.normal(0, 0.004)
-            py = a[1] + (b[1] - a[1]) * t + rng.normal(0, 0.004)
-            r = rng.uniform(0.005, 0.011)
-            trough = np.maximum(trough, smoothstep(r, 0.5 * r, np.hypot(x - px, y - py)))
-    print(f"plain+chasms {time.time() - t0:.1f}s")
-
-    # Height: one field, the plain sunk and flat, chasms cut, craters.
+    # Height: one field, the plain sunk and flat, craters.
     h = 0.5 + 0.25 * base + 0.12 * (ridges - 0.5) * (1 + dark) + 0.03 * detail
     # The plain's ice laps up over a wide margin, so its edge is a gentle slope, not a scarp
     # (a narrow drop cast a hard straight line in low sun).
     sink = smoothstep(1.45, 0.8, pd)
     h = h * (1 - sink) + (0.38 + 0.003 * cell_edge) * sink
-    h = h + crat * (1 - trough) - 0.1 * trough
+    h = h + crat
     height = np.clip(h, 0, 1)
 
     # --- Colour ---------------------------------------------------------------------------
@@ -202,8 +157,6 @@ def generate(width: int, out: Path) -> None:
     floor = np.clip(-crat * 8, 0, 1)[..., None]
     rgb = rgb * (1 - 0.06 * floor) * (1 + 0.1 * np.clip(ejecta, 0, 1)[..., None])
     rgb = rgb * (1 - rays[..., None] * 0.45) + np.array([0.84, 0.86, 0.88], np.float32) * rays[..., None] * 0.45
-    # Chasm floors: fresh bluish ice.
-    rgb = rgb * (1 - 0.35 * trough[..., None]) + np.array([0.45, 0.52, 0.6], np.float32) * 0.35 * trough[..., None]
     # The plain: bright cream-white ice, cells faintly varied, troughs barely darker.
     # Neutral, a touch cool: a cream white rendered khaki-olive under the warm sun.
     plainrgb = np.array([0.8, 0.81, 0.83], np.float32) * (0.98 + 0.02 * cell_edge[..., None])
