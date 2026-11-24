@@ -11,15 +11,17 @@
 		/** Tilt of the orbital plane, degrees. */
 		tilt?: number;
 		position?: [number, number, number];
+		/** How fast time runs: 1 is normal, 0 paused. */
+		rate?: number;
 		children: Snippet;
 	};
-	let { period, phase = 0, tilt = 0, position = [0, 0, 0], children }: Props = $props();
+	let { period, phase = 0, tilt = 0, position = [0, 0, 0], rate = 1, children }: Props = $props();
 
 	// Anything placed on the +x axis inside circles the centre; because it turns with the
 	// group, it keeps one face to the centre (tidal lock).
 	let spinner = $state<THREE.Group>();
 	useTask((delta) => {
-		if (spinner) spinner.rotation.y += ((Math.PI * 2) / period) * delta;
+		if (spinner) spinner.rotation.y += ((Math.PI * 2) / period) * delta * rate;
 	});
 </script>
 

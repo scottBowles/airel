@@ -62,6 +62,8 @@
 		twilight?: { strength: number; color?: [number, number, number] };
 		/** A non-spherical body (Didymus Prime's kidney bean). */
 		shape?: Shape;
+		/** Load the small maps (made by tools/planets/far_maps.py): for a body seen from afar. */
+		far?: boolean;
 	};
 	let {
 		slug,
@@ -80,7 +82,8 @@
 		nightLights = false,
 		detail = 0,
 		twilight,
-		shape
+		shape,
+		far = false
 	}: Props = $props();
 
 	/** A unit sphere, or the shaped body, with normals worked out from the shape itself (not
@@ -130,8 +133,9 @@
 	const airGeometry = body(96, 48);
 
 	const loader = new THREE.TextureLoader();
+	// The maps are fixed for the planet's lifetime: to switch to or from the small ones, re-create it.
 	function load(file: string, srgb: boolean) {
-		const tex = loader.load(`/system/${slug}/${file}`);
+		const tex = loader.load(`/system/${slug}/${far ? 'far/' : ''}${file}`);
 		tex.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
 		tex.anisotropy = 8;
 		return tex;

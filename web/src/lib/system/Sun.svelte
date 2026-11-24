@@ -9,8 +9,14 @@
 		position?: [number, number, number];
 		/** Strength of the light the sun casts on planets. */
 		intensity?: number;
+		/**
+		 * How far the light reaches (0: everywhere, undimmed). It fades smoothly to nothing there,
+		 * so with two suns each planet is lit mostly by its own, and a tidally locked world's dark
+		 * side stays dark.
+		 */
+		reach?: number;
 	};
-	let { look, radius = 1, position = [0, 0, 0], intensity = 3 }: Props = $props();
+	let { look, radius = 1, position = [0, 0, 0], intensity = 3, reach = 0 }: Props = $props();
 
 	const CORONA = 2.6; // corona size, in sun radii
 	// The look is fixed for a sun's lifetime, so the materials are built once.
@@ -41,5 +47,5 @@
 	<T.Mesh scale={radius * CORONA} material={corona} renderOrder={1}>
 		<T.PlaneGeometry args={[2, 2]} />
 	</T.Mesh>
-	<T.PointLight color={light} {intensity} decay={0} />
+	<T.PointLight color={light} {intensity} decay={0} distance={reach} />
 </T.Group>

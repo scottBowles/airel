@@ -26,9 +26,14 @@
 		clear?: { at: [number, number, number]; radius: number; shield?: boolean }[];
 		/** Crowd rocks toward a point: they're this many times denser near it. */
 		crowd?: { at: [number, number, number]; radius: number; factor: number };
+		/**
+		 * Faint specks of dust and gravel along the belt, a few pixels each whatever the distance:
+		 * from afar the rocks are too small and dark to see, and this shows where the belt is.
+		 */
+		dust?: number;
 		seed?: number;
 	};
-	let { centre = [0, 0, 0], radius, arc, width, thickness, count, size, icy = 0.2, clear, crowd, seed = 7 }: Props = $props();
+	let { centre = [0, 0, 0], radius, arc, width, thickness, count, size, icy = 0.2, clear, crowd, dust = 0, seed = 7 }: Props = $props();
 
 	/** Small seeded PRNG (mulberry32), so the belt is the same on every load. */
 	function rng(s: number) {
@@ -230,6 +235,33 @@
 		}
 	}
 
+	// svelte-ignore state_referenced_locally
+	const dustPoints = (() => {
+		if (!dust) return null;
+		const pos = new Float32Array(dust * 3);
+		const col = new Float32Array(dust * 3);
+		for (let i = 0; i < dust; i++) {
+			const a = arc[0] + (arc[1] - arc[0]) * (0.5 + 0.5 * (r() + r() - 1) * 1.15);
+			const rr = radius + gauss(r) * width * 1.3;
+			pos.set([centre[0] + rr * Math.cos(a), centre[1] + gauss(r) * thickness * 1.5, centre[2] - rr * Math.sin(a)], i * 3);
+			// Faint, some brighter (sunlit ice), a touch warm.
+			const l = 0.025 + 0.12 * r() ** 4;
+			col.set([l, l * 0.96, l * 0.9], i * 3);
+		}
+		const g = new THREE.BufferGeometry();
+		g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+		g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+		const m = new THREE.PointsMaterial({
+			size: 1.3,
+			sizeAttenuation: false,
+			vertexColors: true,
+			transparent: true,
+			blending: THREE.AdditiveBlending,
+			depthWrite: false
+		});
+		return new THREE.Points(g, m);
+	})();
+
 	const meshes = geometries.map((g, i) => {
 		const m = new THREE.InstancedMesh(g, material, Math.max(rocks[i].length, 1));
 		m.count = rocks[i].length;
@@ -279,9 +311,14 @@
 		geometries.forEach((g) => g.dispose());
 		material.dispose();
 		bump.dispose();
+		dustPoints?.geometry.dispose();
+		(dustPoints?.material as THREE.Material | undefined)?.dispose();
 	});
 </script>
 
 {#each meshes as mesh, i (i)}
 	<T is={mesh} />
 {/each}
+{#if dustPoints}
+	<T is={dustPoints} />
+{/if}

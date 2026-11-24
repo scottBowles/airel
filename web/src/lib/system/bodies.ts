@@ -224,3 +224,11 @@ export const HYANG_WAN_MOON: BodyLook = {
 	radius: 0.3,
 	orbit: { distance: 4.6, period: 300, phase: 2.2, tilt: 4 }
 };
+
+/** The fire world, nearest the Yellow Sun: lava under no cloud. */
+export const MAGMUS: BodyLook = {
+	name: 'Magmus',
+	radius: 1,
+	glow: 1,
+	flicker: 1
+};

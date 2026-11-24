@@ -8,10 +8,12 @@
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
+	import SystemView from '$lib/system/SystemView.svelte';
 	import type { Pin } from '$lib/system/geo';
 	import { RED_SUN, YELLOW_SUN } from '$lib/system/sunShader';
 
 	const VIEWS = [
+		{ id: 'system', label: 'The system' },
 		{ id: 'suns', label: 'Both suns' },
 		{ id: 'yellow', label: 'The Yellow Sun' },
 		{ id: 'red', label: 'The Red Sun' },
@@ -29,7 +31,34 @@
 	];
 	const MOONS = Object.entries(GONHIRRIM_MOONS);
 
-	let view = $state('janus');
+	let view = $state('system');
+	// The system view: how fast time runs, and the body the camera follows.
+	let rate = $state(1);
+	let follow = $state<string | null>(null);
+	const RATES = [
+		{ rate: 0, label: 'Pause' },
+		{ rate: 1, label: '1×' },
+		{ rate: 10, label: '10×' },
+		{ rate: 60, label: '60×' }
+	];
+	const DESTINATIONS = [
+		{ id: 'yellow', label: 'Yellow Sun' },
+		{ id: 'magmus', label: 'Magmus' },
+		{ id: 'felucia', label: 'Felucia' },
+		{ id: 'terran', label: 'Terran' },
+		{ id: 'hyang-wan', label: 'Hyang Wan' },
+		{ id: 'gonhirrim', label: 'Gonhirrim' },
+		{ id: 'hielo', label: 'Hielo' },
+		{ id: 'chromium', label: 'Chromium' },
+		{ id: 'mystra', label: 'Mystra' },
+		{ id: 'genussa', label: 'Genussa' },
+		{ id: 'janus', label: 'Janus' },
+		{ id: 'didymus', label: 'Didymus' },
+		{ id: 'red', label: 'Red Sun' }
+	];
+	const followName = $derived(
+		DESTINATIONS.find((d) => d.id === follow)?.label ?? (follow && GONHIRRIM_MOONS[follow]?.name) ?? ''
+	);
 	let showPins = $state(true);
 	let selected = $state<Pin | null>(null);
 	let pins = $state<Pin[]>([]);
@@ -97,12 +126,16 @@
 <div class="lab">
 	<!-- At most 2× pixel density: phones are often 3×, which costs half again more pixels per frame for little visible gain. -->
 	<Canvas toneMapping={NeutralToneMapping} dpr={[1, 2]}>
+		{#if view === 'system'}
+			<SystemView {rate} bind:focus={follow} {showPins} onpin={(p) => (selected = p)} />
+		{:else}
 		{#key view}
 			<T.PerspectiveCamera makeDefault position={camera.at as [number, number, number]} fov={45}>
 				<OrbitControls enableDamping minDistance={camera.min} maxDistance={90} />
 			</T.PerspectiveCamera>
 		{/key}
 		<Stars count={4000} radius={150} />
+		{/if}
 		{#if view === 'suns'}
 			<Sun look={YELLOW_SUN} position={[-3, 0, 0]} />
 			<Sun look={RED_SUN} position={[3, 0, 0]} />
@@ -347,6 +380,27 @@
 		{#each VIEWS as v (v.id)}
 			<button class:active={view === v.id} onclick={() => pick(v.id)}>{v.label}</button>
 		{/each}
+		{#if view === 'system'}
+			<div class="moons">
+				{#each RATES as r (r.rate)}
+					<button class:active={rate === r.rate} onclick={() => (rate = r.rate)}>{r.label}</button>
+				{/each}
+				<button class:active={follow === null} onclick={() => ((follow = null), (selected = null))}>Overview</button>
+				<label><input type="checkbox" bind:checked={showPins} /> Places</label>
+			</div>
+			<div class="moons">
+				{#each DESTINATIONS as d (d.id)}
+					<button class:active={follow === d.id} onclick={() => ((follow = d.id), (selected = null))}>{d.label}</button>
+				{/each}
+			</div>
+			{#if follow === 'gonhirrim' || (follow && follow in GONHIRRIM_MOONS)}
+				<div class="moons">
+					{#each MOONS as [slug, m] (slug)}
+						<button class:active={follow === slug} onclick={() => ((follow = slug), (selected = null))}>{m.name}</button>
+					{/each}
+				</div>
+			{/if}
+		{/if}
 		{#if focus}
 			<label><input type="checkbox" bind:checked={showPins} /> Places</label>
 		{/if}
@@ -361,7 +415,7 @@
 
 	{#if selected}
 		<aside class="readout">
-			<div class="kicker">{focusName} · {selected.lat.toFixed(1)}°, {selected.lon.toFixed(1)}°</div>
+			<div class="kicker">{view === 'system' ? followName : focusName} · {selected.lat.toFixed(1)}°, {selected.lon.toFixed(1)}°</div>
 			<h2>{selected.name}</h2>
 			<p>
 				Position: <strong>{selected.confidence}</strong>
