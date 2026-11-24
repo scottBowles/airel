@@ -134,12 +134,9 @@ def generate(width: int, out: Path) -> None:
     cell_edge = smoothstep(0.0, 0.5, f2 - f1)  # 0 at the troughs
     cell_tone = (cid % 97) / 96.0
 
-    # Chasms: long, sub-parallel graben, from a stretched ridged field, inside the cave country.
-    cd = angular_distance(g, CHASMS[0], CHASMS[1]) / CHASMS[2] + 0.3 * fbm(n[9], p * 4 + warp, 3)
-    field = smoothstep(1.2, 0.5, cd)
-    # Squashed hard along one axis so the crests run long and nearly parallel (graben, as on
-    # Charon), few octaves so they're continuous valleys, not scratches.
-    # Laid out in the surface's own frame at the cave country, so they run parallel there.
+    # Four broad graben (as on Charon and Ariel): long troughs with flat floors and steep walls,
+    # parallel, laid out in the surface's own frame at the cave country. Many thin crests read as
+    # claw marks.
     c = unit(CHASMS[0], CHASMS[1])
     east = np.cross([0, 0, 1], c)
     east /= np.linalg.norm(east)
@@ -147,8 +144,14 @@ def generate(width: int, out: Path) -> None:
     ang = np.radians(30)
     across = (p @ east) * np.cos(ang) + (p @ north) * np.sin(ang)
     along = -(p @ east) * np.sin(ang) + (p @ north) * np.cos(ang)
-    q = np.stack([across * 30, along * 3, (p @ c) * 3], -1) + 0.4 * warp
-    trough = smoothstep(0.75, 0.9, ridged(n[10], q, 2)) * field
+    front = p @ c > 0
+    wav = 0.006 * fbm(n[10], p * 12, 3)  # walls wander a little, not ruled straight
+    trough = np.zeros(g.lat.shape, np.float32)
+    for off, half_len, w, shift in ((-0.12, 0.13, 0.022, 0.02), (-0.035, 0.2, 0.034, -0.01), (0.055, 0.16, 0.026, 0.03), (0.13, 0.1, 0.018, -0.02)):
+        d = np.abs(across - off + wav)
+        floor = smoothstep(w, 0.65 * w, d)  # flat floor, walls ~0.35 of the half-width
+        ends = smoothstep(half_len, 0.75 * half_len, np.abs(along - shift))
+        trough = np.maximum(trough, floor * ends * front)
     print(f"plain+chasms {time.time() - t0:.1f}s")
 
     # Height: one field, the plain sunk and flat, chasms cut, craters.
@@ -157,7 +160,7 @@ def generate(width: int, out: Path) -> None:
     # (a narrow drop cast a hard straight line in low sun).
     sink = smoothstep(1.45, 0.8, pd)
     h = h * (1 - sink) + (0.38 + 0.003 * cell_edge) * sink
-    h = h + crat - 0.15 * trough
+    h = h + crat * (1 - trough) - 0.06 * trough
     height = np.clip(h, 0, 1)
 
     # --- Colour ---------------------------------------------------------------------------

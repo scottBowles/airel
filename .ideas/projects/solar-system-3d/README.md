@@ -239,8 +239,9 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 - **Lightning in the cloud shader** (`uLightning`): keep a flash inside its cell's neighbour search
   (halo < 0.6 cell) or it's clipped to a hard edge; fade it toward the limb (cloud alpha piles up
   there and a flash reads as glare); show it mostly on the night side.
-- **Asteroids** (`AsteroidBelt.svelte`). Smooth noise lobes make every rock an egg; a few planar
-  cuts (chipped facets) make them read as rock. Keep them dark (asteroids reflect 5–20%; instance
+- **Asteroids** (`AsteroidBelt.svelte`). Smooth noise lobes make every rock an egg; many hard planar
+  cuts make gravel chips. Real ones (Eros, Ida, Itokawa) are lumpy potatoes with broad flattened
+  sides and craters; the biggest are rounder. 3–5 planes pressing ~70% flat, lobes, craters. Keep them dark (asteroids reflect 5–20%; instance
   colours are linear, so 0.04–0.13) and a touch cool, as the warm sun turns grey tan. Shrink rocks
   near the camera and between the camera and the body in focus, or one fills or hides the view.
 - **An icy dwarf** (Hielo). A sunken plain needs a wide height margin, or its edge casts a hard

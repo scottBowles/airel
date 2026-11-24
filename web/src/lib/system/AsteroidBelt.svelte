@@ -42,28 +42,30 @@
 	}
 	const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
 
-	/** A lumpy rock: an icosphere pushed in and out by a few random bumps, then squashed. */
-	function rock(r: () => number) {
+	/** A lumpy rock, as real small asteroids are (Eros, Ida, Itokawa): an icosphere pushed in and
+	 * out by broad lobes, a couple of broad flattened sides, shallow craters, then squashed.
+	 * `round` (0..1) makes it rounder, for the biggest rocks, as larger bodies are. */
+	function rock(r: () => number, round = 0) {
 		const g = mergeVertices(new THREE.IcosahedronGeometry(1, 4));
 		const pos = g.attributes.position;
 		// Broad lobes, then a few craters: narrow dents with a slight raised rim.
 		const bumps = [
 			...Array.from({ length: 7 }, () => ({
 				d: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-				k: (r() - 0.45) * 0.9,
+				k: (r() - 0.45) * 1.1 * (1 - 0.6 * round),
 				w: 2 + r() * 5
 			})),
-			...Array.from({ length: 6 }, () => ({
+			...Array.from({ length: 12 }, () => ({
 				d: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-				k: -0.03 - 0.04 * r(),
-				w: 25 + r() * 60
+				k: -0.04 - 0.06 * r(),
+				w: 20 + r() * 80
 			}))
 		];
-		// Chipped faces: a few planes slice the rock, leaving flat facets and edges (without them
-		// every rock read as a smooth egg).
-		const cuts = Array.from({ length: 5 + Math.floor(r() * 5) }, () => ({
+		// Broad flattened sides: a few planes press the rock most of the way flat. (Without them every rock
+		// was a smooth egg; cut fully flat, with many planes, they were gravel chips.)
+		const cuts = Array.from({ length: 3 + Math.floor(r() * 3 * (1 - round)) }, () => ({
 			n: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-			d: 0.6 + 0.3 * r()
+			d: 0.65 + 0.25 * r()
 		}));
 		const v = new THREE.Vector3();
 		for (let i = 0; i < pos.count; i++) {
@@ -72,16 +74,16 @@
 			for (const b of bumps) s += b.k * Math.exp(-b.w * (1 - v.dot(b.d)));
 			// Fine roughness, so a rock isn't smooth as a pebble.
 			s += 0.09 * Math.sin(v.x * 5 + 1.7) * Math.sin(v.y * 9 + 0.3) * Math.sin(v.z * 6 + 2.1);
-			s += 0.025 * Math.sin(v.x * 19 + 0.4) * Math.sin(v.y * 23 + 2.2) * Math.sin(v.z * 17 + 1.1);
+			s += 0.04 * Math.sin(v.x * 19 + 0.4) * Math.sin(v.y * 23 + 2.2) * Math.sin(v.z * 17 + 1.1);
 			v.multiplyScalar(s);
 			for (const c of cuts) {
 				const over = v.dot(c.n) - c.d;
-				if (over > 0) v.addScaledVector(c.n, -over * 0.9);
+				if (over > 0) v.addScaledVector(c.n, -over * 0.7);
 			}
 			pos.setXYZ(i, v.x, v.y, v.z);
 		}
 		// Squashed and stretched; now and then a long one or a peanut (two lobes touching).
-		const kind = r();
+		const kind = round > 0 ? 1 : r();
 		if (kind < 0.2) g.scale(1.8, 0.6 + 0.3 * r(), 0.7 + 0.2 * r());
 		else if (kind < 0.3) {
 			const p2 = g.attributes.position;
@@ -92,7 +94,8 @@
 				p2.setY(i, p2.getY(i) * pinch);
 				p2.setZ(i, p2.getZ(i) * pinch);
 			}
-		} else g.scale(1, 0.45 + 0.4 * r(), 0.6 + 0.3 * r());
+		} else if (round > 0) g.scale(1, 0.8 + 0.15 * r(), 0.85 + 0.15 * r());
+		else g.scale(1, 0.6 + 0.35 * r(), 0.7 + 0.3 * r());
 		g.computeVertexNormals();
 		return g;
 	}
@@ -101,7 +104,9 @@
 	// svelte-ignore state_referenced_locally
 	const r = rng(seed);
 	const SHAPES = 14;
-	const geometries = Array.from({ length: SHAPES }, () => rock(r));
+	// The first ROUND shapes are rounder, for the biggest rocks.
+	const ROUND = 4;
+	const geometries = Array.from({ length: SHAPES }, (_, i) => rock(r, i < ROUND ? 1 : 0));
 	const material = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0 });
 
 	// svelte-ignore state_referenced_locally
@@ -128,7 +133,8 @@
 			if (r() > keep) continue;
 			const u = r();
 			const scale = Math.min(size[1], size[0] * (1 - u) ** -0.55);
-			const shape = Math.floor(r() * SHAPES);
+			const big = scale > 0.5 * size[1];
+			const shape = big ? Math.floor(r() * ROUND) : ROUND + Math.floor(r() * (SHAPES - ROUND));
 			rocks[shape].push({
 				pos: p.clone(),
 				scale,
