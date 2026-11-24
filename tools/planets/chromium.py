@@ -40,7 +40,7 @@ from pathlib import Path
 import numpy as np
 
 from clouds import make_clouds, rank
-from mystra import blur, save_mist_glow
+from mystra import blur
 from planetgen import (
     Noise3,
     angular_distance,
@@ -104,7 +104,7 @@ def generate(width: int, out: Path) -> None:
     # into dashes by a second field, so only some segments are open (and glowing) at once.
     crest = ridged(n[8], p * 30 + warp * 3, 3)
     crack = smoothstep(0.84, 0.93, crest) * belt
-    dash = smoothstep(0.45, 0.75, rank(fbm(n[9], p * 18 + warp * 2, 3)))
+    dash = smoothstep(0.3, 0.55, rank(fbm(n[9], p * 18 + warp * 2, 3)))
     glow = crack * dash
     # A wider, dimmer skirt: warm ground around the open cracks (blurred by a coarser field).
     skirt = smoothstep(0.7, 0.93, crest) * belt * smoothstep(0.3, 0.7, rank(fbm(n[9], p * 18 + warp * 2, 3)))
@@ -112,7 +112,7 @@ def generate(width: int, out: Path) -> None:
     # Vents: calderas, most in the belts.
     lat = np.degrees(g.lat)
     lon = np.degrees(g.lon)
-    weight = (0.15 + belt) * np.cos(g.lat)
+    weight = (0.04 + belt) * np.cos(g.lat)
     weight = weight.ravel().astype(np.float64)
     weight /= weight.sum()
     vents = np.zeros(g.lat.shape, np.float32)
@@ -130,7 +130,7 @@ def generate(width: int, out: Path) -> None:
         rows = np.where(np.abs(lat[:, 0] - la) < 8 * r + 0.5)[0]
         sub = (slice(rows[0], rows[-1] + 1), slice(None))
         d = angular_distance(g, la, lo)[sub] / r
-        b = float(rng.uniform(0.4, 1.0))
+        b = float(rng.uniform(0.4, 1.0)) * (0.3 + 0.7 * float(belt.flat[idx]))
         vents[sub] = np.maximum(vents[sub], b * (smoothstep(1.0, 0.2, d) + 0.25 * smoothstep(4.0, 1.0, d)))
         pit[sub] = np.maximum(pit[sub], smoothstep(2.5, 0.8, d))
     print(f"fissures {time.time() - t0:.1f}s, {len(placed)} vents")
@@ -175,11 +175,23 @@ def generate(width: int, out: Path) -> None:
 
     clouds, thickness = storm_deck(g)
     save_gray(out / "clouds.webp", clouds)
-    save_rgb(out / "clouds-normal.webp", normal_map(thickness * 0.006, strength=1.0))
+    # Smoothed first: the raw thickness crazed into fine veins in grazing light at the terminator.
+    save_rgb(out / "clouds-normal.webp", normal_map(blur(thickness, 0.15 * g.width / 360) * 0.006, strength=1.0))
     print(f"  clouds: alpha>0.5 {float((clouds > 0.5).mean()):.3f}, alpha<0.2 {float((clouds < 0.2).mean()):.3f}")
-    save_mist_glow(out, emissive)
+    save_ember_glow(out, emissive)
     write_pins(out / "pins.json", "Chromium", [])
     print(f"done {time.time() - t0:.1f}s -> {out}")
+
+
+def save_ember_glow(out: Path, emissive: np.ndarray) -> None:
+    """clouds-glow.webp: the embers as the storm deck above them shows them. Wider than Mystra's
+    halos (~1° and ~2.5°), so each rift belt shows as one continuous dull band, not beads."""
+    h, w = emissive.shape[:2]
+    small = emissive[: h - h % 4, : w - w % 4].reshape(h // 4, 4, w // 4, 4, 3).mean(axis=(1, 3))
+    px = (w // 4) / 360
+    glow = np.stack([0.5 * blur(small[..., c], 1.0 * px) + 0.5 * blur(small[..., c], 2.5 * px) for c in range(3)], -1)
+    peak = float(np.percentile(glow.max(-1), 99.9))
+    save_rgb(out / "clouds-glow.webp", np.clip(glow / max(peak, 1e-6), 0, 1) ** 0.8)
 
 
 def storm_deck(g):
@@ -192,7 +204,7 @@ def storm_deck(g):
         dict(lat=-45, lon=150, ax=24, ay=16, swirl=-1.5, inflow=0.7),
         dict(lat=12, lon=-30, ax=7, ay=7, swirl=2.4, inflow=1.3, eye=0.6, strength=3.0, round=True),
     ]
-    return make_clouds(g, SEED, cover=0.62, storms=storms, veil=(0.2, 0.4), zoning=0.15)
+    return make_clouds(g, SEED, cover=0.62, storms=storms, veil=(0.35, 0.55), zoning=0.15)
 
 
 if __name__ == "__main__":

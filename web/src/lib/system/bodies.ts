@@ -148,15 +148,15 @@ export const CHROMIUM: BodyLook = {
 	glow: 1.6,
 	flicker: 0.6,
 	clouds: {
-		color: [0.13, 0.13, 0.15],
+		color: [0.07, 0.07, 0.08],
 		opacity: 0.95,
 		drift: 0,
 		normal: true,
-		glow: 0.7,
-		lightning: 1.0,
+		glow: 0.4,
+		lightning: 0.8,
 		near: 0.55
 	},
-	atmosphere: { color: [0.5, 0.48, 0.8], strength: 0.4 }
+	atmosphere: { color: [0.5, 0.48, 0.8], strength: 0.22 }
 };
 
 /**

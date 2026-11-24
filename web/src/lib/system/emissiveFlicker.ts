@@ -138,7 +138,8 @@ float cityDetail(vec3 q) {
 // Lightning: storm cells on a coarse grid. In each short time slot a few cells flash, a quick
 // double pulse lighting a soft patch of cloud from inside, with a small bright core.
 float lightning(vec3 q, float t) {
-  const float S = 12.0;
+  // Coarse cells, and flashes small enough (halo < 0.6 cell) that a neighbour search never clips them.
+  const float S = 6.0;
   vec3 base = floor(q * S);
   float sum = 0.0;
   for (int i = -1; i <= 1; i++)
@@ -148,15 +149,16 @@ float lightning(vec3 q, float t) {
     // Each cell keeps its own clock, so the flashes don't fire together.
     float tt = t * 1.3 + 7.0 * hash13(cell + 77.7);
     float slot = floor(tt);
-    float on = step(0.992, hash13(cell + slot * 1.37));
+    float on = step(0.97, hash13(cell + slot * 1.37));
     if (on == 0.0) continue;
     float ph = fract(tt);
     float pulse = smoothstep(0.0, 0.02, ph) * smoothstep(0.12, 0.03, ph)
       + 0.7 * smoothstep(0.16, 0.18, ph) * smoothstep(0.3, 0.2, ph);
     vec3 c = normalize((cell + 0.5 + 0.8 * (vec3(hash13(cell + slot + 3.1), hash13(cell + slot + 5.7), hash13(cell + slot + 9.3)) - 0.5)) / S);
     float d = length(q - c);
-    float r = 0.025 + 0.03 * hash13(cell + slot + 13.9);
-    sum += pulse * (0.7 * smoothstep(r * 1.6, 0.0, d) + 0.35 * smoothstep(r * 0.5, 0.0, d));
+    float r = 0.012 + 0.012 * hash13(cell + slot + 13.9);
+    // A soft core and a dim halo a few times wider: a flash lights its whole storm cell.
+    sum += pulse * (0.6 * smoothstep(r * 1.6, 0.0, d) + 0.15 * smoothstep(r * 4.0, 0.0, d));
   }
   return sum;
 }
@@ -185,9 +187,11 @@ float fnoise(vec3 x) {
   // dark, peaking at the terminator; the direct light takes over further in.
   // Lightning lights thick cloud from inside, brightest on the night side.
   if (uLightning > 0.0) {
-    float thick = smoothstep(0.5, 0.9, diffuseColor.a / max(opacity, 1e-3));
+    // Follows the cloud's thickness rather than cutting off at an edge, so it lights the billows.
+    float a = diffuseColor.a / max(opacity, 1e-3);
+    float thick = smoothstep(0.2, 0.7, a) * a;
     float night = smoothstep(0.2, -0.1, sunward);
-    totalEmissiveRadiance += vec3(0.75, 0.8, 1.0) * uLightning * thick * (0.25 + 0.75 * night) * lightning(q, uTime);
+    totalEmissiveRadiance += vec3(0.7, 0.72, 1.0) * uLightning * thick * (0.25 + 0.75 * night) * lightning(q, uTime);
   }
   if (uTwilight > 0.0) {
     float dusk = smoothstep(-0.24, 0.02, sunward) * smoothstep(0.3, 0.02, sunward);
