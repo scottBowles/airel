@@ -20,6 +20,7 @@ export type BodyLook = {
 		near?: number;
 		normal?: boolean;
 		glow?: number;
+		lightning?: number;
 	};
 	atmosphere?: AtmosphereLook;
 	/** Dusk light past the terminator (see Planet's `twilight`). */
@@ -134,6 +135,28 @@ export const MYSTRA: BodyLook = {
 	// The mist sits in the basins and breaks over the uplands, so it doesn't drift.
 	clouds: { color: [0.62, 0.4, 0.5], opacity: 0.9, drift: 0, normal: true, glow: 0.5 },
 	atmosphere: { color: [0.95, 0.55, 0.72], strength: 0.75 }
+};
+
+/**
+ * Chromium, the dark planet of the dragons: near-black basalt under a dark storm deck, ember
+ * rifts glowing dull red up through the cloud at night, lightning in the storms, and a faint
+ * cool sheen at the rim. The deck doesn't drift, as the ember glow is mapped on it.
+ */
+export const CHROMIUM: BodyLook = {
+	name: 'Chromium',
+	radius: 1.1,
+	glow: 1.6,
+	flicker: 0.6,
+	clouds: {
+		color: [0.13, 0.13, 0.15],
+		opacity: 0.95,
+		drift: 0,
+		normal: true,
+		glow: 0.7,
+		lightning: 1.0,
+		near: 0.55
+	},
+	atmosphere: { color: [0.5, 0.48, 0.8], strength: 0.4 }
 };
 
 /**

@@ -26,6 +26,8 @@ export type Flicker = {
 		/** Dusk light past the terminator (the sun is a disc, and air scatters): strength, colour. */
 		uTwilight: { value: number };
 		uTwilightColor: { value: THREE.Color };
+		/** Lightning flashing in thick cloud (for a cloud layer's material): strength, 0 for none. */
+		uLightning: { value: number };
 	};
 };
 
@@ -42,7 +44,8 @@ export function addEmissiveFlicker(material: THREE.MeshStandardMaterial, amount:
 		uCloudTurn: { value: 0 },
 		uDetail: { value: 0 },
 		uTwilight: { value: 0 },
-		uTwilightColor: { value: new THREE.Color(1, 0.6, 0.4) }
+		uTwilightColor: { value: new THREE.Color(1, 0.6, 0.4) },
+		uLightning: { value: 0 }
 	};
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms);
@@ -89,6 +92,7 @@ uniform float uDusk;
 uniform float uDetail;
 uniform float uTwilight;
 uniform vec3 uTwilightColor;
+uniform float uLightning;
 // Cloud cover between this point and the sun. The shadow is cast from a little higher than the
 // cloud mesh really is, so the offset shows; a blurred mip makes its edges soft.
 float cloudShadow(vec3 p) {
@@ -131,6 +135,31 @@ float cityDetail(vec3 q) {
   else { uv = q.xy / a.z; face = 4.0 + sign(q.z); }
   return glitter(uv, face, 300.0) * glitter(uv, face, 900.0);
 }
+// Lightning: storm cells on a coarse grid. In each short time slot a few cells flash, a quick
+// double pulse lighting a soft patch of cloud from inside, with a small bright core.
+float lightning(vec3 q, float t) {
+  const float S = 12.0;
+  vec3 base = floor(q * S);
+  float sum = 0.0;
+  for (int i = -1; i <= 1; i++)
+  for (int j = -1; j <= 1; j++)
+  for (int k = -1; k <= 1; k++) {
+    vec3 cell = base + vec3(float(i), float(j), float(k));
+    // Each cell keeps its own clock, so the flashes don't fire together.
+    float tt = t * 1.3 + 7.0 * hash13(cell + 77.7);
+    float slot = floor(tt);
+    float on = step(0.992, hash13(cell + slot * 1.37));
+    if (on == 0.0) continue;
+    float ph = fract(tt);
+    float pulse = smoothstep(0.0, 0.02, ph) * smoothstep(0.12, 0.03, ph)
+      + 0.7 * smoothstep(0.16, 0.18, ph) * smoothstep(0.3, 0.2, ph);
+    vec3 c = normalize((cell + 0.5 + 0.8 * (vec3(hash13(cell + slot + 3.1), hash13(cell + slot + 5.7), hash13(cell + slot + 9.3)) - 0.5)) / S);
+    float d = length(q - c);
+    float r = 0.025 + 0.03 * hash13(cell + slot + 13.9);
+    sum += pulse * (0.7 * smoothstep(r * 1.6, 0.0, d) + 0.35 * smoothstep(r * 0.5, 0.0, d));
+  }
+  return sum;
+}
 float fhash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float fnoise(vec3 x) {
   vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
@@ -154,6 +183,12 @@ float fnoise(vec3 x) {
   totalEmissiveRadiance *= mix(1.0, smoothstep(0.12 - uDusk, -0.18 - uDusk, sunward), uNightOnly);
   // Twilight: a dim glow on the ground from just inside the lit side to several degrees into the
   // dark, peaking at the terminator; the direct light takes over further in.
+  // Lightning lights thick cloud from inside, brightest on the night side.
+  if (uLightning > 0.0) {
+    float thick = smoothstep(0.5, 0.9, diffuseColor.a / max(opacity, 1e-3));
+    float night = smoothstep(0.2, -0.1, sunward);
+    totalEmissiveRadiance += vec3(0.75, 0.8, 1.0) * uLightning * thick * (0.25 + 0.75 * night) * lightning(q, uTime);
+  }
   if (uTwilight > 0.0) {
     float dusk = smoothstep(-0.24, 0.02, sunward) * smoothstep(0.3, 0.02, sunward);
     totalEmissiveRadiance += diffuseColor.rgb * uTwilightColor * uTwilight * dusk;

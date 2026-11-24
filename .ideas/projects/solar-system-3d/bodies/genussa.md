@@ -149,3 +149,17 @@ cluster are spread out by about 10× so the pins can be told apart; directions a
   (2025-03-27).
 - Reference images (`img/Genussa_0..1`): inspiration only. A rust-brown planet webbed with orange city
   lights.
+
+## 7. Ideas kept for later (Nov 2026)
+
+Shipped: the Berlin model (one grid, quadrants differ by lamp era and money, wide blends between
+them). Ideas the user wants kept, not done yet:
+
+- **G1 vs G2 still read alike** at whole-planet scale (G2 is a little brighter, with hot spots). Options:
+  bigger and more numerous G2 hot spots; or a calmer, more uniform G1 carpet (steady residential light
+  against G2's clustered blaze).
+- **The river** north of the hub reads as a thin black wiggly line, close to the "crack" look. Make it
+  wider and softer, or light its banks.
+- **G4's dark tract** and **Yafel's chasm** barely show at whole-planet scale.
+- **Confetti at close zoom**: the app's `cityDetail` points glitter more than they should.
+- Annotated quadrant map script: `<scratchpad>/annot/genussa_map.py` (not committed).

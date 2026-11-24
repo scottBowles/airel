@@ -47,6 +47,8 @@
 			 * drift, as the glow is mapped on the cloud mesh.
 			 */
 			glow?: number;
+			/** Lightning flashing inside thick cloud: its brightness (0 or unset for none). */
+			lightning?: number;
 		};
 		/** A glow around the rim, lit from `sun`. */
 		atmosphere?: AtmosphereLook;
@@ -175,8 +177,9 @@
 		: null;
 	if (cloudMaterial) live.uniforms.uCloudMap.value = cloudMaterial.alphaMap;
 	// The glow through the cloud shows on the night side only, as the lights below do.
-	const cloudLive = cloudMaterial && clouds?.glow ? addEmissiveFlicker(cloudMaterial, 0) : null;
+	const cloudLive = cloudMaterial && (clouds?.glow || clouds?.lightning) ? addEmissiveFlicker(cloudMaterial, 0) : null;
 	if (cloudLive) {
+		cloudLive.uniforms.uLightning.value = clouds?.lightning ?? 0;
 		cloudLive.uniforms.uNightOnly.value = 1;
 		// Lit mist outshines the glow from below: it comes on only well past the terminator.
 		cloudLive.uniforms.uDusk.value = 0.15;
@@ -229,6 +232,7 @@
 			}
 		}
 		live.uniforms.uTime.value += delta;
+		if (cloudLive) cloudLive.uniforms.uTime.value += delta;
 		if (!pins.length) return;
 		const { width, height } = size.current;
 		const at = pins.map((pin) => {

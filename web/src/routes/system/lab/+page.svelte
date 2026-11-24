@@ -3,7 +3,7 @@
 	import { Canvas, T } from '@threlte/core';
 	import { NeutralToneMapping } from 'three';
 	import { OrbitControls, Stars } from '@threlte/extras';
-	import { DIDYMUS, DIDYMUS_PRIME, FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
+	import { CHROMIUM, DIDYMUS, DIDYMUS_PRIME, FELUCIA, GENUSSA, GONHIRRIM, JANUS, MYSTRA, TERRAN, GONHIRRIM_MOONS, HYANG_WAN, HYANG_WAN_MOON } from '$lib/system/bodies';
 	import Orbit from '$lib/system/Orbit.svelte';
 	import Planet from '$lib/system/Planet.svelte';
 	import Sun from '$lib/system/Sun.svelte';
@@ -21,6 +21,7 @@
 		{ id: 'janus', label: 'Janus' },
 		{ id: 'mystra', label: 'Mystra' },
 		{ id: 'didymus', label: 'Didymus' },
+		{ id: 'chromium', label: 'Chromium' },
 		{ id: 'hyang-wan', label: 'Hyang Wan' },
 		{ id: 'gonhirrim', label: 'Gonhirrim' }
 	];
@@ -67,6 +68,8 @@
 					? { at: [0, 0.6, 4.4], min: 1.5 }
 				: view === 'didymus'
 					? { at: [0, 0.5, 4.2], min: 1.0 }
+				: view === 'chromium'
+					? { at: [0, 0.6, 4.3], min: 1.45 }
 				: moon
 					? { at: [0, 0.25, moon.radius * 3.6], min: moon.radius * 1.3 }
 					: { at: [0, 0.6, 3.4], min: 1.3 }
@@ -166,6 +169,21 @@
 				spin={0.003}
 				pins={showPins ? pins : []}
 				onpin={(p) => (selected = p)}
+			/>
+		{:else if view === 'chromium'}
+			<!-- Uncharted: no places. -->
+			<T.AmbientLight intensity={0.06} />
+			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
+			<Planet
+				slug="chromium"
+				radius={CHROMIUM.radius}
+				glow={CHROMIUM.glow}
+				flicker={CHROMIUM.flicker}
+				clouds={CHROMIUM.clouds}
+				atmosphere={CHROMIUM.atmosphere}
+				sun={SUN_AT}
+				face={0}
+				spin={0.003}
 			/>
 		{:else if view === 'didymus'}
 			<!-- The twins, each with its worn break face (lon 180) turned to the other. -->
