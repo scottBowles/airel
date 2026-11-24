@@ -134,24 +134,47 @@ def generate(width: int, out: Path) -> None:
     cell_edge = smoothstep(0.0, 0.5, f2 - f1)  # 0 at the troughs
     cell_tone = (cid % 97) / 96.0
 
-    # Four broad graben (as on Charon and Ariel): long troughs with flat floors and steep walls,
-    # parallel, laid out in the surface's own frame at the cave country. Many thin crests read as
-    # claw marks.
+    # The ice-cave country: one winding canyon with two side branches at different angles (as
+    # Mars's Noctis Labyrinthus or Charon's chasmata branch), and two chains of collapse pits, where
+    # cave roofs have fallen in (pit chains mark caves and lava tubes on Mars and the Moon). Four
+    # parallel troughs read as eight parallel lines (a lit wall and a dark wall each).
+    # Laid out in the surface's own frame at the cave country, coordinates ~radians.
     c = unit(CHASMS[0], CHASMS[1])
     east = np.cross([0, 0, 1], c)
     east /= np.linalg.norm(east)
     north = np.cross(c, east)
-    ang = np.radians(30)
-    across = (p @ east) * np.cos(ang) + (p @ north) * np.sin(ang)
-    along = -(p @ east) * np.sin(ang) + (p @ north) * np.cos(ang)
-    front = p @ c > 0
-    wav = 0.006 * fbm(n[10], p * 12, 3)  # walls wander a little, not ruled straight
-    trough = np.zeros(g.lat.shape, np.float32)
-    for off, half_len, w, shift in ((-0.12, 0.13, 0.022, 0.02), (-0.035, 0.2, 0.034, -0.01), (0.055, 0.16, 0.026, 0.03), (0.13, 0.1, 0.018, -0.02)):
-        d = np.abs(across - off + wav)
-        floor = smoothstep(w, 0.65 * w, d)  # flat floor, walls ~0.35 of the half-width
-        ends = smoothstep(half_len, 0.75 * half_len, np.abs(along - shift))
-        trough = np.maximum(trough, floor * ends * front)
+    front = p @ c > 0.8
+    x = np.where(front, p @ east, 9.0) + 0.012 * fbm(n[10], p * 9, 3)  # walls wander a little
+    y = np.where(front, p @ north, 9.0) + 0.012 * fbm(n[11], p * 9, 3)
+
+    def canyon(pts, w0, w1):
+        """Distance-based trough along a polyline (x, y), half-width w0 at the start to w1 at the
+        end, tapering shut at both tips; flat floor, steep walls."""
+        out = np.zeros(g.lat.shape, np.float32)
+        total = sum(np.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts[:-1], pts[1:]))
+        run = 0.0
+        for a, b in zip(pts[:-1], pts[1:]):
+            ab = np.array(b) - np.array(a)
+            ln = float(np.hypot(*ab))
+            t = np.clip(((x - a[0]) * ab[0] + (y - a[1]) * ab[1]) / ln**2, 0, 1)
+            d = np.hypot(x - a[0] - t * ab[0], y - a[1] - t * ab[1])
+            u = (run + t * ln) / total  # 0..1 along the whole canyon
+            w = (w0 + (w1 - w0) * u) * np.clip(np.sin(np.pi * u) * 2.2, 0.15, 1)
+            out = np.maximum(out, smoothstep(w, 0.6 * w, d))
+            run += ln
+        return out
+
+    trough = canyon([(-0.17, -0.07), (-0.09, -0.02), (-0.02, -0.01), (0.05, 0.03), (0.15, 0.06)], 0.022, 0.03)
+    trough = np.maximum(trough, canyon([(-0.04, -0.01), (-0.03, 0.06), (0.01, 0.12), (0.0, 0.17)], 0.016, 0.01))
+    trough = np.maximum(trough, canyon([(0.07, 0.035), (0.1, -0.03), (0.09, -0.1)], 0.014, 0.009))
+    # Pit chains: round collapse pits in a row, unevenly sized and spaced, some merging.
+    for a, b, k in (((-0.16, 0.05), (-0.05, 0.13), 8), ((-0.12, -0.13), (0.02, -0.15), 7)):
+        for i in range(k):
+            t = (i + rng.uniform(-0.3, 0.3)) / (k - 1)
+            px = a[0] + (b[0] - a[0]) * t + rng.normal(0, 0.004)
+            py = a[1] + (b[1] - a[1]) * t + rng.normal(0, 0.004)
+            r = rng.uniform(0.005, 0.011)
+            trough = np.maximum(trough, smoothstep(r, 0.5 * r, np.hypot(x - px, y - py)))
     print(f"plain+chasms {time.time() - t0:.1f}s")
 
     # Height: one field, the plain sunk and flat, chasms cut, craters.
@@ -160,7 +183,7 @@ def generate(width: int, out: Path) -> None:
     # (a narrow drop cast a hard straight line in low sun).
     sink = smoothstep(1.45, 0.8, pd)
     h = h * (1 - sink) + (0.38 + 0.003 * cell_edge) * sink
-    h = h + crat * (1 - trough) - 0.06 * trough
+    h = h + crat * (1 - trough) - 0.1 * trough
     height = np.clip(h, 0, 1)
 
     # --- Colour ---------------------------------------------------------------------------
@@ -180,7 +203,7 @@ def generate(width: int, out: Path) -> None:
     rgb = rgb * (1 - 0.06 * floor) * (1 + 0.1 * np.clip(ejecta, 0, 1)[..., None])
     rgb = rgb * (1 - rays[..., None] * 0.45) + np.array([0.84, 0.86, 0.88], np.float32) * rays[..., None] * 0.45
     # Chasm floors: fresh bluish ice.
-    rgb = rgb * (1 - 0.25 * trough[..., None]) + np.array([0.55, 0.62, 0.7], np.float32) * 0.25 * trough[..., None]
+    rgb = rgb * (1 - 0.35 * trough[..., None]) + np.array([0.45, 0.52, 0.6], np.float32) * 0.35 * trough[..., None]
     # The plain: bright cream-white ice, cells faintly varied, troughs barely darker.
     # Neutral, a touch cool: a cream white rendered khaki-olive under the warm sun.
     plainrgb = np.array([0.8, 0.81, 0.83], np.float32) * (0.98 + 0.02 * cell_edge[..., None])

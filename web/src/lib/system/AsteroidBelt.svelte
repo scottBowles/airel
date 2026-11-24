@@ -42,40 +42,78 @@
 	}
 	const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
 
-	/** A lumpy rock, as real small asteroids are (Eros, Ida, Itokawa): an icosphere pushed in and
-	 * out by broad lobes, a couple of broad flattened sides, shallow craters, then squashed.
-	 * `round` (0..1) makes it rounder, for the biggest rocks, as larger bodies are. */
-	function rock(r: () => number, round = 0) {
-		const g = mergeVertices(new THREE.IcosahedronGeometry(1, 4));
+	/** Smooth 3D value noise, -1..1, and a few octaves of it: for a big rock's rough surface. */
+	function hash(x: number, y: number, z: number) {
+		const h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
+		return h - Math.floor(h);
+	}
+	function noise(x: number, y: number, z: number) {
+		const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+		const f = (t: number) => t * t * (3 - 2 * t);
+		const u = f(x - xi), v = f(y - yi), w = f(z - zi);
+		const l = (a: number, b: number, t: number) => a + (b - a) * t;
+		const c = (dx: number, dy: number, dz: number) => hash(xi + dx, yi + dy, zi + dz);
+		return (
+			2 *
+				l(
+					l(l(c(0, 0, 0), c(1, 0, 0), u), l(c(0, 1, 0), c(1, 1, 0), u), v),
+					l(l(c(0, 0, 1), c(1, 0, 1), u), l(c(0, 1, 1), c(1, 1, 1), u), v),
+					w
+				) -
+			1
+		);
+	}
+	function fbm(x: number, y: number, z: number, octaves: number, gain = 0.5) {
+		let sum = 0;
+		let amp = 0.5;
+		for (let o = 0; o < octaves; o++) {
+			sum += amp * noise(x, y, z);
+			x *= 2.1;
+			y *= 2.1;
+			z *= 2.1;
+			amp *= gain;
+		}
+		return sum;
+	}
+
+	/**
+	 * A rock shape, as real small asteroids are (Eros, Ida, Itokawa): lumpy potatoes with broad
+	 * flattened sides and craters. Three tiers by size, because nearly every rock is a few pixels
+	 * across and only a few are ever seen up close:
+	 * - big (round 1): rounder, as larger bodies are; a fine mesh with rough noise at several
+	 *   scales and many rimmed craters, so it isn't smooth up close;
+	 * - mid: a medium mesh, lumpier;
+	 * - small: a coarse mesh (a few hundred faces); they're specks.
+	 */
+	function rock(r: () => number, tier: 'big' | 'mid' | 'small') {
+		const round = tier === 'big' ? 1 : 0;
+		const g = mergeVertices(new THREE.IcosahedronGeometry(1, tier === 'big' ? 5 : tier === 'mid' ? 3 : 2));
 		const pos = g.attributes.position;
-		// Broad lobes, then a few craters: narrow dents with a slight raised rim.
-		const bumps = [
-			...Array.from({ length: 7 }, () => ({
-				d: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-				k: (r() - 0.45) * 1.1 * (1 - 0.6 * round),
-				w: 2 + r() * 5
-			})),
-			...Array.from({ length: 12 }, () => ({
-				d: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-				k: -0.04 - 0.06 * r(),
-				w: 20 + r() * 80
-			}))
-		];
-		// Broad flattened sides: a few planes press the rock most of the way flat. (Without them every rock
-		// was a smooth egg; cut fully flat, with many planes, they were gravel chips.)
-		const cuts = Array.from({ length: 3 + Math.floor(r() * 3 * (1 - round)) }, () => ({
-			n: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-			d: 0.65 + 0.25 * r()
+		const dir = () => new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize();
+		const lobes = Array.from({ length: 7 }, () => ({ d: dir(), k: (r() - 0.45) * 1.1 * (1 - 0.6 * round), w: 2 + r() * 5 }));
+		// Craters: a bowl and a raised rim, a few large and many small.
+		const craters = Array.from({ length: tier === 'big' ? 40 : 12 }, (_, i) => ({
+			d: dir(),
+			k: -(0.03 + 0.06 * r()) * (i < 4 ? 1.6 : 1),
+			w: i < 4 ? 6 + 8 * r() : 20 + r() * 90
 		}));
+		const cuts = Array.from({ length: (tier === 'big' ? 2 : 3) + Math.floor(r() * 3 * (1 - round)) }, () => ({ n: dir(), d: 0.65 + 0.25 * r() }));
+		const off = r() * 100;
 		const v = new THREE.Vector3();
 		for (let i = 0; i < pos.count; i++) {
 			v.fromBufferAttribute(pos, i);
 			let s = 1;
-			for (const b of bumps) s += b.k * Math.exp(-b.w * (1 - v.dot(b.d)));
-			// Fine roughness, so a rock isn't smooth as a pebble.
-			s += 0.09 * Math.sin(v.x * 5 + 1.7) * Math.sin(v.y * 9 + 0.3) * Math.sin(v.z * 6 + 2.1);
-			s += 0.04 * Math.sin(v.x * 19 + 0.4) * Math.sin(v.y * 23 + 2.2) * Math.sin(v.z * 17 + 1.1);
+			for (const b of lobes) s += b.k * Math.exp(-b.w * (1 - v.dot(b.d)));
+			for (const c of craters) {
+				const t = (1 - v.dot(c.d)) * c.w;
+				s += c.k * (Math.exp(-t * 1.5) - 0.4 * Math.exp(-((t - 1.3) ** 2) * 2));
+			}
+			// Rough at every scale the mesh can hold: broad swells to fine grit.
+			// Big rocks keep more of the fine octaves (higher gain), or they read smooth up close.
+			s += (tier === 'big' ? 0.14 : 0.12) * fbm(v.x * 2.5 + off, v.y * 2.5, v.z * 2.5, tier === 'big' ? 7 : tier === 'mid' ? 4 : 2, tier === 'big' ? 0.68 : 0.5);
 			v.multiplyScalar(s);
+			// Broad flattened sides: planes press the rock most of the way flat. (Without them every
+			// rock was a smooth egg; cut fully flat, with many planes, they were gravel chips.)
 			for (const c of cuts) {
 				const over = v.dot(c.n) - c.d;
 				if (over > 0) v.addScaledVector(c.n, -over * 0.7);
@@ -83,19 +121,19 @@
 			pos.setXYZ(i, v.x, v.y, v.z);
 		}
 		// Squashed and stretched; now and then a long one or a peanut (two lobes touching).
-		const kind = round > 0 ? 1 : r();
+		// Long ones are rarer among the small: a field of them read as scattered seeds.
+		const kind = round > 0 ? 1 : r() * (tier === 'small' ? 1.6 : 1);
 		if (kind < 0.2) g.scale(1.8, 0.6 + 0.3 * r(), 0.7 + 0.2 * r());
 		else if (kind < 0.3) {
-			const p2 = g.attributes.position;
-			for (let i = 0; i < p2.count; i++) {
-				const x = p2.getX(i);
-				p2.setX(i, x * 1.5);
+			for (let i = 0; i < pos.count; i++) {
+				const x = pos.getX(i);
+				pos.setX(i, x * 1.5);
 				const pinch = 1 - 0.35 * Math.exp(-(x * x) * 6);
-				p2.setY(i, p2.getY(i) * pinch);
-				p2.setZ(i, p2.getZ(i) * pinch);
+				pos.setY(i, pos.getY(i) * pinch);
+				pos.setZ(i, pos.getZ(i) * pinch);
 			}
 		} else if (round > 0) g.scale(1, 0.8 + 0.15 * r(), 0.85 + 0.15 * r());
-		else g.scale(1, 0.6 + 0.35 * r(), 0.7 + 0.3 * r());
+		else g.scale(1, (tier === 'small' ? 0.7 : 0.6) + 0.3 * r(), 0.75 + 0.25 * r());
 		g.computeVertexNormals();
 		return g;
 	}
@@ -103,11 +141,49 @@
 	// Fixed for the belt's lifetime.
 	// svelte-ignore state_referenced_locally
 	const r = rng(seed);
-	const SHAPES = 14;
-	// The first ROUND shapes are rounder, for the biggest rocks.
-	const ROUND = 4;
-	const geometries = Array.from({ length: SHAPES }, (_, i) => rock(r, i < ROUND ? 1 : 0));
-	const material = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0 });
+	// Shapes per tier. A rock's tier follows its size: big above half the largest size (a few
+	// dozen rocks), mid above a sixth (a few hundred), small for the rest (thousands). With 12,000
+	// rocks that's ~3M vertices a frame, against ~30M when every rock used the fine mesh.
+	const TIERS = { big: 4, mid: 6, small: 4 } as const;
+	const tierOf: ('big' | 'mid' | 'small')[] = (['big', 'mid', 'small'] as const).flatMap((t) => Array(TIERS[t]).fill(t));
+	const SHAPES = tierOf.length;
+	const first = { big: 0, mid: TIERS.big, small: TIERS.big + TIERS.mid };
+	const geometries = tierOf.map((t) => rock(r, t));
+	/** A tiling noise texture for a bump map: grit, knobs and small pits finer than any rock's mesh
+	 * can hold, at no cost in vertices. Octaves of value noise on a periodic lattice, so it tiles. */
+	function grit(size = 256) {
+		const data = new Uint8Array(size * size * 4);
+		const lattice = (n: number) => Array.from({ length: n * n }, () => r());
+		const octaves = [8, 16, 32, 64].map((n) => ({ n, v: lattice(n) }));
+		for (let y = 0; y < size; y++)
+			for (let x = 0; x < size; x++) {
+				let h = 0;
+				let amp = 0.5;
+				for (const { n, v } of octaves) {
+					const fx = (x / size) * n, fy = (y / size) * n;
+					const x0 = Math.floor(fx), y0 = Math.floor(fy);
+					const tx = fx - x0, ty = fy - y0;
+					const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+					const at = (i: number, j: number) => v[((j + n) % n) * n + ((i + n) % n)];
+					const a = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * sx;
+					const b = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * sx;
+					h += amp * (a + (b - a) * sy);
+					amp *= 0.6;
+				}
+				const k = Math.round(Math.min(Math.max(h / 1.1, 0), 1) * 255);
+				data.set([k, k, k, 255], (y * size + x) * 4);
+			}
+		const t = new THREE.DataTexture(data, size, size);
+		t.wrapS = t.wrapT = THREE.RepeatWrapping;
+		t.repeat.set(2, 1);
+		t.magFilter = THREE.LinearFilter;
+		t.minFilter = THREE.LinearMipmapLinearFilter;
+		t.generateMipmaps = true;
+		t.needsUpdate = true;
+		return t;
+	}
+	const bump = grit();
+	const material = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, bumpMap: bump, bumpScale: 3 });
 
 	// svelte-ignore state_referenced_locally
 	const holes = (clear ?? []).map((h) => ({ at: new THREE.Vector3(...h.at), radius: h.radius, shield: !!h.shield }));
@@ -133,8 +209,8 @@
 			if (r() > keep) continue;
 			const u = r();
 			const scale = Math.min(size[1], size[0] * (1 - u) ** -0.55);
-			const big = scale > 0.5 * size[1];
-			const shape = big ? Math.floor(r() * ROUND) : ROUND + Math.floor(r() * (SHAPES - ROUND));
+			const tier = scale > 0.5 * size[1] ? 'big' : scale > size[1] / 6 ? 'mid' : 'small';
+			const shape = first[tier] + Math.floor(r() * TIERS[tier]);
 			rocks[shape].push({
 				pos: p.clone(),
 				scale,
@@ -202,6 +278,7 @@
 		meshes.forEach((m) => m.dispose());
 		geometries.forEach((g) => g.dispose());
 		material.dispose();
+		bump.dispose();
 	});
 </script>
 
