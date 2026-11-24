@@ -21,3 +21,7 @@ node_modules/
 # Editors
 .idea/
 .claude/settings.local.json
+
+# Phone-size planet maps (tools/planets/far_maps.py makes them). Not committed until the system
+# view becomes a route that uses them, to keep 21 MB of images out of git history until then.
+web/static/system/*/mid/
