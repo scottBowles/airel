@@ -233,6 +233,12 @@ Next: the other planets and moons (see `assets.md`), then the fly-through UI.
 - **A tidally locked planet** (Janus). Lighting alone made the dark half a black disc, so it gets
   more ambient than the others (its steam and rock can be made out), lights that thin out from
   the terminator into the dark, and clouds that don't drift.
+- **A dark storm world** (Chromium). Even a dark slate cloud colour renders mid-grey in full sun:
+  for a "black" deck the colour has to be ~0.07, with a thick veil so the gaps don't read as dim
+  continents. Glow mapped up into cloud needs a wide blur (1–2.5°) or a rift reads as beads.
+- **Lightning in the cloud shader** (`uLightning`): keep a flash inside its cell's neighbour search
+  (halo < 0.6 cell) or it's clipped to a hard edge; fade it toward the limb (cloud alpha piles up
+  there and a flash reads as glare); show it mostly on the night side.
 - **Clouds thin as the camera closes in** (to `near` × opacity at 2 radii), so places can be
   seen up close while the planet reads as cloudy from afar.
 

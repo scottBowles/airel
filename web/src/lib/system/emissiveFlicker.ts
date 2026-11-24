@@ -191,7 +191,9 @@ float fnoise(vec3 x) {
     float a = diffuseColor.a / max(opacity, 1e-3);
     float thick = smoothstep(0.2, 0.7, a) * a;
     float night = smoothstep(0.2, -0.1, sunward);
-    totalEmissiveRadiance += vec3(0.7, 0.72, 1.0) * uLightning * thick * (0.25 + 0.75 * night) * lightning(q, uTime);
+    // Faded toward the limb, where cloud alpha piles up and a flash read as glare on the rim.
+    float facing = smoothstep(0.15, 0.5, dot(normalize(normal), normalize(vViewPosition)));
+    totalEmissiveRadiance += vec3(0.8, 0.85, 1.0) * uLightning * thick * facing * (0.05 + 0.95 * night) * lightning(q, uTime);
   }
   if (uTwilight > 0.0) {
     float dusk = smoothstep(-0.24, 0.02, sunward) * smoothstep(0.3, 0.02, sunward);

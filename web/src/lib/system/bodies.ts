@@ -156,7 +156,7 @@ export const CHROMIUM: BodyLook = {
 		lightning: 0.8,
 		near: 0.55
 	},
-	atmosphere: { color: [0.5, 0.48, 0.8], strength: 0.22 }
+	atmosphere: { color: [0.5, 0.48, 0.8], strength: 0.3 }
 };
 
 /**
