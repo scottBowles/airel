@@ -184,9 +184,9 @@
 				radius={30}
 				arc={[-Math.PI / 2 - 0.7, -Math.PI / 2 + 0.7]}
 				width={1.4}
-				thickness={0.3}
-				count={5000}
-				size={[0.006, 0.16]}
+				thickness={0.12}
+				count={12000}
+				size={[0.003, 0.12]}
 				clear={[
 					{ at: [0, 0, 0], radius: 1.1 },
 					{ at: [0.4, 0.5, 2.6], radius: 2.2 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The asteroid belt: thousands of rocks along an arc, as a few instanced meshes (one per rock
 	// shape). The belt orbits nothing (DM, Nov 2026), so the rocks stay put; each tumbles slowly.
-	import { T, useTask } from '@threlte/core';
+	import { T, useTask, useThrelte } from '@threlte/core';
 	import { onDestroy } from 'svelte';
 	import * as THREE from 'three';
 	import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -43,33 +43,55 @@
 
 	/** A lumpy rock: an icosphere pushed in and out by a few random bumps, then squashed. */
 	function rock(r: () => number) {
-		const g = mergeVertices(new THREE.IcosahedronGeometry(1, 3));
+		const g = mergeVertices(new THREE.IcosahedronGeometry(1, 4));
 		const pos = g.attributes.position;
 		// Broad lobes, then a few craters: narrow dents with a slight raised rim.
 		const bumps = [
 			...Array.from({ length: 7 }, () => ({
 				d: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-				k: (r() - 0.45) * 0.5,
+				k: (r() - 0.45) * 0.9,
 				w: 2 + r() * 5
 			})),
 			...Array.from({ length: 6 }, () => ({
 				d: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
-				k: -0.06 - 0.08 * r(),
+				k: -0.03 - 0.04 * r(),
 				w: 25 + r() * 60
 			}))
 		];
+		// Chipped faces: a few planes slice the rock, leaving flat facets and edges (without them
+		// every rock read as a smooth egg).
+		const cuts = Array.from({ length: 5 + Math.floor(r() * 5) }, () => ({
+			n: new THREE.Vector3(gauss(r), gauss(r), gauss(r)).normalize(),
+			d: 0.6 + 0.3 * r()
+		}));
 		const v = new THREE.Vector3();
 		for (let i = 0; i < pos.count; i++) {
 			v.fromBufferAttribute(pos, i);
 			let s = 1;
 			for (const b of bumps) s += b.k * Math.exp(-b.w * (1 - v.dot(b.d)));
 			// Fine roughness, so a rock isn't smooth as a pebble.
-			s += 0.05 * Math.sin(v.x * 7 + 1.7) * Math.sin(v.y * 9 + 0.3) * Math.sin(v.z * 6 + 2.1);
+			s += 0.09 * Math.sin(v.x * 5 + 1.7) * Math.sin(v.y * 9 + 0.3) * Math.sin(v.z * 6 + 2.1);
 			s += 0.025 * Math.sin(v.x * 19 + 0.4) * Math.sin(v.y * 23 + 2.2) * Math.sin(v.z * 17 + 1.1);
 			v.multiplyScalar(s);
+			for (const c of cuts) {
+				const over = v.dot(c.n) - c.d;
+				if (over > 0) v.addScaledVector(c.n, -over * 0.9);
+			}
 			pos.setXYZ(i, v.x, v.y, v.z);
 		}
-		g.scale(1, 0.6 + 0.4 * r(), 0.7 + 0.3 * r());
+		// Squashed and stretched; now and then a long one or a peanut (two lobes touching).
+		const kind = r();
+		if (kind < 0.2) g.scale(1.8, 0.6 + 0.3 * r(), 0.7 + 0.2 * r());
+		else if (kind < 0.3) {
+			const p2 = g.attributes.position;
+			for (let i = 0; i < p2.count; i++) {
+				const x = p2.getX(i);
+				p2.setX(i, x * 1.5);
+				const pinch = 1 - 0.35 * Math.exp(-(x * x) * 6);
+				p2.setY(i, p2.getY(i) * pinch);
+				p2.setZ(i, p2.getZ(i) * pinch);
+			}
+		} else g.scale(1, 0.45 + 0.4 * r(), 0.6 + 0.3 * r());
 		g.computeVertexNormals();
 		return g;
 	}
@@ -77,9 +99,9 @@
 	// Fixed for the belt's lifetime.
 	// svelte-ignore state_referenced_locally
 	const r = rng(seed);
-	const SHAPES = 6;
+	const SHAPES = 14;
 	const geometries = Array.from({ length: SHAPES }, () => rock(r));
-	const material = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, flatShading: true });
+	const material = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0 });
 
 	type Rock = { pos: THREE.Vector3; scale: number; quat: THREE.Quaternion; axis: THREE.Vector3; spin: number };
 	const rocks: Rock[][] = Array.from({ length: SHAPES }, () => []);
@@ -115,8 +137,9 @@
 			// Grey and brown rock, some pale icy bodies; darker small ones (dust-coated).
 			const ice = r() < icy;
 			// Asteroids are dark (most reflect 5–20% of light); the icy ones a pale blue-grey, not snow.
-			const l = ice ? 0.36 + 0.14 * r() : 0.12 + 0.14 * r();
-			const warm = ice ? -0.03 : 0.04 * r();
+			const l = ice ? 0.12 + 0.06 * r() : 0.04 + 0.1 * r();
+			// Slightly cool, as the warm sun tints neutral grey toward tan.
+			const warm = ice ? -0.02 : -0.012 + 0.015 * r();
 			colours[shape].push(new THREE.Color(l + warm, l, l - warm + (ice ? 0.05 : 0)));
 			placed++;
 		}
@@ -129,7 +152,9 @@
 		m.frustumCulled = false;
 		return m;
 	});
+	const { camera } = useThrelte();
 	const matrix = new THREE.Matrix4();
+	const world = new THREE.Vector3();
 	const turn = new THREE.Quaternion();
 	const scl = new THREE.Vector3();
 	function update(delta: number) {
@@ -137,7 +162,10 @@
 			rocks[i].forEach((k, j) => {
 				turn.setFromAxisAngle(k.axis, k.spin * delta);
 				k.quat.premultiply(turn);
-				matrix.compose(k.pos, k.quat, scl.setScalar(k.scale));
+				// Rocks shrink away as the camera comes close, so none ever fills the view.
+				world.copy(k.pos);
+				const near = Math.min(Math.max((camera.current.position.distanceTo(world) - 0.6) / 1.2, 0), 1);
+				matrix.compose(k.pos, k.quat, scl.setScalar(k.scale * near * near * (3 - 2 * near)));
 				m.setMatrixAt(j, matrix);
 			});
 			m.instanceMatrix.needsUpdate = true;

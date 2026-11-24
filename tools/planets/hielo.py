@@ -54,16 +54,17 @@ from planetgen import (
 )
 
 SEED = 1616
-PLAIN = (10, 175, 30)  # centre and radius°: the bright smooth ice plain
+PLAIN = (10, 175, 30)
+PLAIN2 = (-6, 157, 20)  # a second, offset lobe: the plain is heart-like, not a disc  # centre and radius°: the bright smooth ice plain
 DARK = (-15, -120, 48)  # the dark rough land
 CHASMS = (16, -38, 12)  # the ice-cave country
-CRATERS = 420
+CRATERS = 1200
 RAYED = 6
 LIGHTS = [
-    (5, 10, 0.12, 0.9),  # Hammer and Kiln's Hiobium works
-    (-10, 60, 0.06, 0.5),  # the science station
-    (50, -90, 0.04, 0.35),  # Bode Augur's camp
-    (16.5, -36.5, 0.04, 0.35),  # Whidmore's canisters in the ice caves
+    (5, 10, 0.4, 0.9),  # Hammer and Kiln's Hiobium works
+    (-10, 60, 0.25, 0.6),  # the science station
+    (50, -90, 0.12, 0.45),  # Bode Augur's camp
+    (16.5, -36.5, 0.15, 0.45),  # Whidmore's canisters in the ice caves
 ]
 LAMP = np.array([1.0, 0.85, 0.65], np.float32)
 
@@ -82,7 +83,8 @@ def generate(width: int, out: Path) -> None:
     detail = fbm(n[5], p * 24 + warp * 2, 4)
 
     # The plain: a lobed basin, edged by noise so its shore wanders.
-    pd = angular_distance(g, PLAIN[0], PLAIN[1]) / PLAIN[2] + 0.35 * fbm(n[6], p * 3 + warp, 4) + 0.08 * fbm(n[7], p * 14, 3)
+    pd = np.minimum(angular_distance(g, PLAIN[0], PLAIN[1]) / PLAIN[2], angular_distance(g, PLAIN2[0], PLAIN2[1]) / PLAIN2[2])
+    pd = pd + 0.6 * fbm(n[6], p * 3 + warp, 4) + 0.1 * fbm(n[7], p * 14, 3)
     plain = smoothstep(1.0, 0.8, pd)
     # A margin where the plain's ice laps over the old land: paler, smoothed, partly buried.
     margin = smoothstep(1.35, 1.0, pd) * (1 - plain)
@@ -96,7 +98,7 @@ def generate(width: int, out: Path) -> None:
     crat = np.zeros(g.lat.shape, np.float32)
     ejecta = np.zeros(g.lat.shape, np.float32)
     lats, lons = random_points(rng, CRATERS, (-88, 88))
-    radii = 0.3 + 9.0 * rng.uniform(0, 1, CRATERS) ** 3
+    radii = 0.25 + 9.0 * rng.uniform(0, 1, CRATERS) ** 4
     for la, lo, r in zip(lats, lons, radii):
         rows = np.where(np.abs(lat[:, 0] - la) < 3 * r + 0.5)[0]
         sub = (slice(rows[0], rows[-1] + 1), slice(None))
@@ -127,9 +129,9 @@ def generate(width: int, out: Path) -> None:
     print(f"craters {time.time() - t0:.1f}s")
 
     # Convection cells on the plain: gentle tone and height between cell centres and edges.
-    f1, f2, cid = worley(p * 28 + 0.6 * warp + 0.05 * np.stack([fbm(n[9], p * 60, 2)] * 3, -1), SEED)
+    f1, f2, cid = worley(p * 10 + 0.6 * warp + 0.05 * np.stack([fbm(n[9], p * 60, 2)] * 3, -1), SEED)
     # Soft rounded domes with broad shallow troughs, not tiles: a sharp edge drew a crazed web.
-    cell_edge = smoothstep(0.0, 0.25, f2 - f1)  # 0 at the troughs
+    cell_edge = smoothstep(0.0, 0.5, f2 - f1)  # 0 at the troughs
     cell_tone = (cid % 97) / 96.0
 
     # Chasms: long, sub-parallel graben, from a stretched ridged field, inside the cave country.
@@ -137,13 +139,24 @@ def generate(width: int, out: Path) -> None:
     field = smoothstep(1.2, 0.5, cd)
     # Squashed hard along one axis so the crests run long and nearly parallel (graben, as on
     # Charon), few octaves so they're continuous valleys, not scratches.
-    stretch = np.array([5.0, 0.6, 0.6], np.float32)
-    trough = smoothstep(0.62, 0.86, ridged(n[10], p * stretch * 4 + warp * 0.3, 2)) * field
+    # Laid out in the surface's own frame at the cave country, so they run parallel there.
+    c = unit(CHASMS[0], CHASMS[1])
+    east = np.cross([0, 0, 1], c)
+    east /= np.linalg.norm(east)
+    north = np.cross(c, east)
+    ang = np.radians(30)
+    across = (p @ east) * np.cos(ang) + (p @ north) * np.sin(ang)
+    along = -(p @ east) * np.sin(ang) + (p @ north) * np.cos(ang)
+    q = np.stack([across * 30, along * 3, (p @ c) * 3], -1) + 0.4 * warp
+    trough = smoothstep(0.75, 0.9, ridged(n[10], q, 2)) * field
     print(f"plain+chasms {time.time() - t0:.1f}s")
 
     # Height: one field, the plain sunk and flat, chasms cut, craters.
     h = 0.5 + 0.25 * base + 0.12 * (ridges - 0.5) * (1 + dark) + 0.03 * detail
-    h = h * (1 - plain) + (0.38 + 0.01 * cell_edge) * plain
+    # The plain's ice laps up over a wide margin, so its edge is a gentle slope, not a scarp
+    # (a narrow drop cast a hard straight line in low sun).
+    sink = smoothstep(1.45, 0.8, pd)
+    h = h * (1 - sink) + (0.38 + 0.003 * cell_edge) * sink
     h = h + crat - 0.15 * trough
     height = np.clip(h, 0, 1)
 
@@ -157,17 +170,17 @@ def generate(width: int, out: Path) -> None:
         ],
     )
     upland = upland * (0.9 + 0.12 * detail[..., None])
-    darkrgb = np.array([0.3, 0.29, 0.28], np.float32) * (0.85 + 0.3 * ridges[..., None])
+    darkrgb = np.array([0.23, 0.22, 0.215], np.float32) * (0.8 + 0.4 * ridges[..., None]) * (0.9 + 0.2 * detail[..., None])
     rgb = upland * (1 - 0.85 * dark[..., None]) + darkrgb * 0.85 * dark[..., None]
     # Crater floors a little darker, ejecta a little brighter: old dust over ice.
     floor = np.clip(-crat * 8, 0, 1)[..., None]
     rgb = rgb * (1 - 0.06 * floor) * (1 + 0.1 * np.clip(ejecta, 0, 1)[..., None])
     rgb = rgb * (1 - rays[..., None] * 0.45) + np.array([0.84, 0.86, 0.88], np.float32) * rays[..., None] * 0.45
     # Chasm floors: fresh bluish ice.
-    rgb = rgb * (1 - 0.5 * trough[..., None]) + np.array([0.55, 0.65, 0.75], np.float32) * 0.5 * trough[..., None]
+    rgb = rgb * (1 - 0.25 * trough[..., None]) + np.array([0.55, 0.62, 0.7], np.float32) * 0.25 * trough[..., None]
     # The plain: bright cream-white ice, cells faintly varied, troughs barely darker.
     # Neutral, a touch cool: a cream white rendered khaki-olive under the warm sun.
-    plainrgb = np.array([0.82, 0.83, 0.85], np.float32) * (0.96 + 0.05 * cell_tone[..., None]) * (0.96 + 0.04 * cell_edge[..., None])
+    plainrgb = np.array([0.75, 0.76, 0.78], np.float32) * (0.96 + 0.05 * cell_tone[..., None]) * (0.96 + 0.04 * cell_edge[..., None])
     rgb = rgb * (1 - 0.5 * margin[..., None]) + np.array([0.78, 0.78, 0.77], np.float32) * 0.5 * margin[..., None]
     rgb = rgb * (1 - plain[..., None]) + plainrgb * plain[..., None]
     # Polar frost: soft, ragged, brightest at the poles.
