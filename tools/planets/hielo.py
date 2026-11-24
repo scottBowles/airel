@@ -180,7 +180,7 @@ def generate(width: int, out: Path) -> None:
     rgb = rgb * (1 - 0.25 * trough[..., None]) + np.array([0.55, 0.62, 0.7], np.float32) * 0.25 * trough[..., None]
     # The plain: bright cream-white ice, cells faintly varied, troughs barely darker.
     # Neutral, a touch cool: a cream white rendered khaki-olive under the warm sun.
-    plainrgb = np.array([0.75, 0.76, 0.78], np.float32) * (0.96 + 0.05 * cell_tone[..., None]) * (0.96 + 0.04 * cell_edge[..., None])
+    plainrgb = np.array([0.8, 0.81, 0.83], np.float32) * (0.98 + 0.02 * cell_edge[..., None])
     rgb = rgb * (1 - 0.5 * margin[..., None]) + np.array([0.78, 0.78, 0.77], np.float32) * 0.5 * margin[..., None]
     rgb = rgb * (1 - plain[..., None]) + plainrgb * plain[..., None]
     # Polar frost: soft, ragged, brightest at the poles.
@@ -193,9 +193,12 @@ def generate(width: int, out: Path) -> None:
     lights = np.zeros(g.lat.shape, np.float32)
     for la, lo, r, b in LIGHTS:
         d = angular_distance(g, la, lo) / r
-        lights += b * (smoothstep(1.0, 0.2, d) + 0.6 * (glint > 0.7) * smoothstep(2.5, 1.0, d))
+        # A small cluster and a soft halo about three times wider, so an outpost shows from orbit.
+        lights += b * (smoothstep(1.0, 0.2, d) + 0.6 * (glint > 0.7) * smoothstep(2.5, 1.0, d) + 0.25 * smoothstep(3.5, 0.5, d))
     emissive = LAMP * np.clip(lights, 0, 1)[..., None]
 
+    # A touch cooler overall: under the warm sun the blue-grey read sepia.
+    rgb = rgb * np.array([0.98, 1.0, 1.04], np.float32)
     rough = np.clip(0.8 - 0.25 * plain - 0.1 * frost, 0, 1)
     out.mkdir(parents=True, exist_ok=True)
     save_rgb(out / "albedo.webp", rgb)

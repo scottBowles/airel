@@ -21,8 +21,9 @@
 		size: [number, number];
 		/** Share of pale icy rocks among the grey and brown. */
 		icy?: number;
-		/** Keep rocks away from these points (a body sitting in the belt, the camera). */
-		clear?: { at: [number, number, number]; radius: number }[];
+		/** Keep rocks away from these points (a body sitting in the belt, the camera). With
+		 * `shield`, rocks between the camera and the point also shrink away, so none hides it. */
+		clear?: { at: [number, number, number]; radius: number; shield?: boolean }[];
 		/** Crowd rocks toward a point: they're this many times denser near it. */
 		crowd?: { at: [number, number, number]; radius: number; factor: number };
 		seed?: number;
@@ -103,13 +104,14 @@
 	const geometries = Array.from({ length: SHAPES }, () => rock(r));
 	const material = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0 });
 
+	// svelte-ignore state_referenced_locally
+	const holes = (clear ?? []).map((h) => ({ at: new THREE.Vector3(...h.at), radius: h.radius, shield: !!h.shield }));
 	type Rock = { pos: THREE.Vector3; scale: number; quat: THREE.Quaternion; axis: THREE.Vector3; spin: number };
 	const rocks: Rock[][] = Array.from({ length: SHAPES }, () => []);
 	const colours: THREE.Color[][] = Array.from({ length: SHAPES }, () => []);
 	// svelte-ignore state_referenced_locally
 	{
 		const c = new THREE.Vector3(...centre);
-		const holes = (clear ?? []).map((h) => ({ at: new THREE.Vector3(...h.at), radius: h.radius }));
 		const dense = crowd && new THREE.Vector3(...crowd.at);
 		const p = new THREE.Vector3();
 		let placed = 0;
@@ -137,10 +139,11 @@
 			// Grey and brown rock, some pale icy bodies; darker small ones (dust-coated).
 			const ice = r() < icy;
 			// Asteroids are dark (most reflect 5–20% of light); the icy ones a pale blue-grey, not snow.
-			const l = ice ? 0.12 + 0.06 * r() : 0.04 + 0.1 * r();
+			// One range, cool dark grey to grey-brown; icy ones only a little paler and bluer.
+			const l = ice ? 0.1 + 0.05 * r() : 0.04 + 0.09 * r();
 			// Slightly cool, as the warm sun tints neutral grey toward tan.
-			const warm = ice ? -0.02 : -0.012 + 0.015 * r();
-			colours[shape].push(new THREE.Color(l + warm, l, l - warm + (ice ? 0.05 : 0)));
+			const warm = ice ? -0.012 : -0.012 + 0.015 * r();
+			colours[shape].push(new THREE.Color(l + warm, l, l - warm + (ice ? 0.015 : 0)));
 			placed++;
 		}
 	}
@@ -155,6 +158,8 @@
 	const { camera } = useThrelte();
 	const matrix = new THREE.Matrix4();
 	const world = new THREE.Vector3();
+	const toBody = new THREE.Vector3();
+	const toRock = new THREE.Vector3();
 	const turn = new THREE.Quaternion();
 	const scl = new THREE.Vector3();
 	function update(delta: number) {
@@ -164,7 +169,20 @@
 				k.quat.premultiply(turn);
 				// Rocks shrink away as the camera comes close, so none ever fills the view.
 				world.copy(k.pos);
-				const near = Math.min(Math.max((camera.current.position.distanceTo(world) - 0.6) / 1.2, 0), 1);
+				let near = Math.min(Math.max((camera.current.position.distanceTo(world) - 0.6) / 1.2, 0), 1);
+				// And rocks between the camera and a body in the belt, so none hides it.
+				for (const h of holes) {
+					if (!h.shield) continue;
+					toBody.copy(h.at).sub(camera.current.position);
+					const len = toBody.length();
+					toBody.divideScalar(len);
+					toRock.copy(world).sub(camera.current.position);
+					const t = toRock.dot(toBody);
+					if (t > 0 && t < len) {
+						const off = toRock.addScaledVector(toBody, -t).length() / (h.radius * (t / len));
+						near = Math.min(near, Math.min(Math.max((off - 0.9) / 0.3, 0), 1));
+					}
+				}
 				matrix.compose(k.pos, k.quat, scl.setScalar(k.scale * near * near * (3 - 2 * near)));
 				m.setMatrixAt(j, matrix);
 			});

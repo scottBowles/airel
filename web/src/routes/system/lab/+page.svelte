@@ -178,7 +178,7 @@
 			<!-- Hielo in the belt. The belt's arc runs through it, left to right. -->
 			<T.AmbientLight intensity={0.05} />
 			<Sun look={YELLOW_SUN} radius={1.2} position={SUN_AT} intensity={1.6} />
-			<Planet slug="hielo" radius={HIELO.radius} glow={HIELO.glow} atmosphere={HIELO.atmosphere} nightLights sun={SUN_AT} face={140} spin={0.002} />
+			<Planet slug="hielo" radius={HIELO.radius} glow={HIELO.glow} atmosphere={HIELO.atmosphere} nightLights sun={SUN_AT} face={-160} spin={0.002} />
 			<AsteroidBelt
 				centre={[0, 0, -30]}
 				radius={30}
@@ -188,7 +188,7 @@
 				count={12000}
 				size={[0.003, 0.12]}
 				clear={[
-					{ at: [0, 0, 0], radius: 1.1 },
+					{ at: [0, 0, 0], radius: 1.1, shield: true },
 					{ at: [0.4, 0.5, 2.6], radius: 2.2 }
 				]}
 				crowd={{ at: [0, 0, 0], radius: 6, factor: 3 }}
